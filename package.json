@@ -1,0 +1,26 @@
+{
+  "name": "mikurumsul",
+  "version": "1.0.0",
+  "description": "Bu proje, Mi Kurumsal'ın franchise + yatırımcı + lokasyon + marka operasyonunu tek panelde toplamak için hazırlanmış bir CRM prototipidir.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^8.0.7",
+    "pg": "^8.20.0",
+    "twilio": "^6.0.0",
+    "xlsx": "^0.18.5"
+  }
+}
