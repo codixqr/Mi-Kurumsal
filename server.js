@@ -17,11 +17,9 @@ const jwtSecret = process.env.JWT_SECRET || "crm_dev_secret_change_me";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  host: process.env.DB_HOST || "localhost",
-  port: Number(process.env.DB_PORT || 5432),
-  user: process.env.DB_USER || "postgres",
-  password: process.env.DB_PASSWORD || "postgres",
-  database: process.env.DB_NAME || "mikurumsal_crm",
+  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes("db.prisma.io") 
+    ? { rejectUnauthorized: false } 
+    : false,
 });
 
 app.use(cors());
@@ -1277,7 +1275,14 @@ async function start() {
   });
 }
 
-start().catch((error) => {
-  console.error("Sunucu başlatılamadı:", error);
-  process.exit(1);
-});
+// Export the app for Vercel
+module.exports = app;
+
+if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+  start().catch((error) => {
+    console.error("Sunucu başlatılamadı:", error);
+    process.exit(1);
+  });
+} else {
+  console.log("Vercel environment detected, serverless mode active.");
+}
