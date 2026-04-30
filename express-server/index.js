@@ -1311,37 +1311,6 @@ app.post("/api/matching/suggest", authMiddleware, async (req, res) => {
   res.json(results);
 });
 
-  const { investorName, budget, city, sector, sqm } = req.body || {};
-  const brandsResult = await pool.query("SELECT * FROM brands WHERE active = true");
-  const brandList = brandsResult.rows.map(mapBrand);
-  const results = brandList
-    .map((brand) => {
-      const score =
-        scoreBudget(Number(budget), brand) +
-        scoreCity(city, brand) +
-        scoreSector(sector, brand) +
-        scoreSqm(Number(sqm), brand);
-      return { brand, score };
-    })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5);
-
-  if (investorName) {
-    await pool.query(
-      `INSERT INTO investors(name,budget,city,sector,investment_type,pipeline_stage,created_by)
-       VALUES($1,$2,$3,$4,$5,$6,$7)`,
-      [investorName, budget, city, sector, "Franchise", "Yeni Lead", req.user.id],
-    );
-    await triggerAutomation("Eşleştirme Lead", {
-      summary: `${investorName} için otomatik eşleşme çalıştırıldı`,
-      investorName,
-      city,
-      sector,
-    });
-  }
-
-  res.json(results);
-});
 
 app.get("/api/export/:module", authMiddleware, async (req, res) => {
   const moduleName = req.params.module;
@@ -1597,57 +1566,6 @@ app.get("/api/dashboard/stats", authMiddleware, async (req, res) => {
   });
 });
 
-  const { from, to } = req.query;
-  const fromClause = from ? new Date(from) : new Date("1970-01-01");
-  const toClause = to ? new Date(to) : new Date();
-  const params = [fromClause, toClause];
-
-  const leadCount = await pool.query(
-    `SELECT COUNT(*)::int AS value FROM investors
-     WHERE deleted_at IS NULL AND created_at BETWEEN $1 AND $2`,
-    params,
-  );
-  const winCount = await pool.query(
-    `SELECT COUNT(*)::int AS value FROM investors
-     WHERE deleted_at IS NULL AND pipeline_stage ILIKE '%Kapandı%' AND created_at BETWEEN $1 AND $2`,
-    params,
-  );
-  const projectCount = await pool.query(
-    `SELECT COUNT(*)::int AS value FROM projects
-     WHERE deleted_at IS NULL AND created_at BETWEEN $1 AND $2`,
-    params,
-  );
-  const financeCount = await pool.query(
-    `SELECT COUNT(*)::int AS value FROM contracts
-     WHERE deleted_at IS NULL AND created_at BETWEEN $1 AND $2`,
-    params,
-  );
-  const topSector = await pool.query(
-    `SELECT sector, COUNT(*)::int AS count FROM investors
-     WHERE deleted_at IS NULL AND created_at BETWEEN $1 AND $2
-     GROUP BY sector ORDER BY count DESC LIMIT 1`,
-    params,
-  );
-  const teamPerf = await pool.query(
-    `SELECT owner_team, COUNT(*)::int AS count FROM projects
-     WHERE deleted_at IS NULL AND created_at BETWEEN $1 AND $2
-     GROUP BY owner_team ORDER BY count DESC LIMIT 1`,
-    params,
-  );
-
-  res.json({
-    period: { from: fromClause, to: toClause },
-    leads: leadCount.rows[0].value,
-    wins: winCount.rows[0].value,
-    conversionRate: leadCount.rows[0].value
-      ? Math.round((winCount.rows[0].value / leadCount.rows[0].value) * 100)
-      : 0,
-    activeProjects: projectCount.rows[0].value,
-    financeRecords: financeCount.rows[0].value,
-    topSector: topSector.rowCount ? topSector.rows[0].sector : "-",
-    topTeam: teamPerf.rowCount ? teamPerf.rows[0].owner_team : "-",
-  });
-});
 
 app.get("/api/templates", authMiddleware, async (req, res) => {
   const rows = await pool.query("SELECT * FROM message_templates ORDER BY id DESC");
