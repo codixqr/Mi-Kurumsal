@@ -720,7 +720,10 @@ app.post("/api/admin/db-fix", async (req, res) => {
       "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS amount BIGINT",
       "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'",
 
-      "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP"
+      "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP",
+      
+      "ALTER TABLE projects ADD COLUMN IF NOT EXISTS type TEXT",
+      "ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS user_name TEXT"
     ];
 
     for (const sql of alters) {
