@@ -26,13 +26,17 @@ export default function DashboardLayout({ children }) {
     { name: 'Eşleştirme Motoru', path: '/matching', id: 'matching' },
     { name: 'DB Kontrol', path: '/db-check', id: 'db-check' },
   ];
-
   return (
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark logo-inside">
-            <img src="/logo/mikurumsal_logo.png" alt="Mi Kurumsal Logo" className="brand-logo" />
+            <img
+              src="/logo/mikurumsal_logo.png"
+              alt="Mi Kurumsal Logo"
+              className="brand-logo"
+              onError={(e) => { e.target.style.display='none'; e.target.parentElement.textContent='Mi'; }}
+            />
           </div>
           <div className="brand-text">
             <strong>Mi Core CRM</strong>
@@ -40,27 +44,32 @@ export default function DashboardLayout({ children }) {
           </div>
         </div>
         <nav className="menu">
-          {menuItems.map((item) => (
-            <Link 
-              key={item.id} 
-              href={item.path} 
-              className={`menu-link ${pathname === item.path ? 'active' : ''}`}
-            >
-              {item.name}
-            </Link>
-          ))}
+          <Link href="/" className={`menu-link ${pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
+          <Link href="/investors" className={`menu-link ${pathname === '/investors' ? 'active' : ''}`}>Yatırımcılar</Link>
+          <Link href="/brands" className={`menu-link ${pathname === '/brands' ? 'active' : ''}`}>Markalar</Link>
+          <Link href="/locations" className={`menu-link ${pathname === '/locations' ? 'active' : ''}`}>Lokasyonlar</Link>
+          <Link href="/projects" className={`menu-link ${pathname === '/projects' ? 'active' : ''}`}>Projeler</Link>
+          <Link href="/contracts" className={`menu-link ${pathname === '/contracts' ? 'active' : ''}`}>Sözleşme & Finans</Link>
+          <Link href="/tasks" className={`menu-link ${pathname === '/tasks' ? 'active' : ''}`}>Görevler</Link>
+          <Link href="/reports" className={`menu-link ${pathname === '/reports' ? 'active' : ''}`}>Raporlar</Link>
+          <Link href="/pnl" className={`menu-link ${pathname === '/pnl' ? 'active' : ''}`}>Kar / Zarar</Link>
+          <Link href="/timeline" className={`menu-link ${pathname === '/timeline' ? 'active' : ''}`}>Timeline</Link>
+          <Link href="/templates" className={`menu-link ${pathname === '/templates' ? 'active' : ''}`}>Şablonlar</Link>
+          <Link href="/matching" className={`menu-link ${pathname === '/matching' ? 'active' : ''}`}>Eşleştirme Motoru</Link>
+          <Link href="/db-check" className={`menu-link ${pathname === '/db-check' ? 'active' : ''}`} style={{opacity: 0.5}}>DB Kontrol</Link>
         </nav>
       </aside>
 
       <main className="content">
         <header className="header">
           <div>
-            <img src="/logo/mikurumsal_logo.png" alt="Mi Kurumsal Logo" className="header-logo" />
+            <img src="/logo/mikurumsal_logo.png" alt="Mi Kurumsal Logo" className="header-logo" style={{height: '40px', marginBottom: '10px'}} />
             <h1>Mi Kurumsal CRM Yönetim Paneli</h1>
-            <p>Hoş geldin, <strong>{user.name}</strong></p>
+            <p>Danışmanlık + Gayrimenkul + Franchise operasyon merkezi</p>
           </div>
           <div className="header-actions">
-            <button type="button">Excel (Tümü)</button>
+            <button type="button" className="secondary-btn">Excel (Tümü)</button>
+            <button type="button" className="primary-btn" onClick={() => window.location.href='/investors'}>+ Yeni Lead</button>
             <button onClick={logout} className="danger-btn">Çıkış</button>
           </div>
         </header>

@@ -103,10 +103,10 @@ export default function LocationsPage() {
             {locations.map(loc => (
               <tr key={loc.id}>
                 <td><strong>{loc.name}</strong><br/><small>{loc.address}</small></td>
-                <td>{loc.location_type}</td>
+                <td>{loc.type}</td>
                 <td>{loc.sqm} m² / {loc.rent?.toLocaleString()} {loc.currency}</td>
                 <td>{loc.potential}</td>
-                <td><small>{(loc.recommended_brands || []).join(', ')}</small></td>
+                <td><small>{(loc.recommendedBrands || []).join(', ')}</small></td>
                 <td>
                   <button onClick={() => handleEdit(loc)} className="edit-btn">Düzenle</button>
                   <button onClick={async () => { if(confirm('Sil?')) { await apiClient.delete(`/locations/${loc.id}`); fetchData(); } }} className="danger-btn">Sil</button>

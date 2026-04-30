@@ -27,6 +27,24 @@ export default function InvestorsPage() {
 
   useEffect(() => { fetchData(); }, []);
 
+  const handleImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('excelFile', file);
+    try {
+      await fetch('/api/investors/import', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` },
+        body: formData
+      });
+      alert('Yatırımcılar başarıyla aktarıldı.');
+      fetchData();
+    } catch (err) {
+      alert('İçe aktarma hatası');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -58,6 +76,12 @@ export default function InvestorsPage() {
       <div className="module-head">
         <h2>Yatırımcı Yönetimi</h2>
         <div className="header-actions">
+          <div className="inline-filter">
+            <label className="secondary-btn" style={{cursor: 'pointer'}}>
+              📁 Excel'den Akıllı Yükle
+              <input type="file" onChange={handleImport} style={{display: 'none'}} accept=".xlsx,.xls" />
+            </label>
+          </div>
           <button className="export-btn" type="button">Excel Dışa Aktar</button>
         </div>
       </div>
@@ -98,7 +122,7 @@ export default function InvestorsPage() {
                 <td>{inv.budget?.toLocaleString()} {inv.currency}</td>
                 <td>{inv.city}</td>
                 <td>{inv.sector}</td>
-                <td><span className="badge warning">{inv.pipeline_stage}</span></td>
+                <td><span className="badge warning">{inv.pipelineStage}</span></td>
                 <td>
                   <button onClick={() => handleEdit(inv)} className="edit-btn">Düzenle</button>
                   <button onClick={async () => { if(confirm('Sil?')) { await apiClient.delete(`/investors/${inv.id}`); fetchData(); } }} className="danger-btn">Sil</button>

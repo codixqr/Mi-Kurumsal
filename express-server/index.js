@@ -1685,6 +1685,64 @@ app.delete("/api/pnl/:id", authMiddleware, async (req, res) => {
   res.status(204).send();
 });
 
+app.post("/api/investors/import", authMiddleware, upload.single("excelFile"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "Dosya yüklenmedi." });
+  const workbook = xlsx.readFile(req.file.path);
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const data = xlsx.utils.sheet_to_json(sheet);
+  
+  const imported = [];
+  for (const row of data) {
+    const inserted = await pool.query(
+      `INSERT INTO investors(name,budget,city,sector,investment_type,pipeline_stage,phone,email,district,goal,created_by)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [
+        row.Ad || row.Name || row.name || "İsimsiz",
+        Number(row.Bütçe || row.Budget || 0),
+        row.Şehir || row.City || "Belirtilmemiş",
+        row.Sektör || row.Sector || "Genel",
+        row.Tip || row.Type || "Franchise",
+        row.Pipeline || "Yeni Lead",
+        row.Telefon || row.Phone || "",
+        row.Email || "",
+        row.İlçe || row.District || "",
+        row.Hedef || row.Goal || "",
+        req.user.id
+      ]
+    );
+    imported.push(inserted.rows[0]);
+  }
+  res.json({ message: `${imported.length} yatırımcı başarıyla aktarıldı.`, imported });
+});
+
+app.post("/api/brands/import", authMiddleware, upload.single("excelFile"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "Dosya yüklenmedi." });
+  const workbook = xlsx.readFile(req.file.path);
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const data = xlsx.utils.sheet_to_json(sheet);
+  
+  const imported = [];
+  for (const row of data) {
+    const inserted = await pool.query(
+      `INSERT INTO brands(name,sector,min_budget,max_budget,currency,min_sqm,max_sqm,target_locations,active,created_at)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW()) RETURNING *`,
+      [
+        row.Marka || row.Name || "İsimsiz Marka",
+        row.Sektör || row.Sector || "Genel",
+        Number(row.MinButce || 0),
+        Number(row.MaxButce || 0),
+        row.ParaBirimi || "TRY",
+        Number(row.MinSqm || 0),
+        Number(row.MaxSqm || 0),
+        row.Lokasyonlar || "",
+        true
+      ]
+    );
+    imported.push(inserted.rows[0]);
+  }
+  res.json({ message: `${imported.length} marka başarıyla aktarıldı.`, imported });
+});
+
 app.post("/api/pnl/import", authMiddleware, upload.single("excelFile"), async (req, res) => {
   const fallbackPath = "c:/Users/Xezal/Desktop/Kar Zarar Raporu mi kurumsal.xlsx";
   const filePath = req.file ? req.file.path : fallbackPath;
@@ -1764,10 +1822,8 @@ app.get("/api/dashboard/stats", authMiddleware, async (req, res) => {
     activeInvestors: leadCount.rows[0].value,
     activeProjects: projectCount.rows[0].value,
     openTasks: taskCount.rows[0].value,
-    strongMatches: 12, // Bu hesaplama logic'ine göre dinamikleşebilir, şimdilik placeholder
-    conversionRate: leadCount.rows[0].value
-      ? Math.round((winCount.rows[0].value / leadCount.rows[0].value) * 100)
-      : 0,
+    strongMatches: winCount.rows[0].value,
+    financeCount: financeCount.rows[0].value
   });
 });
 

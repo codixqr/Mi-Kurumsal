@@ -1,17 +1,19 @@
 :root {
-  --bg: #f4faf6;
+  --bg: #f8fafc;
   --surface: #ffffff;
-  --surface-alt: #e8f5eb;
-  --primary: #1c7f4f;
-  --primary-dark: #125f3a;
-  --text: #173126;
-  --muted: #4a6a5a;
-  --success: #1f7a5c;
-  --warning: #ba7a0f;
-  --danger: #b44343;
-  --border: #cfe2d6;
-  --radius: 14px;
-  --shadow: 0 8px 18px rgba(18, 95, 58, 0.1);
+  --surface-alt: #f1f5f9;
+  --primary: #0f766e;
+  --primary-dark: #0d9488;
+  --primary-glow: rgba(13, 148, 136, 0.2);
+  --text: #0f172a;
+  --muted: #64748b;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --border: #e2e8f0;
+  --radius: 16px;
+  --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  --sidebar-gradient: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
 }
 
 * {
@@ -130,9 +132,10 @@ body {
 }
 
 .sidebar {
-  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+  background: var(--sidebar-gradient);
   color: #fff;
-  padding: 20px 14px;
+  padding: 24px 16px;
+  box-shadow: 4px 0 20px rgba(0,0,0,0.1);
 }
 
 .brand {
@@ -238,12 +241,16 @@ body {
 }
 
 .dashboard-card h3 {
-  margin: -4px -4px 12px;
-  font-size: 18px;
-  background: linear-gradient(90deg, #1f7a5c, #2a9d70);
-  color: #fff;
-  padding: 10px 12px;
-  border-radius: 10px;
+  margin: -16px -16px 20px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  background: #f8fafc;
+  border-radius: 16px 16px 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .dashboard-list {
@@ -324,17 +331,37 @@ body {
   border: 1px solid var(--border);
 }
 
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 80px;
+  height: 80px;
+  background: var(--primary);
+  opacity: 0.03;
+  border-radius: 50%;
+  transform: translate(20px, 20px);
+}
+
 .stat-card h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--muted);
+  text-transform: uppercase;
 }
 
 .stat-card p {
-  margin: 8px 0 0;
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--primary-dark);
+  margin: 12px 0 0;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--primary);
 }
 
 h2 {

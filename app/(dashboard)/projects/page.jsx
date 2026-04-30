@@ -99,9 +99,9 @@ export default function ProjectsPage() {
           <tbody>
             {projects.map(p => (
               <tr key={p.id}>
-                <td><strong>{p.name}</strong><br/><small>{p.due_date ? new Date(p.due_date).toLocaleDateString('tr-TR') : ''}</small></td>
-                <td>{p.project_type}</td>
-                <td>{p.owner_team}</td>
+                <td><strong>{p.name}</strong><br/><small>{p.dueDate ? new Date(p.dueDate).toLocaleDateString('tr-TR') : ''}</small></td>
+                <td>{p.projectType}</td>
+                <td>{p.ownerTeam}</td>
                 <td>{p.stage}</td>
                 <td>
                   <div style={{ width: '100%', backgroundColor: '#eee', borderRadius: '4px', height: '10px' }}>

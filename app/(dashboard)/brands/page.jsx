@@ -21,6 +21,24 @@ export default function BrandsPage() {
     businessPlan: '', operationPlan: '', onboardingSteps: '', kpiTargets: '', brandNotes: ''
   });
 
+  const handleImport = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('excelFile', file);
+    try {
+      await fetch('/api/brands/import', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` },
+        body: formData
+      });
+      alert('Markalar başarıyla aktarıldı.');
+      fetchData();
+    } catch (err) {
+      alert('İçe aktarma hatası');
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -96,8 +114,14 @@ export default function BrandsPage() {
   return (
     <section className="card page-section active">
       <div className="module-head">
-        <h2>Marka Yönetimi</h2>
+        <h2>Marka Portföy Yönetimi</h2>
         <div className="header-actions">
+          <div className="inline-filter">
+            <label className="secondary-btn" style={{cursor: 'pointer'}}>
+              📁 Excel'den Akıllı Yükle
+              <input type="file" onChange={handleImport} style={{display: 'none'}} accept=".xlsx,.xls" />
+            </label>
+          </div>
           <button className="export-btn" type="button">Excel Dışa Aktar</button>
         </div>
       </div>
@@ -158,8 +182,8 @@ export default function BrandsPage() {
               <tr key={brand.id} className={selectedBrand?.id === brand.id ? 'selected-row' : ''}>
                 <td><strong>{brand.name}</strong></td>
                 <td>{brand.sector}</td>
-                <td>{brand.min_budget?.toLocaleString()} - {brand.max_budget?.toLocaleString()} {brand.currency}</td>
-                <td>{brand.min_sqm} - {brand.max_sqm} m²</td>
+                <td>{brand.minBudget?.toLocaleString()} - {brand.maxBudget?.toLocaleString()} {brand.currency}</td>
+                <td>{brand.minSqm} - {brand.maxSqm} m²</td>
                 <td><span className={`badge ${brand.active ? 'success' : 'danger'}`}>{brand.active ? 'Aktif' : 'Pasif'}</span></td>
                 <td>
                   <button onClick={() => selectBrandForEdit(brand)} className="edit-btn">Seç / Düzenle</button>
