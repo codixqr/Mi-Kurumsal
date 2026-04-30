@@ -12,7 +12,7 @@ export default function DbCheckPage() {
     investors: ['id', 'name', 'budget', 'city', 'sector', 'investment_type', 'pipeline_stage', 'currency', 'phone', 'email', 'district', 'goal', 'contact_history', 'meeting_notes', 'follow_up_date', 'documents', 'created_at', 'deleted_at'],
     brands: ['id', 'name', 'sector', 'min_budget', 'max_budget', 'currency', 'min_sqm', 'max_sqm', 'target_locations', 'monthly_growth', 'active', 'created_at', 'deleted_at'],
     locations: ['id', 'name', 'location_type', 'sqm', 'rent', 'currency', 'potential', 'recommended_brands', 'created_at', 'deleted_at'],
-    projects: ['id', 'name', 'type', 'owner_team', 'priority', 'progress', 'stage', 'due_date', 'description', 'checklist', 'assignees', 'created_at', 'deleted_at'],
+    projects: ['id', 'name', 'project_type', 'owner_team', 'priority', 'progress', 'stage', 'due_date', 'description', 'checklist', 'assignees', 'created_at', 'deleted_at'],
     contracts: ['id', 'note', 'contract_type', 'status', 'counterparty', 'start_date', 'end_date', 'amount', 'currency', 'created_at', 'deleted_at'],
     tasks: ['id', 'note', 'status', 'created_at', 'deleted_at'],
     pnl: ['id', 'month_name', 'year_value', 'revenue', 'expense', 'profit', 'note', 'created_at'],

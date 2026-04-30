@@ -722,7 +722,7 @@ app.post("/api/admin/db-fix", async (req, res) => {
 
       "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP",
       
-      "ALTER TABLE projects ADD COLUMN IF NOT EXISTS type TEXT",
+      "ALTER TABLE projects ADD COLUMN IF NOT EXISTS project_type TEXT",
       "ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS user_name TEXT"
     ];
 
@@ -784,7 +784,7 @@ app.get("/api/admin/seed", async (req, res) => {
 
     // 6. Seed Projects
     await pg.query(`
-      INSERT INTO projects(name, type, owner_team, priority, progress, stage, due_date)
+      INSERT INTO projects(name, project_type, owner_team, priority, progress, stage, due_date)
       VALUES 
       ('Burger Master AVM Projesi', 'Yeni Şube', 'Operasyon', 'Yüksek', 70, 'İnce İşler', NOW() + INTERVAL '15 days'),
       ('İzmir Bölge Bayiliği', 'Genişleme', 'İş Geliştirme', 'Orta', 30, 'Hukuk Onayı', NOW() + INTERVAL '45 days'),
