@@ -1281,6 +1281,36 @@ app.delete("/api/tasks/:id", authMiddleware, async (req, res) => {
 });
 
 app.post("/api/matching", authMiddleware, async (req, res) => {
+  // Existing matching code...
+});
+
+app.post("/api/matching/suggest", authMiddleware, async (req, res) => {
+  // Alias for matching
+  const { investorName, budget, city, sector, sqm } = req.body || {};
+  const brandsResult = await pool.query("SELECT * FROM brands WHERE active = true");
+  const brandList = brandsResult.rows.map(mapBrand);
+  const results = brandList
+    .map((brand) => {
+      const score =
+        scoreBudget(Number(budget), brand) +
+        scoreCity(city, brand) +
+        scoreSector(sector, brand) +
+        scoreSqm(Number(sqm), brand);
+      return { brand, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+
+  if (investorName) {
+    await pool.query(
+      `INSERT INTO investors(name,budget,city,sector,investment_type,pipeline_stage,created_by)
+       VALUES($1,$2,$3,$4,$5,$6,$7)`,
+      [investorName, budget, city, sector, "Franchise", "Yeni Lead", req.user.id],
+    );
+  }
+  res.json(results);
+});
+
   const { investorName, budget, city, sector, sqm } = req.body || {};
   const brandsResult = await pool.query("SELECT * FROM brands WHERE active = true");
   const brandList = brandsResult.rows.map(mapBrand);
@@ -1522,6 +1552,51 @@ app.post("/api/pnl/import", authMiddleware, upload.single("excelFile"), async (r
 });
 
 app.get("/api/reports/summary", authMiddleware, async (req, res) => {
+  // Existing code...
+});
+
+app.get("/api/dashboard/stats", authMiddleware, async (req, res) => {
+  const { from, to } = req.query;
+  const fromClause = from ? new Date(from) : new Date("1970-01-01");
+  const toClause = to ? new Date(to) : new Date();
+  const params = [fromClause, toClause];
+
+  const leadCount = await pool.query(
+    `SELECT COUNT(*)::int AS value FROM investors
+     WHERE deleted_at IS NULL AND created_at BETWEEN $1 AND $2`,
+    params,
+  );
+  const winCount = await pool.query(
+    `SELECT COUNT(*)::int AS value FROM investors
+     WHERE deleted_at IS NULL AND pipeline_stage ILIKE '%Kapandı%' AND created_at BETWEEN $1 AND $2`,
+    params,
+  );
+  const projectCount = await pool.query(
+    `SELECT COUNT(*)::int AS value FROM projects
+     WHERE deleted_at IS NULL AND created_at BETWEEN $1 AND $2`,
+    params,
+  );
+  const financeCount = await pool.query(
+    `SELECT COUNT(*)::int AS value FROM contracts
+     WHERE deleted_at IS NULL AND created_at BETWEEN $1 AND $2`,
+    params,
+  );
+  const taskCount = await pool.query(
+    `SELECT COUNT(*)::int AS value FROM tasks
+     WHERE status != 'Tamamlandı'`,
+  );
+
+  res.json({
+    activeInvestors: leadCount.rows[0].value,
+    activeProjects: projectCount.rows[0].value,
+    openTasks: taskCount.rows[0].value,
+    strongMatches: 12, // Bu hesaplama logic'ine göre dinamikleşebilir, şimdilik placeholder
+    conversionRate: leadCount.rows[0].value
+      ? Math.round((winCount.rows[0].value / leadCount.rows[0].value) * 100)
+      : 0,
+  });
+});
+
   const { from, to } = req.query;
   const fromClause = from ? new Date(from) : new Date("1970-01-01");
   const toClause = to ? new Date(to) : new Date();
