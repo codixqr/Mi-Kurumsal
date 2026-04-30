@@ -638,6 +638,96 @@ app.get("/api/uploads/:module", authMiddleware, async (req, res) => {
   res.json(rows.rows);
 });
 
+app.get("/api/admin/seed", async (req, res) => {
+  try {
+    const pg = pool;
+    console.log("Manual seeding started...");
+
+    // 1. Get an admin user id
+    const adminRes = await pg.query("SELECT id FROM users LIMIT 1");
+    if (adminRes.rowCount === 0) {
+      return res.status(400).json({ error: "Önce kayıt olmalısınız veya admin kullanıcısı oluşturulmalı." });
+    }
+    const adminId = adminRes.rows[0].id;
+
+    // 2. Clear existing (Optional - let's just add new ones for safety)
+    
+    // 3. Seed Investors
+    await pg.query(`
+      INSERT INTO investors(name, budget, city, sector, investment_type, pipeline_stage, phone, email, created_by)
+      VALUES 
+      ('Mustafa Kemal', 7500000, 'İstanbul', 'Gıda', 'Franchise', 'Teklif Verildi', '+90 532 111 2233', 'mustafa@demo.com', $1),
+      ('Ayşe Yılmaz', 3000000, 'Ankara', 'Perakende', 'Franchise', 'Yeni Lead', '+90 533 444 5566', 'ayse@demo.com', $1),
+      ('Eren Holding', 25000000, 'İzmir', 'Teknoloji', 'Ortaklık', 'Sözleşme Süreci', '+90 212 777 8899', 'info@eren.com', $1),
+      ('Selin Demir', 1500000, 'Bursa', 'Hizmet', 'Franchise', 'İletişim Kuruldu', '+90 544 222 3344', 'selin@demo.com', $1),
+      ('Kaan Özkan', 10000000, 'Antalya', 'Turizm', 'Master Franchise', 'Analiz Yapıldı', '+90 505 111 0099', 'kaan@demo.com', $1)
+    `, [adminId]);
+
+    // 4. Seed Brands
+    await pg.query(`
+      INSERT INTO brands(name, sector, min_budget, max_budget, min_sqm, max_sqm, target_locations, active, monthly_growth)
+      VALUES 
+      ('Burger Master', 'Gıda', 3000000, 6000000, 80, 200, 'AVM, Cadde', true, 12),
+      ('Glow Beauty', 'Kozmetik', 1500000, 3000000, 40, 100, 'Cadde', true, 8),
+      ('EduPlay', 'Eğitim', 5000000, 12000000, 300, 800, 'Merkezi Lokasyon', true, 15),
+      ('AutoCheck', 'Otomotiv', 4000000, 8000000, 500, 1500, 'Sanayi, Ana Yol', true, 5),
+      ('Pizzasimo', 'Gıda', 2000000, 4500000, 60, 120, 'AVM, Cadde', true, 10)
+    `);
+
+    // 5. Seed Locations
+    await pg.query(`
+      INSERT INTO locations(name, location_type, sqm, rent, potential, recommended_brands)
+      VALUES 
+      ('İstinye Park AVM', 'AVM', 150, 18000, 'Çok Yüksek', 'Burger Master, Pizzasimo'),
+      ('Kızılay Meydanı', 'Cadde', 80, 12000, 'Yüksek', 'Glow Beauty'),
+      ('Terracity AVM', 'AVM', 450, 35000, 'Yüksek', 'EduPlay'),
+      ('Nilüfer Sanayi', 'Sanayi', 1200, 45000, 'Orta', 'AutoCheck')
+    `);
+
+    // 6. Seed Projects
+    await pg.query(`
+      INSERT INTO projects(name, type, owner_team, priority, progress, stage, due_date)
+      VALUES 
+      ('Burger Master AVM Projesi', 'Yeni Şube', 'Operasyon', 'Yüksek', 70, 'İnce İşler', NOW() + INTERVAL '15 days'),
+      ('İzmir Bölge Bayiliği', 'Genişleme', 'İş Geliştirme', 'Orta', 30, 'Hukuk Onayı', NOW() + INTERVAL '45 days'),
+      ('Glow Beauty Franchise', 'Yeni Şube', 'Satış', 'Orta', 90, 'Anahtar Teslim', NOW() + INTERVAL '5 days')
+    `);
+
+    // 7. Seed Tasks
+    await pg.query(`
+      INSERT INTO tasks(note, status)
+      VALUES 
+      ('Kira sözleşmesini imzalat', 'Açık'),
+      ('Ekipman siparişlerini ver', 'Devam Ediyor'),
+      ('Personel ilanını yayınla', 'Tamamlandı'),
+      ('Marka tescil kontrolü yap', 'Açık')
+    `);
+
+    // 8. Seed PnL
+    await pg.query(`
+      INSERT INTO pnl(month_name, year_value, revenue, expense, profit, note)
+      VALUES 
+      ('OCAK', 2024, 1250000, 850000, 400000, 'Yılın ilk ayı performansı'),
+      ('ŞUBAT', 2024, 1400000, 900000, 500000, 'Satışlarda artış'),
+      ('MART', 2024, 1100000, 950000, 150000, 'Yüksek operasyonel giderler')
+    `);
+
+    // 9. Seed Contracts
+    await pg.query(`
+      INSERT INTO contracts(note, counterparty, amount, currency, status)
+      VALUES 
+      ('Ana Bayilik Sözleşmesi', 'Mustafa Kemal', 5000000, 'TRY', 'Onaylandı'),
+      ('Kira Sözleşmesi - İstinye', 'Zorlu GYO', 150000, 'USD', 'İmzada')
+    `);
+
+    console.log("Seeding successful!");
+    res.json({ success: true, message: "Veritabanı başarıyla demo verilerle dolduruldu. Artık panelleri kontrol edebilirsiniz." });
+  } catch (err) {
+    console.error("Seeding error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get("/api/config", authMiddleware, (req, res) => {
   res.json({ pipelineStages, scoreWeights });
 });
