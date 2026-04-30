@@ -4,8 +4,9 @@
   "description": "Bu proje, Mi Kurumsal'ın franchise + yatırımcı + lokasyon + marka operasyonunu tek panelde toplamak için hazırlanmış bir CRM prototipidir.",
   "main": "api/index.js",
   "scripts": {
-    "start": "node api/index.js",
-    "dev": "node api/index.js",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down"
   },
@@ -19,9 +20,12 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
+    "next": "^16.2.4",
     "nodemailer": "^8.0.7",
     "pdfkit": "^0.18.0",
     "pg": "^8.20.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "twilio": "^6.0.0",
     "xlsx": "^0.18.5"
   }
