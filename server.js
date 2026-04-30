@@ -28,9 +28,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
-const uploadsDir = path.join(__dirname, "uploads");
+const uploadsDir = process.env.VERCEL 
+  ? path.join("/tmp", "uploads") 
+  : path.join(__dirname, "uploads");
+
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+  try {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  } catch (err) {
+    console.error("Dizin oluşturulamadı:", err);
+  }
 }
 app.use("/uploads", express.static(uploadsDir));
 
@@ -1658,21 +1665,26 @@ app.use((err, req, res, next) => {
 });
 
 async function start() {
-  await initDb();
-  await seedDefaultDataIfNeeded();
-  app.listen(port, () => {
-    console.log(`Mi Kurumsal CRM API çalışıyor: http://localhost:${port}`);
-  });
+  try {
+    console.log("Veritabanı başlatılıyor...");
+    await initDb();
+    await seedDefaultDataIfNeeded();
+    console.log("Veritabanı hazır.");
+  } catch (error) {
+    console.error("Veritabanı başlatılırken hata oluştu:", error);
+  }
+
+  if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+    app.listen(port, () => {
+      console.log(`Mi Kurumsal CRM API çalışıyor: http://localhost:${port}`);
+    });
+  } else {
+    console.log("Vercel ortamı algılandı, serverless mod aktif.");
+  }
 }
 
-// Export the app for Vercel
+// Uygulamayı başlat
+start();
+
+// Vercel için app nesnesini dışa aktar
 module.exports = app;
-
-if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
-  start().catch((error) => {
-    console.error("Sunucu başlatılamadı:", error);
-    process.exit(1);
-  });
-} else {
-  console.log("Vercel environment detected, serverless mode active.");
-}
