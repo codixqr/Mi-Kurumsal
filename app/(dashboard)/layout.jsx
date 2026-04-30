@@ -63,9 +63,8 @@ export default function DashboardLayout({ children }) {
       <main className="content">
         <header className="header">
           <div>
-            <img src="/logo/mikurumsal_logo.png" alt="Mi Kurumsal Logo" className="header-logo" style={{height: '40px', marginBottom: '10px'}} />
+            <img src="/logo/mikurumsal_logo.png" alt="Mi Kurumsal Logo" className="header-logo" style={{height: '60px', marginBottom: '5px'}} />
             <h1>Mi Kurumsal CRM Yönetim Paneli</h1>
-            <p>Danışmanlık + Gayrimenkul + Franchise operasyon merkezi</p>
           </div>
           <div className="header-actions">
             <button type="button" className="secondary-btn">Excel (Tümü)</button>
