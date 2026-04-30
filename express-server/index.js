@@ -720,6 +720,23 @@ app.get("/api/admin/seed", async (req, res) => {
       ('Kira Sözleşmesi - İstinye', 'Zorlu GYO', 150000, 'USD', 'İmzada')
     `);
 
+    // 10. Seed Templates
+    await pg.query(`
+      INSERT INTO message_templates(channel, event_name, title, body, active)
+      VALUES 
+      ('whatsapp', 'Yeni Lead Karşılama', 'Merhaba Hoşgeldiniz', 'Sayın {{name}}, başvurunuz alınmıştır. En kısa sürede döneceğiz.', true),
+      ('mail', 'Sözleşme Hatırlatma', 'Sözleşme Süreci Hakkında', 'Sözleşmeniz onay beklemektedir.', true)
+    `);
+
+    // 11. Seed Activity Logs
+    await pg.query(`
+      INSERT INTO activity_logs(user_id, user_name, module_name, action_type, summary)
+      VALUES 
+      ($1, 'Admin', 'Yatırımcılar', 'Ekleme', 'Yeni yatırımcı: Mustafa Kemal eklendi'),
+      ($1, 'Admin', 'Markalar', 'Güncelleme', 'Burger Master franchise bedeli güncellendi'),
+      ($1, 'Admin', 'Projeler', 'Aşama Değişikliği', 'Nişantaşı projesi İnşaat aşamasına geçti')
+    `, [adminId]);
+
     console.log("Seeding successful!");
     res.json({ success: true, message: "Veritabanı başarıyla demo verilerle dolduruldu. Artık panelleri kontrol edebilirsiniz." });
   } catch (err) {
