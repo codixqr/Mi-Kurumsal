@@ -678,10 +678,10 @@ app.get("/api/admin/seed", async (req, res) => {
     await pg.query(`
       INSERT INTO locations(name, location_type, sqm, rent, potential, recommended_brands)
       VALUES 
-      ('İstinye Park AVM', 'AVM', 150, 18000, 'Çok Yüksek', 'Burger Master, Pizzasimo'),
-      ('Kızılay Meydanı', 'Cadde', 80, 12000, 'Yüksek', 'Glow Beauty'),
-      ('Terracity AVM', 'AVM', 450, 35000, 'Yüksek', 'EduPlay'),
-      ('Nilüfer Sanayi', 'Sanayi', 1200, 45000, 'Orta', 'AutoCheck')
+      ('İstinye Park AVM', 'AVM', 150, 18000, 'Çok Yüksek', ARRAY['Burger Master', 'Pizzasimo']),
+      ('Kızılay Meydanı', 'Cadde', 80, 12000, 'Yüksek', ARRAY['Glow Beauty']),
+      ('Terracity AVM', 'AVM', 450, 35000, 'Yüksek', ARRAY['EduPlay']),
+      ('Nilüfer Sanayi', 'Sanayi', 1200, 45000, 'Orta', ARRAY['AutoCheck'])
     `);
 
     // 6. Seed Projects
