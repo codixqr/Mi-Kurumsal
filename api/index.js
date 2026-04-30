@@ -26,11 +26,11 @@ const pool = new Pool({
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.join(__dirname, "..")));
 
 const uploadsDir = process.env.VERCEL 
   ? path.join("/tmp", "uploads") 
-  : path.join(__dirname, "uploads");
+  : path.join(__dirname, "..", "uploads");
 
 if (!fs.existsSync(uploadsDir)) {
   try {
@@ -366,7 +366,12 @@ function scoreSqm(sqm, brand) {
 }
 
 async function initDb() {
-  const schema = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
+  const schemaPath = path.join(__dirname, "..", "schema.sql");
+  if (!fs.existsSync(schemaPath)) {
+    console.log("schema.sql bulunamadı, initDb atlanıyor.");
+    return;
+  }
+  const schema = fs.readFileSync(schemaPath, "utf8");
   await pool.query(schema);
   await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
   await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
