@@ -6,14 +6,14 @@ import { apiClient } from '@/lib/apiClient';
 export default function InvestorsPage() {
   const [investors, setInvestors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
-    name: '', budget: '', city: '', sector: '', type: 'Franchise', pipeline: 'Yeni Lead',
-    currency: 'TRY', phone: '', email: '', district: '', goal: '',
-    contactHistory: '', meetingNotes: '', followUpDate: ''
+    name: '', budget: '', city: '', sector: '', investment_type: 'Franchise',
+    pipeline_stage: 'Yeni Lead', currency: 'TRY', phone: '', email: '',
+    district: '', goal: '', contact_history: '', meeting_notes: '',
+    follow_up_date: ''
   });
 
-  const fetchInvestors = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
       const data = await apiClient.get('/investors');
@@ -25,51 +25,30 @@ export default function InvestorsPage() {
     }
   };
 
-  useEffect(() => { fetchInvestors(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editingId) {
-        await apiClient.put(`/investors/${editingId}`, form);
+      if (form.id) {
+        await apiClient.put(`/investors/${form.id}`, form);
       } else {
         await apiClient.post('/investors', form);
       }
-      resetForm();
-      fetchInvestors();
+      setForm({ name: '', budget: '', city: '', sector: '', investment_type: 'Franchise', pipeline_stage: 'Yeni Lead', currency: 'TRY', phone: '', email: '', district: '', goal: '', contact_history: '', meeting_notes: '', follow_up_date: '' });
+      fetchData();
     } catch (err) {
-      alert('Hata: ' + err.message);
+      alert('Hata oluştu');
     }
-  };
-
-  const resetForm = () => {
-    setEditingId(null);
-    setForm({
-      name: '', budget: '', city: '', sector: '', type: 'Franchise', pipeline: 'Yeni Lead',
-      currency: 'TRY', phone: '', email: '', district: '', goal: '',
-      contactHistory: '', meetingNotes: '', followUpDate: ''
-    });
   };
 
   const handleEdit = (inv) => {
-    setEditingId(inv.id);
     setForm({
-      name: inv.name, budget: inv.budget, city: inv.city, sector: inv.sector,
-      type: inv.type, pipeline: inv.pipeline, currency: inv.currency,
-      phone: inv.phone, email: inv.email, district: inv.district,
-      goal: inv.goal, contactHistory: inv.contactHistory,
-      meetingNotes: inv.meetingNotes, followUpDate: inv.followUpDate ? inv.followUpDate.split('T')[0] : ''
+      ...inv,
+      budget: inv.budget || '',
+      follow_up_date: inv.follow_up_date ? inv.follow_up_date.split('T')[0] : ''
     });
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm('Bu yatırımcıyı silmek istediğinize emin misiniz?')) return;
-    try {
-      await apiClient.delete(`/investors/${id}`);
-      fetchInvestors();
-    } catch (err) {
-      alert('Silinemedi.');
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (loading) return <div className="card">Yükleniyor...</div>;
@@ -78,67 +57,51 @@ export default function InvestorsPage() {
     <section className="card page-section active">
       <div className="module-head">
         <h2>Yatırımcı Yönetimi</h2>
-        <div>
+        <div className="header-actions">
           <button className="export-btn" type="button">Excel Dışa Aktar</button>
-          <button className="pdf-export-btn" type="button">PDF Dışa Aktar</button>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="entry-form">
         <div className="field"><label>Ad Soyad / Şirket</label><input value={form.name} onChange={e => setForm({...form, name: e.target.value})} required /></div>
         <div className="field"><label>Bütçe</label><input type="number" value={form.budget} onChange={e => setForm({...form, budget: e.target.value})} required /></div>
-        <div className="field"><label>Şehir</label><input value={form.city} onChange={e => setForm({...form, city: e.target.value})} list="cityOptions" required /></div>
-        <div className="field"><label>Sektör</label><input value={form.sector} onChange={e => setForm({...form, sector: e.target.value})} list="sectorOptions" required /></div>
-        <div className="field">
-          <label>Yatırım Tipi</label>
-          <select value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
-            <option>Franchise</option><option>Satın Alma</option><option>Ortaklık</option><option>Master Franchise</option>
-          </select>
-        </div>
-        <div className="field">
-          <label>Pipeline</label>
-          <select value={form.pipeline} onChange={e => setForm({...form, pipeline: e.target.value})}>
-            <option>Yeni Lead</option><option>İletişim Kuruldu</option><option>Analiz Yapıldı</option><option>Marka Önerildi</option><option>Sunum Yapıldı</option><option>Teklif Verildi</option><option>Sözleşme Süreci</option><option>Kapandı</option>
-          </select>
-        </div>
         <div className="field">
           <label>Para Birimi</label>
-          <select value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}><option value="TRY">TL</option><option value="USD">USD</option></select>
+          <select value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}>
+            <option value="TRY">TL</option><option value="USD">USD</option>
+          </select>
         </div>
-        <div className="field"><label>Telefon</label><input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} placeholder="+90 5xx..." /></div>
+        <div className="field"><label>Şehir</label><input value={form.city} onChange={e => setForm({...form, city: e.target.value})} required /></div>
+        <div className="field"><label>İlçe / Bölge</label><input value={form.district} onChange={e => setForm({...form, district: e.target.value})} /></div>
+        <div className="field"><label>Sektör</label><input value={form.sector} onChange={e => setForm({...form, sector: e.target.value})} required /></div>
+        <div className="field"><label>Yatırım Tipi</label><input value={form.investment_type} onChange={e => setForm({...form, investment_type: e.target.value})} required /></div>
+        <div className="field"><label>Pipeline</label><input value={form.pipeline_stage} onChange={e => setForm({...form, pipeline_stage: e.target.value})} required /></div>
+        <div className="field"><label>Telefon</label><input value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} /></div>
         <div className="field"><label>E-posta</label><input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} /></div>
-        <div className="field"><label>İlçe</label><input value={form.district} onChange={e => setForm({...form, district: e.target.value})} /></div>
-        <div className="field"><label>Hedef</label><input value={form.goal} onChange={e => setForm({...form, goal: e.target.value})} /></div>
-        
-        <div className="field field-wide"><label>İletişim Geçmişi</label><textarea value={form.contactHistory} onChange={e => setForm({...form, contactHistory: e.target.value})} rows="3"></textarea></div>
-        <div className="field field-wide"><label>Görüşme Notu</label><textarea value={form.meetingNotes} onChange={e => setForm({...form, meetingNotes: e.target.value})} rows="3"></textarea></div>
-        <div className="field"><label>Takip Tarihi</label><input type="date" value={form.followUpDate} onChange={e => setForm({...form, followUpDate: e.target.value})} /></div>
-        
-        <div className="field-wide">
-          <button type="submit" className="primary-btn">{editingId ? 'Güncelle' : 'Yatırımcı Ekle'}</button>
-          {editingId && <button type="button" onClick={resetForm} className="secondary-btn" style={{marginLeft: '10px'}}>Vazgeç</button>}
-        </div>
+        <div className="field"><label>Takip Tarihi</label><input type="date" value={form.follow_up_date} onChange={e => setForm({...form, follow_up_date: e.target.value})} /></div>
+        <div className="field field-wide"><label>İletişim Geçmişi</label><textarea rows="2" value={form.contact_history} onChange={e => setForm({...form, contact_history: e.target.value})} placeholder="Daha önce yapılan görüşmelerin özeti..."></textarea></div>
+        <div className="field field-wide"><label>Görüşme Notları</label><textarea rows="3" value={form.meeting_notes} onChange={e => setForm({...form, meeting_notes: e.target.value})} placeholder="Detaylı analiz ve toplantı notları..."></textarea></div>
+        <button type="submit" className="primary-btn">{form.id ? 'Yatırımcıyı Güncelle' : 'Yatırımcı Ekle'}</button>
       </form>
 
-      <div className="table-wrap">
+      <div className="table-wrap" style={{ marginTop: '20px' }}>
         <table>
           <thead>
             <tr>
-              <th>Yatırımcı</th><th>Bütçe</th><th>Şehir</th><th>Sektör</th><th>Tip</th><th>Pipeline</th><th>İşlem</th>
+              <th>Yatırımcı</th><th>Bütçe</th><th>Şehir</th><th>Sektör</th><th>Pipeline</th><th>İşlem</th>
             </tr>
           </thead>
           <tbody>
             {investors.map(inv => (
               <tr key={inv.id}>
-                <td><strong>{inv.name}</strong></td>
-                <td>{inv.budget.toLocaleString()} {inv.currency}</td>
+                <td><strong>{inv.name}</strong><br/><small>{inv.phone}</small></td>
+                <td>{inv.budget?.toLocaleString()} {inv.currency}</td>
                 <td>{inv.city}</td>
                 <td>{inv.sector}</td>
-                <td>{inv.type}</td>
-                <td><span className={`badge ${inv.pipeline.toLowerCase().replace(/ /g, '-')}`}>{inv.pipeline}</span></td>
+                <td><span className="badge warning">{inv.pipeline_stage}</span></td>
                 <td>
                   <button onClick={() => handleEdit(inv)} className="edit-btn">Düzenle</button>
-                  <button onClick={() => handleDelete(inv.id)} className="danger-btn">Sil</button>
+                  <button onClick={async () => { if(confirm('Sil?')) { await apiClient.delete(`/investors/${inv.id}`); fetchData(); } }} className="danger-btn">Sil</button>
                 </td>
               </tr>
             ))}
