@@ -10,6 +10,8 @@ const { Pool } = require("pg");
 const xlsx = require("xlsx");
 const nodemailer = require("nodemailer");
 const twilio = require("twilio");
+const multer = require("multer");
+const PDFDocument = require("pdfkit");
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -25,6 +27,21 @@ const pool = new Pool({
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
+
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use("/uploads", express.static(uploadsDir));
+
+const uploadStorage = multer.diskStorage({
+  destination: uploadsDir,
+  filename: (req, file, cb) => {
+    const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname.replace(/[^\w.\-]/g, "_")}`;
+    cb(null, safeName);
+  },
+});
+const upload = multer({ storage: uploadStorage, limits: { fileSize: 25 * 1024 * 1024 } });
 
 const pipelineStages = [
   "Yeni Lead",
@@ -235,6 +252,19 @@ function mapBrand(row) {
     targetLocations: row.target_locations,
     active: row.active,
     monthlyGrowth: Number(row.monthly_growth),
+    agreementStatus: row.agreement_status || "",
+    franchiseFee: Number(row.franchise_fee || 0),
+    royaltyRate: Number(row.royalty_rate || 0),
+    contractTermMonths: Number(row.contract_term_months || 0),
+    initialInvestment: Number(row.initial_investment || 0),
+    branchCount: Number(row.branch_count || 0),
+    contactPerson: row.contact_person || "",
+    contactPhone: row.contact_phone || "",
+    businessPlan: row.business_plan || "",
+    operationPlan: row.operation_plan || "",
+    onboardingSteps: row.onboarding_steps || [],
+    kpiTargets: row.kpi_targets || "",
+    brandNotes: row.brand_notes || "",
   };
 }
 
@@ -248,6 +278,14 @@ function mapLocation(row) {
     currency: row.currency || "TRY",
     potential: row.potential,
     recommendedBrands: row.recommended_brands || [],
+    address: row.address || "",
+    traffic: row.traffic || "",
+    owner: row.owner || "",
+    ownerPhone: row.owner_phone || "",
+    notes: row.notes || "",
+    attachmentName: row.attachment_name || "",
+    attachmentData: row.attachment_data || "",
+    attachmentUrl: row.attachment_url || "",
   };
 }
 
@@ -288,6 +326,8 @@ function mapContract(row) {
     currency: row.currency || "TRY",
     fileName: row.file_name || "",
     fileData: row.file_data || "",
+    fileUrl: row.file_url || "",
+    fileMimeType: row.file_mime_type || "",
   };
 }
 
@@ -329,6 +369,19 @@ async function initDb() {
   await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
   await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'");
   await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS agreement_status TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS franchise_fee BIGINT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS royalty_rate NUMERIC(5,2)");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS contract_term_months INTEGER");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS initial_investment BIGINT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS branch_count INTEGER");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS contact_person TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS contact_phone TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS business_plan TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS operation_plan TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS onboarding_steps TEXT[] NOT NULL DEFAULT '{}'");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS kpi_targets TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS brand_notes TEXT");
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'");
   await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS phone TEXT");
   await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS email TEXT");
@@ -352,6 +405,16 @@ async function initDb() {
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS file_name TEXT");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS file_data TEXT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS file_url TEXT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS file_mime_type TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS address TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS traffic TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS owner TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS owner_phone TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS notes TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS attachment_name TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS attachment_data TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS attachment_url TEXT");
 }
 
 async function seedDefaultDataIfNeeded() {
@@ -368,17 +431,12 @@ async function seedDefaultDataIfNeeded() {
     );
   }
 
-  const brandCount = await pool.query("SELECT COUNT(*)::int AS count FROM brands");
-  if (brandCount.rows[0].count > 0) {
-    return;
-  }
-
   const seedBrands = [
     ["Tavada Tavuk", "Fast Casual", 1500000, 3500000, 90, 220, "AVM + Cadde", true, 11],
     ["Bigye", "Fast Casual", 1300000, 2900000, 70, 180, "AVM", true, 9],
     ["Kasap Döner", "Doner", 1200000, 2600000, 65, 150, "Cadde", true, 8],
     ["Cajun Corner", "Fast Casual", 1400000, 3100000, 80, 170, "AVM + Cadde", true, 10],
-    ["Springfield (Yeni Nesil Dürüm)", "Doner", 1250000, 2500000, 60, 130, "Cadde", true, 7],
+    ["Springfield ( Yeni Nesil Dürüm)", "Doner", 1250000, 2500000, 60, 130, "Cadde", true, 7],
     ["Yelken Balıkçısı", "Seafood", 2000000, 5000000, 140, 350, "Sahil + Premium Cadde", true, 6],
     ["Mogaf Döner", "Doner", 1100000, 2100000, 50, 120, "Cadde + Mahalle", true, 8],
     ["Blak Coffee Co", "Coffee", 1700000, 3600000, 90, 180, "Cadde + AVM", true, 13],
@@ -387,12 +445,91 @@ async function seedDefaultDataIfNeeded() {
   ];
 
   for (const brand of seedBrands) {
+    const exists = await pool.query("SELECT id FROM brands WHERE LOWER(name)=LOWER($1)", [brand[0]]);
+    if (exists.rowCount > 0) continue;
     await pool.query(
       `INSERT INTO brands(name, sector, min_budget, max_budget, min_sqm, max_sqm, target_locations, active, monthly_growth)
        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       brand,
     );
   }
+}
+
+function normalizeMonthName(sheetName) {
+  return String(sheetName || "").trim().toUpperCase("tr-TR");
+}
+
+function pickNumeric(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function extractMonthlyPnL(sheet, monthName) {
+  const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  let revenue = 0;
+  let expense = 0;
+  let profit = 0;
+
+  for (const row of rows) {
+    if (!Array.isArray(row) || row.length < 3) continue;
+    const label = String(row[1] || "").toLowerCase("tr-TR");
+    if (label.includes("satışlar") || label.includes("aylık toplam ciro")) {
+      const val = pickNumeric(row[2]);
+      if (val !== null) revenue = val;
+    }
+    if (label.includes("kar / zarar")) {
+      const val = pickNumeric(row[7] ?? row[2]);
+      if (val !== null) profit = val;
+    }
+    const label2 = String(row[5] || "").toLowerCase("tr-TR");
+    if (label2.includes("genel gider toplamları")) {
+      const val = pickNumeric(row[7]);
+      if (val !== null) expense = val;
+    }
+  }
+
+  if (!expense && revenue && profit) {
+    expense = revenue - profit;
+  }
+  return { monthName, revenue, expense, profit };
+}
+
+function extractPnLDetailLines(sheet) {
+  const rows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+  const details = [];
+  let currentCategory = "Diğer";
+  const categoryHints = [
+    "maliyetler",
+    "personel giderleri",
+    "satış komisyon gideri",
+    "kira ve aidat gideri",
+    "enerji giderleri",
+    "değişken  giderler",
+    "değişken giderler",
+  ];
+  for (const row of rows) {
+    if (!Array.isArray(row)) continue;
+    const label = String(row[1] || "").trim();
+    if (!label) continue;
+    const labelLc = label.toLowerCase("tr-TR");
+    if (categoryHints.includes(labelLc)) {
+      currentCategory = label;
+      continue;
+    }
+    if (labelLc.includes("toplam") || labelLc.includes("satışlar") || labelLc.includes("kar / zarar")) {
+      continue;
+    }
+    const amount = pickNumeric(row[2]);
+    if (amount === null) continue;
+    const ratio = pickNumeric(row[3]);
+    details.push({
+      category: currentCategory,
+      itemName: label,
+      amount,
+      ratio,
+    });
+  }
+  return details;
 }
 
 app.post("/api/auth/register", async (req, res) => {
@@ -456,6 +593,37 @@ app.get("/api/auth/me", authMiddleware, async (req, res) => {
     return res.status(404).json({ message: "Kullanıcı bulunamadı." });
   }
   return res.json(result.rows[0]);
+});
+
+app.post("/api/uploads", authMiddleware, upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: "Dosya yüklenemedi." });
+  }
+  const moduleName = String(req.body.moduleName || "general");
+  const fileUrl = `/uploads/${req.file.filename}`;
+  const inserted = await pool.query(
+    `INSERT INTO uploaded_files(module_name,original_name,stored_name,file_url,mime_type,size_bytes,created_by)
+     VALUES($1,$2,$3,$4,$5,$6,$7)
+     RETURNING *`,
+    [
+      moduleName,
+      req.file.originalname,
+      req.file.filename,
+      fileUrl,
+      req.file.mimetype,
+      req.file.size,
+      req.user.id,
+    ],
+  );
+  res.status(201).json(inserted.rows[0]);
+});
+
+app.get("/api/uploads/:module", authMiddleware, async (req, res) => {
+  const rows = await pool.query(
+    "SELECT * FROM uploaded_files WHERE module_name=$1 ORDER BY created_at DESC LIMIT 50",
+    [req.params.module],
+  );
+  res.json(rows.rows);
 });
 
 app.get("/api/config", authMiddleware, (req, res) => {
@@ -616,8 +784,8 @@ app.get("/api/brands", authMiddleware, async (req, res) => {
 app.post("/api/brands", authMiddleware, async (req, res) => {
   const body = req.body || {};
   const inserted = await pool.query(
-    `INSERT INTO brands(name,sector,min_budget,max_budget,currency,min_sqm,max_sqm,target_locations,active,monthly_growth)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+    `INSERT INTO brands(name,sector,min_budget,max_budget,currency,min_sqm,max_sqm,target_locations,active,monthly_growth,agreement_status,franchise_fee,royalty_rate,contract_term_months,initial_investment,branch_count,contact_person,contact_phone,business_plan,operation_plan,onboarding_steps,kpi_targets,brand_notes)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23) RETURNING *`,
     [
       body.name,
       body.sector,
@@ -629,6 +797,19 @@ app.post("/api/brands", authMiddleware, async (req, res) => {
       body.targetLocations,
       body.active,
       body.monthlyGrowth,
+      body.agreementStatus || null,
+      body.franchiseFee || null,
+      body.royaltyRate || null,
+      body.contractTermMonths || null,
+      body.initialInvestment || null,
+      body.branchCount || null,
+      body.contactPerson || null,
+      body.contactPhone || null,
+      body.businessPlan || null,
+      body.operationPlan || null,
+      body.onboardingSteps || [],
+      body.kpiTargets || null,
+      body.brandNotes || null,
     ],
   );
   const item = mapBrand(inserted.rows[0]);
@@ -648,8 +829,8 @@ app.put("/api/brands/:id", authMiddleware, async (req, res) => {
   const before = await pool.query("SELECT * FROM brands WHERE id=$1", [req.params.id]);
   const updated = await pool.query(
     `UPDATE brands
-     SET name=$1,sector=$2,min_budget=$3,max_budget=$4,currency=$5,min_sqm=$6,max_sqm=$7,target_locations=$8,active=$9,monthly_growth=$10,updated_at=NOW()
-     WHERE id=$11 RETURNING *`,
+     SET name=$1,sector=$2,min_budget=$3,max_budget=$4,currency=$5,min_sqm=$6,max_sqm=$7,target_locations=$8,active=$9,monthly_growth=$10,agreement_status=$11,franchise_fee=$12,royalty_rate=$13,contract_term_months=$14,initial_investment=$15,branch_count=$16,contact_person=$17,contact_phone=$18,business_plan=$19,operation_plan=$20,onboarding_steps=$21,kpi_targets=$22,brand_notes=$23,updated_at=NOW()
+     WHERE id=$24 RETURNING *`,
     [
       body.name,
       body.sector,
@@ -661,6 +842,19 @@ app.put("/api/brands/:id", authMiddleware, async (req, res) => {
       body.targetLocations,
       body.active,
       body.monthlyGrowth,
+      body.agreementStatus || null,
+      body.franchiseFee || null,
+      body.royaltyRate || null,
+      body.contractTermMonths || null,
+      body.initialInvestment || null,
+      body.branchCount || null,
+      body.contactPerson || null,
+      body.contactPhone || null,
+      body.businessPlan || null,
+      body.operationPlan || null,
+      body.onboardingSteps || [],
+      body.kpiTargets || null,
+      body.brandNotes || null,
       req.params.id,
     ],
   );
@@ -696,6 +890,42 @@ app.delete("/api/brands/:id", authMiddleware, async (req, res) => {
   res.status(204).send();
 });
 
+app.get("/api/brands/:id/agreements", authMiddleware, async (req, res) => {
+  const rows = await pool.query(
+    "SELECT * FROM brand_agreements WHERE brand_id=$1 ORDER BY version_no DESC, created_at DESC",
+    [req.params.id],
+  );
+  res.json(rows.rows);
+});
+
+app.post("/api/brands/:id/agreements", authMiddleware, async (req, res) => {
+  const brandId = Number(req.params.id);
+  const { title, revisionNote = null, effectiveDate = null, fileName = null, fileUrl = null, mimeType = null } = req.body || {};
+  if (!title) {
+    return res.status(400).json({ message: "Doküman başlığı zorunlu." });
+  }
+  const nextVersion = await pool.query(
+    "SELECT COALESCE(MAX(version_no), 0) + 1 AS version_no FROM brand_agreements WHERE brand_id=$1",
+    [brandId],
+  );
+  const inserted = await pool.query(
+    `INSERT INTO brand_agreements(brand_id,version_no,title,revision_note,effective_date,file_name,file_url,mime_type,uploaded_by)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+    [
+      brandId,
+      Number(nextVersion.rows[0].version_no),
+      title,
+      revisionNote,
+      effectiveDate,
+      fileName,
+      fileUrl,
+      mimeType,
+      req.user.id,
+    ],
+  );
+  res.status(201).json(inserted.rows[0]);
+});
+
 app.get("/api/locations", authMiddleware, async (req, res) => {
   const result = await pool.query("SELECT * FROM locations ORDER BY id DESC");
   res.json(result.rows.map(mapLocation));
@@ -704,9 +934,25 @@ app.get("/api/locations", authMiddleware, async (req, res) => {
 app.post("/api/locations", authMiddleware, async (req, res) => {
   const body = req.body || {};
   const inserted = await pool.query(
-    `INSERT INTO locations(name,location_type,sqm,rent,currency,potential,recommended_brands)
-     VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-    [body.name, body.type, body.sqm, body.rent, body.currency || "TRY", body.potential, body.recommendedBrands],
+    `INSERT INTO locations(name,location_type,sqm,rent,currency,potential,recommended_brands,address,traffic,owner,owner_phone,notes,attachment_name,attachment_data,attachment_url)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
+    [
+      body.name,
+      body.type,
+      body.sqm,
+      body.rent,
+      body.currency || "TRY",
+      body.potential,
+      body.recommendedBrands,
+      body.address || null,
+      body.traffic || null,
+      body.owner || null,
+      body.ownerPhone || null,
+      body.notes || null,
+      body.attachmentName || null,
+      body.attachmentData || null,
+      body.attachmentUrl || null,
+    ],
   );
   const item = mapLocation(inserted.rows[0]);
   await logActivity({
@@ -725,9 +971,26 @@ app.put("/api/locations/:id", authMiddleware, async (req, res) => {
   const before = await pool.query("SELECT * FROM locations WHERE id=$1", [req.params.id]);
   const updated = await pool.query(
     `UPDATE locations
-     SET name=$1,location_type=$2,sqm=$3,rent=$4,currency=$5,potential=$6,recommended_brands=$7,updated_at=NOW()
-     WHERE id=$8 RETURNING *`,
-    [body.name, body.type, body.sqm, body.rent, body.currency || "TRY", body.potential, body.recommendedBrands, req.params.id],
+     SET name=$1,location_type=$2,sqm=$3,rent=$4,currency=$5,potential=$6,recommended_brands=$7,address=$8,traffic=$9,owner=$10,owner_phone=$11,notes=$12,attachment_name=$13,attachment_data=$14,attachment_url=$15,updated_at=NOW()
+     WHERE id=$16 RETURNING *`,
+    [
+      body.name,
+      body.type,
+      body.sqm,
+      body.rent,
+      body.currency || "TRY",
+      body.potential,
+      body.recommendedBrands,
+      body.address || null,
+      body.traffic || null,
+      body.owner || null,
+      body.ownerPhone || null,
+      body.notes || null,
+      body.attachmentName || null,
+      body.attachmentData || null,
+      body.attachmentUrl || null,
+      req.params.id,
+    ],
   );
   if (updated.rowCount === 0) {
     return res.status(404).json({ message: "Kayıt bulunamadı." });
@@ -867,12 +1130,14 @@ app.post("/api/contracts", authMiddleware, async (req, res) => {
     currency = "TRY",
     fileName = null,
     fileData = null,
+    fileUrl = null,
+    fileMimeType = null,
   } = req.body || {};
   const inserted = await pool.query(
-    `INSERT INTO contracts(note,contract_type,status,counterparty,start_date,end_date,amount,currency,file_name,file_data)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    `INSERT INTO contracts(note,contract_type,status,counterparty,start_date,end_date,amount,currency,file_name,file_data,file_url,file_mime_type)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
      RETURNING *`,
-    [note, type, status, counterparty, startDate, endDate, amount, currency, fileName, fileData],
+    [note, type, status, counterparty, startDate, endDate, amount, currency, fileName, fileData, fileUrl, fileMimeType],
   );
   const item = mapContract(inserted.rows[0]);
   await logActivity({
@@ -899,13 +1164,15 @@ app.put("/api/contracts/:id", authMiddleware, async (req, res) => {
     currency = "TRY",
     fileName = null,
     fileData = null,
+    fileUrl = null,
+    fileMimeType = null,
   } = req.body || {};
   const before = await pool.query("SELECT * FROM contracts WHERE id=$1", [req.params.id]);
   const updated = await pool.query(
     `UPDATE contracts
-     SET note=$1,contract_type=$2,status=$3,counterparty=$4,start_date=$5,end_date=$6,amount=$7,currency=$8,file_name=$9,file_data=$10,updated_at=NOW()
-     WHERE id=$11 RETURNING *`,
-    [note, type, status, counterparty, startDate, endDate, amount, currency, fileName, fileData, req.params.id],
+     SET note=$1,contract_type=$2,status=$3,counterparty=$4,start_date=$5,end_date=$6,amount=$7,currency=$8,file_name=$9,file_data=$10,file_url=$11,file_mime_type=$12,updated_at=NOW()
+     WHERE id=$13 RETURNING *`,
+    [note, type, status, counterparty, startDate, endDate, amount, currency, fileName, fileData, fileUrl, fileMimeType, req.params.id],
   );
   if (updated.rowCount === 0) {
     return res.status(404).json({ message: "Kayıt bulunamadı." });
@@ -1038,34 +1305,39 @@ app.get("/api/export/:module", authMiddleware, async (req, res) => {
   const moduleName = req.params.module;
   const config = {
     investors: {
-      sql: "SELECT id,name,budget,city,sector,investment_type AS type,pipeline_stage AS pipeline,created_at FROM investors WHERE deleted_at IS NULL ORDER BY id DESC",
+      sql: "SELECT id,name,budget,city,sector,investment_type AS type,pipeline_stage AS pipeline,created_at FROM investors ORDER BY id DESC",
       file: "yatirimcilar.xlsx",
       sheet: "Yatirimcilar",
     },
     brands: {
-      sql: "SELECT id,name,sector,min_budget,max_budget,min_sqm,max_sqm,target_locations,active,monthly_growth,created_at FROM brands WHERE deleted_at IS NULL ORDER BY id DESC",
+      sql: "SELECT id,name,sector,min_budget,max_budget,min_sqm,max_sqm,target_locations,active,monthly_growth,created_at FROM brands ORDER BY id DESC",
       file: "markalar.xlsx",
       sheet: "Markalar",
     },
     locations: {
-      sql: "SELECT id,name,location_type,sqm,rent,potential,recommended_brands,created_at FROM locations WHERE deleted_at IS NULL ORDER BY id DESC",
+      sql: "SELECT id,name,location_type,sqm,rent,potential,recommended_brands,created_at FROM locations ORDER BY id DESC",
       file: "lokasyonlar.xlsx",
       sheet: "Lokasyonlar",
     },
     projects: {
-      sql: "SELECT id,name,project_type,owner_team,stage,due_date,created_at FROM projects WHERE deleted_at IS NULL ORDER BY id DESC",
+      sql: "SELECT id,name,project_type,owner_team,stage,due_date,created_at FROM projects ORDER BY id DESC",
       file: "projeler.xlsx",
       sheet: "Projeler",
     },
     contracts: {
-      sql: "SELECT id,note,created_at FROM contracts WHERE deleted_at IS NULL ORDER BY id DESC",
+      sql: "SELECT id,note,created_at FROM contracts ORDER BY id DESC",
       file: "sozlesmeler.xlsx",
       sheet: "Sozlesmeler",
     },
     tasks: {
-      sql: "SELECT id,note,status,created_at FROM tasks WHERE deleted_at IS NULL ORDER BY id DESC",
+      sql: "SELECT id,note,status,created_at FROM tasks ORDER BY id DESC",
       file: "gorevler.xlsx",
       sheet: "Gorevler",
+    },
+    pnl: {
+      sql: "SELECT id,month_name,year_value,revenue,expense,profit,note,source_file,created_at FROM pnl_reports ORDER BY id DESC",
+      file: "kar-zarar.xlsx",
+      sheet: "KarZarar",
     },
     all: null,
   };
@@ -1102,6 +1374,42 @@ app.get("/api/export/:module", authMiddleware, async (req, res) => {
   return res.send(fileBuffer);
 });
 
+app.get("/api/export-pdf/:module", authMiddleware, async (req, res) => {
+  const moduleName = req.params.module;
+  const config = {
+    investors: "SELECT id,name,budget,city,sector,investment_type AS type,pipeline_stage AS pipeline,created_at FROM investors ORDER BY id DESC",
+    brands: "SELECT id,name,sector,min_budget,max_budget,target_locations,agreement_status,created_at FROM brands ORDER BY id DESC",
+    locations: "SELECT id,name,location_type,sqm,rent,potential,created_at FROM locations ORDER BY id DESC",
+    projects: "SELECT id,name,project_type,owner_team,stage,due_date,created_at FROM projects ORDER BY id DESC",
+    contracts: "SELECT id,note,contract_type,status,counterparty,amount,currency,created_at FROM contracts ORDER BY id DESC",
+    tasks: "SELECT id,note,status,created_at FROM tasks ORDER BY id DESC",
+    pnl: "SELECT id,month_name,year_value,revenue,expense,profit,note,created_at FROM pnl_reports ORDER BY id DESC",
+  };
+  const sql = config[moduleName];
+  if (!sql) {
+    return res.status(404).json({ message: "Geçersiz PDF export modülü." });
+  }
+  const rows = (await pool.query(sql)).rows;
+  const doc = new PDFDocument({ margin: 36, size: "A4" });
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename=mi-crm-${moduleName}.pdf`);
+  doc.pipe(res);
+  doc.fontSize(14).text(`Mi Core CRM - ${moduleName.toUpperCase()} Raporu`, { underline: true });
+  doc.moveDown(0.6);
+  if (!rows.length) {
+    doc.fontSize(11).text("Bu modül için kayıt bulunamadı.");
+  } else {
+    for (const row of rows) {
+      const line = Object.entries(row)
+        .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v ?? "-")}`)
+        .join(" | ");
+      doc.fontSize(9).text(line, { width: 520 });
+      doc.moveDown(0.25);
+    }
+  }
+  doc.end();
+});
+
 app.get("/api/activity", authMiddleware, async (req, res) => {
   const limit = Math.min(200, Number(req.query.limit || 50));
   const rows = await pool.query(
@@ -1117,6 +1425,88 @@ app.get("/api/activity", authMiddleware, async (req, res) => {
 
 app.get("/api/recycle-bin", authMiddleware, async (req, res) => {
   res.json([]);
+});
+
+app.get("/api/pnl", authMiddleware, async (req, res) => {
+  const rows = await pool.query("SELECT * FROM pnl_reports ORDER BY year_value DESC, id DESC");
+  res.json(rows.rows);
+});
+
+app.get("/api/pnl/:id/details", authMiddleware, async (req, res) => {
+  const rows = await pool.query(
+    "SELECT * FROM pnl_detail_lines WHERE pnl_report_id=$1 ORDER BY id ASC",
+    [req.params.id],
+  );
+  res.json(rows.rows);
+});
+
+app.post("/api/pnl", authMiddleware, async (req, res) => {
+  const { monthName, yearValue, revenue, expense, profit, note = null, sourceFile = null } = req.body || {};
+  const inserted = await pool.query(
+    `INSERT INTO pnl_reports(month_name,year_value,revenue,expense,profit,note,source_file,created_by)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+    [monthName, Number(yearValue), Number(revenue || 0), Number(expense || 0), Number(profit || 0), note, sourceFile, req.user.id],
+  );
+  res.status(201).json(inserted.rows[0]);
+});
+
+app.put("/api/pnl/:id", authMiddleware, async (req, res) => {
+  const { monthName, yearValue, revenue, expense, profit, note = null } = req.body || {};
+  const updated = await pool.query(
+    `UPDATE pnl_reports
+     SET month_name=$1,year_value=$2,revenue=$3,expense=$4,profit=$5,note=$6,updated_at=NOW()
+     WHERE id=$7 RETURNING *`,
+    [monthName, Number(yearValue), Number(revenue || 0), Number(expense || 0), Number(profit || 0), note, req.params.id],
+  );
+  if (updated.rowCount === 0) {
+    return res.status(404).json({ message: "Kayıt bulunamadı." });
+  }
+  res.json(updated.rows[0]);
+});
+
+app.delete("/api/pnl/:id", authMiddleware, async (req, res) => {
+  await pool.query("DELETE FROM pnl_reports WHERE id=$1", [req.params.id]);
+  res.status(204).send();
+});
+
+app.post("/api/pnl/import", authMiddleware, upload.single("excelFile"), async (req, res) => {
+  const fallbackPath = "c:/Users/Xezal/Desktop/Kar Zarar Raporu mi kurumsal.xlsx";
+  const filePath = req.file ? req.file.path : fallbackPath;
+  const workbook = xlsx.readFile(filePath);
+  const targetSheets = ["AĞUSTOS", "EYLÜL", "EKİM", "KASIM", "ARALIK"];
+  const imported = [];
+
+  for (const month of targetSheets) {
+    const sheetName = workbook.SheetNames.find((n) => normalizeMonthName(n) === normalizeMonthName(month));
+    if (!sheetName) continue;
+    const row = extractMonthlyPnL(workbook.Sheets[sheetName], month);
+    const upsert = await pool.query(
+      `INSERT INTO pnl_reports(month_name,year_value,revenue,expense,profit,note,source_file,created_by)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8)
+       RETURNING *`,
+      [month, 2023, row.revenue, row.expense, row.profit, "Excel içe aktarım", req.file?.originalname || "Yerel dosya", req.user.id],
+    );
+    const insertedReport = upsert.rows[0];
+    const detailLines = extractPnLDetailLines(workbook.Sheets[sheetName]);
+    for (const d of detailLines) {
+      await pool.query(
+        `INSERT INTO pnl_detail_lines(pnl_report_id,category,item_name,amount,ratio,source_file)
+         VALUES($1,$2,$3,$4,$5,$6)`,
+        [insertedReport.id, d.category, d.itemName, d.amount, d.ratio, req.file?.originalname || "Yerel dosya"],
+      );
+    }
+    imported.push({ ...insertedReport, detailCount: detailLines.length });
+  }
+
+  if (req.file) {
+    await pool.query(
+      `INSERT INTO uploaded_files(module_name,original_name,stored_name,file_url,mime_type,size_bytes,created_by)
+       VALUES($1,$2,$3,$4,$5,$6,$7)`,
+      ["pnl", req.file.originalname, req.file.filename, `/uploads/${req.file.filename}`, req.file.mimetype, req.file.size, req.user.id],
+    );
+  }
+
+  res.json({ importedCount: imported.length, imported });
 });
 
 app.get("/api/reports/summary", authMiddleware, async (req, res) => {

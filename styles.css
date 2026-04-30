@@ -144,13 +144,13 @@ body {
 }
 
 .brand-mark {
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
+  width: 52px;
+  height: 52px;
+  border-radius: 0;
   display: grid;
   place-items: center;
   font-weight: 700;
-  background: rgba(255, 255, 255, 0.18);
+  background: transparent;
 }
 
 .logo-inside {
@@ -216,8 +216,9 @@ body {
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 18px;
+  flex-wrap: wrap;
 }
 
 .header h1 {
@@ -232,12 +233,17 @@ body {
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 18px;
+  margin-top: 18px;
 }
 
 .dashboard-card h3 {
-  margin: 0 0 10px;
+  margin: -4px -4px 12px;
   font-size: 18px;
+  background: linear-gradient(90deg, #1f7a5c, #2a9d70);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
 }
 
 .dashboard-list {
@@ -263,6 +269,7 @@ body {
   text-align: left;
   color: #1f5f40;
   font-weight: 600;
+  min-height: 44px;
 }
 
 .sub-title {
@@ -281,6 +288,14 @@ body {
   font-weight: 600;
   padding: 10px 14px;
   cursor: pointer;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .header-actions button:hover,
@@ -296,7 +311,9 @@ body {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 18px;
+  margin-top: 8px;
+  margin-bottom: 18px;
 }
 
 .card {
@@ -323,6 +340,11 @@ body {
 h2 {
   margin: 0 0 12px;
   font-size: 24px;
+  color: #166347;
+  padding: 8px 10px;
+  border-left: 4px solid #2a9d70;
+  background: #eef9f3;
+  border-radius: 8px;
 }
 
 .pipeline {
@@ -361,6 +383,12 @@ h2 {
   flex-wrap: wrap;
 }
 
+.module-head > div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .inline-filter {
   display: flex;
   gap: 8px;
@@ -382,12 +410,25 @@ h2 {
   cursor: pointer;
 }
 
+.module-upload-wrap {
+  margin: 10px 0;
+}
+
 .export-btn {
   border: 1px solid var(--border);
   background: #f2f6fb;
   border-radius: 8px;
   padding: 8px 10px;
   cursor: pointer;
+}
+
+.pdf-export-btn {
+  border: 1px solid #b7d9c5;
+  background: #eaf8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  margin-left: 6px;
 }
 
 .matching-form {
@@ -461,7 +502,8 @@ h2 {
   border-radius: 8px;
   padding: 4px 8px;
   cursor: pointer;
-  margin-right: 4px;
+  margin-right: 6px;
+  margin-bottom: 4px;
 }
 
 .table-btn.danger {
@@ -477,7 +519,7 @@ h2 {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 720px;
+  min-width: 680px;
 }
 
 thead th {
@@ -574,6 +616,7 @@ tbody td {
   .menu {
     flex-direction: row;
     flex-wrap: wrap;
+    gap: 8px;
   }
 
   .stats-grid,
@@ -584,6 +627,10 @@ tbody td {
   .dashboard-grid,
   .quick-links {
     grid-template-columns: 1fr;
+  }
+
+  .header-actions {
+    width: 100%;
   }
 
   .matching-form {
@@ -613,5 +660,13 @@ tbody td {
   .matching-form,
   .entry-form {
     grid-template-columns: 1fr;
+  }
+
+  .field-wide {
+    grid-column: span 1;
+  }
+
+  table {
+    min-width: 560px;
   }
 }

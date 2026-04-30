@@ -65,7 +65,7 @@
             />
           </div>
           <div class="brand-text">
-            <strong>Mi Kurumsal</strong>
+            <strong>Mi Core CRM</strong>
             <span>Franchise CRM</span>
           </div>
         </div>
@@ -78,6 +78,7 @@
           <a href="#" data-page="contracts" class="menu-link">Sözleşme & Finans</a>
           <a href="#" data-page="tasks" class="menu-link">Görevler</a>
           <a href="#" data-page="reports" class="menu-link">Raporlar</a>
+          <a href="#" data-page="pnl" class="menu-link">Kar / Zarar</a>
           <a href="#" data-page="timeline" class="menu-link">Activity Timeline</a>
           <a href="#" data-page="templates" class="menu-link">Şablonlar</a>
           <a href="#" data-page="matching" class="menu-link">Eşleştirme Motoru</a>
@@ -179,7 +180,10 @@
         <section class="card page-section" id="page-investors">
           <div class="module-head">
             <h2>Yatırımcı Yönetimi</h2>
-            <button class="export-btn" data-module="investors" type="button">Excel Dışa Aktar</button>
+            <div>
+              <button class="export-btn" data-module="investors" type="button">Excel Dışa Aktar</button>
+              <button class="pdf-export-btn" data-module="investors" type="button">PDF Dışa Aktar</button>
+            </div>
           </div>
           <form id="investorForm" class="entry-form">
             <input id="investorId" type="hidden" />
@@ -215,7 +219,10 @@
         <section class="card page-section" id="page-brands">
           <div class="module-head">
             <h2>Marka Yönetimi</h2>
-            <button class="export-btn" data-module="brands" type="button">Excel Dışa Aktar</button>
+            <div>
+              <button class="export-btn" data-module="brands" type="button">Excel Dışa Aktar</button>
+              <button class="pdf-export-btn" data-module="brands" type="button">PDF Dışa Aktar</button>
+            </div>
           </div>
           <form id="brandForm" class="entry-form">
             <input id="brandId" type="hidden" />
@@ -231,6 +238,40 @@
             <div class="field"><label for="brandStatus">Durum</label><select id="brandStatus"><option value="true">Aktif</option><option value="false">Pasif</option></select></div>
             <button id="brandSubmitBtn" type="submit">Marka Ekle</button>
           </form>
+          <form id="brandProfileForm" class="entry-form">
+            <input id="brandProfileId" type="hidden" />
+            <h3 id="bpTitle" class="field-wide">Marka Profili</h3>
+            <div class="field"><label for="bpAgreementStatus">Anlaşma Durumu</label><input id="bpAgreementStatus" placeholder="Görüşmede / Müzakere / İmzalı" /></div>
+            <div class="field"><label for="bpFranchiseFee">Franchise Bedeli</label><input id="bpFranchiseFee" type="number" min="0" /></div>
+            <div class="field"><label for="bpRoyaltyRate">Royalty %</label><input id="bpRoyaltyRate" type="number" min="0" max="100" step="0.1" /></div>
+            <div class="field"><label for="bpContractTerm">Sözleşme Süresi (Ay)</label><input id="bpContractTerm" type="number" min="0" /></div>
+            <div class="field"><label for="bpInitialInvestment">Toplam Yatırım</label><input id="bpInitialInvestment" type="number" min="0" /></div>
+            <div class="field"><label for="bpBranchCount">Şube Sayısı</label><input id="bpBranchCount" type="number" min="0" /></div>
+            <div class="field"><label for="bpContactPerson">Yetkili Kişi</label><input id="bpContactPerson" /></div>
+            <div class="field"><label for="bpContactPhone">Yetkili Telefon</label><input id="bpContactPhone" /></div>
+            <div class="field field-wide"><label for="bpBusinessPlan">İş Planı</label><textarea id="bpBusinessPlan" rows="3" placeholder="Hedef lokasyon, yatırım takvimi, açılış planı"></textarea></div>
+            <div class="field field-wide"><label for="bpOperationPlan">Operasyon Planı</label><textarea id="bpOperationPlan" rows="3" placeholder="Ekip, eğitim, açılış sonrası KPI takibi"></textarea></div>
+            <div class="field field-wide"><label for="bpOnboardingSteps">Onboarding Adımları</label><textarea id="bpOnboardingSteps" rows="4" placeholder="Her satıra bir adım:&#10;Sözleşme imza&#10;Lokasyon onay&#10;Açılış eğitimi"></textarea></div>
+            <div class="field field-wide"><label for="bpKpiTargets">KPI Hedefleri</label><textarea id="bpKpiTargets" rows="2" placeholder="Aylık ciro, dönüşüm oranı, şube açılış hedefi"></textarea></div>
+            <div class="field field-wide"><label for="bpBrandNotes">Notlar</label><textarea id="bpBrandNotes" rows="2"></textarea></div>
+            <button type="submit">Marka Profilini Kaydet</button>
+          </form>
+          <form id="brandAgreementForm" class="entry-form">
+            <h3 class="field-wide">Anlaşma Doküman Geçmişi (Versiyonlama)</h3>
+            <div class="field"><label for="bpAgreementTitle">Doküman Başlığı</label><input id="bpAgreementTitle" placeholder="Ana Franchise Sözleşmesi" required /></div>
+            <div class="field"><label for="bpAgreementEffectiveDate">Geçerlilik Tarihi</label><input id="bpAgreementEffectiveDate" type="date" /></div>
+            <div class="field"><label for="bpAgreementFile">Doküman (PDF/Excel/Görsel)</label><input id="bpAgreementFile" type="file" accept=".pdf,.xlsx,.xls,image/*" /></div>
+            <div class="field field-wide"><label for="bpAgreementRevisionNote">Revizyon Notu</label><textarea id="bpAgreementRevisionNote" rows="2" placeholder="Bu versiyonda royalty maddesi güncellendi."></textarea></div>
+            <button type="submit">Yeni Versiyon Ekle</button>
+          </form>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Versiyon</th><th>Başlık</th><th>Revizyon</th><th>Tarih</th><th>Dosya</th></tr>
+              </thead>
+              <tbody id="brandAgreementTableBody"></tbody>
+            </table>
+          </div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -246,7 +287,10 @@
         <section class="card page-section" id="page-locations">
           <div class="module-head">
             <h2>Lokasyon Yönetimi</h2>
-            <button class="export-btn" data-module="locations" type="button">Excel Dışa Aktar</button>
+            <div>
+              <button class="export-btn" data-module="locations" type="button">Excel Dışa Aktar</button>
+              <button class="pdf-export-btn" data-module="locations" type="button">PDF Dışa Aktar</button>
+            </div>
           </div>
           <form id="locationForm" class="entry-form">
             <input id="locationId" type="hidden" />
@@ -257,13 +301,19 @@
             <div class="field"><label for="locationCurrency">Para Birimi</label><select id="locationCurrency"><option value="TRY">TL</option><option value="USD">USD</option></select></div>
             <div class="field"><label for="locationPotential">Potansiyel</label><input id="locationPotential" list="potentialOptions" required /></div>
             <div class="field"><label for="recommendedBrands">Önerilen Markalar</label><input id="recommendedBrands" required /></div>
+            <div class="field"><label for="locationAddress">Adres</label><input id="locationAddress" placeholder="Açık adres girin" /></div>
+            <div class="field"><label for="locationTraffic">Yaya Trafiği</label><input id="locationTraffic" list="trafficOptions" /></div>
+            <div class="field"><label for="locationOwner">Mülk Sahibi / Yetkili</label><input id="locationOwner" /></div>
+            <div class="field"><label for="locationOwnerPhone">Yetkili Telefon</label><input id="locationOwnerPhone" /></div>
+            <div class="field field-wide"><label for="locationNotes">Lokasyon Notu</label><textarea id="locationNotes" rows="3"></textarea></div>
+            <div class="field"><label for="locationAttachment">PDF/Görsel Yükle</label><input id="locationAttachment" type="file" accept=".pdf,image/*" /></div>
             <button id="locationSubmitBtn" type="submit">Lokasyon Ekle</button>
           </form>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Lokasyon</th><th>Tip</th><th>m²</th><th>Kira</th><th>Potansiyel</th><th>Önerilen</th><th>İşlem</th>
+                  <th>Lokasyon</th><th>Tip</th><th>m²</th><th>Kira</th><th>Potansiyel</th><th>Önerilen</th><th>Ek Dosya</th><th>İşlem</th>
                 </tr>
               </thead>
               <tbody id="locationTableBody"></tbody>
@@ -274,7 +324,10 @@
         <section class="card page-section" id="page-projects">
           <div class="module-head">
             <h2>Proje & Süreç Takibi</h2>
-            <button class="export-btn" data-module="projects" type="button">Excel Dışa Aktar</button>
+            <div>
+              <button class="export-btn" data-module="projects" type="button">Excel Dışa Aktar</button>
+              <button class="pdf-export-btn" data-module="projects" type="button">PDF Dışa Aktar</button>
+            </div>
           </div>
           <form id="projectForm" class="entry-form">
             <input id="projectId" type="hidden" />
@@ -306,7 +359,10 @@
           <article id="contracts">
             <div class="module-head">
               <h2>Sözleşme & Finans</h2>
-              <button class="export-btn" data-module="contracts" type="button">Excel Dışa Aktar</button>
+              <div>
+                <button class="export-btn" data-module="contracts" type="button">Excel Dışa Aktar</button>
+                <button class="pdf-export-btn" data-module="contracts" type="button">PDF Dışa Aktar</button>
+              </div>
             </div>
             <form id="contractForm" class="entry-form">
               <input id="contractId" type="hidden" />
@@ -328,7 +384,10 @@
           <article id="tasks">
             <div class="module-head">
               <h2>Ekip & Görev Yönetimi</h2>
-              <button class="export-btn" data-module="tasks" type="button">Excel Dışa Aktar</button>
+              <div>
+                <button class="export-btn" data-module="tasks" type="button">Excel Dışa Aktar</button>
+                <button class="pdf-export-btn" data-module="tasks" type="button">PDF Dışa Aktar</button>
+              </div>
             </div>
             <form id="taskForm" class="entry-form compact-form">
               <input id="taskId" type="hidden" />
@@ -350,6 +409,45 @@
             </form>
           </div>
           <div id="reportGrid" class="kpi-grid"></div>
+        </section>
+
+        <section class="card page-section" id="page-pnl">
+          <div class="module-head">
+            <h2>Aylık Kar / Zarar Yönetimi</h2>
+            <div>
+              <button class="export-btn" data-module="pnl" type="button">Excel Dışa Aktar</button>
+              <button class="pdf-export-btn" data-module="pnl" type="button">PDF Dışa Aktar</button>
+            </div>
+          </div>
+          <form id="pnlForm" class="entry-form">
+            <div class="field"><label for="pnlMonth">Ay</label><input id="pnlMonth" list="pnlMonthOptions" required /></div>
+            <div class="field"><label for="pnlYear">Yıl</label><input id="pnlYear" type="number" value="2023" required /></div>
+            <div class="field"><label for="pnlRevenue">Ciro</label><input id="pnlRevenue" type="number" min="0" required /></div>
+            <div class="field"><label for="pnlExpense">Gider</label><input id="pnlExpense" type="number" min="0" required /></div>
+            <div class="field"><label for="pnlProfit">Kar/Zarar</label><input id="pnlProfit" type="number" required /></div>
+            <div class="field field-wide"><label for="pnlNote">Not</label><input id="pnlNote" /></div>
+            <button type="submit">Kar/Zarar Kaydı Ekle</button>
+          </form>
+          <div class="inline-filter" style="margin-top:10px;">
+            <input id="pnlImportFile" type="file" accept=".xlsx,.xls" />
+            <button id="pnlImportBtn" type="button">Excel İçe Aktar (5 Ay)</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Ay</th><th>Yıl</th><th>Ciro</th><th>Gider</th><th>Kar/Zarar</th><th>Not</th><th>İşlem</th></tr>
+              </thead>
+              <tbody id="pnlTableBody"></tbody>
+            </table>
+          </div>
+          <div class="table-wrap" style="margin-top: 12px;">
+            <table>
+              <thead>
+                <tr><th>Kategori</th><th>Kalem</th><th>Tutar</th><th>Oran</th></tr>
+              </thead>
+              <tbody id="pnlDetailTableBody"></tbody>
+            </table>
+          </div>
         </section>
 
         <section class="card page-section" id="page-timeline">
@@ -429,6 +527,9 @@
     <datalist id="potentialOptions">
       <option value="Çok Yüksek"></option><option value="Yüksek"></option><option value="Orta-Yüksek"></option><option value="Orta"></option><option value="Düşük"></option>
     </datalist>
+    <datalist id="trafficOptions">
+      <option value="Çok Yoğun"></option><option value="Yoğun"></option><option value="Orta"></option><option value="Düşük"></option>
+    </datalist>
     <datalist id="projectTypeOptions">
       <option value="Franchise"></option><option value="Kiralama"></option><option value="Büyüme Danışmanlığı"></option><option value="Operasyon Danışmanlığı"></option><option value="Marka Konumlandırma"></option>
     </datalist>
@@ -438,6 +539,9 @@
     <datalist id="contractStatusOptions">
       <option value="Taslak"></option><option value="İmzaya Gönderildi"></option><option value="İmzalandı"></option><option value="Revizyonda"></option><option value="İptal"></option>
     </datalist>
+      <datalist id="pnlMonthOptions">
+        <option>AĞUSTOS</option><option>EYLÜL</option><option>EKİM</option><option>KASIM</option><option>ARALIK</option>
+      </datalist>
     <script src="./app.js"></script>
   </body>
 </html>

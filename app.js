@@ -13,6 +13,9 @@ const state = {
   tasks: [],
   timeline: [],
   templates: [],
+  pnlReports: [],
+  brandAgreements: [],
+  pnlDetailLines: [],
   reportSummary: null,
   kpis: [],
   editing: {
@@ -75,11 +78,35 @@ const demoData = {
     },
   ],
   brands: [
-    { id: 1, name: "Blak Coffee Co", sector: "Coffee", currency: "TRY", minBudget: 1700000, maxBudget: 3600000, minSqm: 90, maxSqm: 180, targetLocations: "Cadde + AVM", active: true, monthlyGrowth: 13 },
-    { id: 2, name: "Tavada Tavuk", sector: "Fast Casual", currency: "USD", minBudget: 1500000, maxBudget: 3500000, minSqm: 90, maxSqm: 220, targetLocations: "AVM + Cadde", active: true, monthlyGrowth: 11 },
+    { id: 1, name: "Tavada Tavuk", sector: "Fast Casual", currency: "TRY", minBudget: 1500000, maxBudget: 3500000, minSqm: 90, maxSqm: 220, targetLocations: "AVM + Cadde", active: true, monthlyGrowth: 11 },
+    { id: 2, name: "Bigye", sector: "Fast Casual", currency: "TRY", minBudget: 1300000, maxBudget: 2900000, minSqm: 70, maxSqm: 180, targetLocations: "AVM", active: true, monthlyGrowth: 9 },
+    { id: 3, name: "Kasap Döner", sector: "Doner", currency: "TRY", minBudget: 1200000, maxBudget: 2600000, minSqm: 65, maxSqm: 150, targetLocations: "Cadde", active: true, monthlyGrowth: 8 },
+    { id: 4, name: "Cajun Corner", sector: "Fast Casual", currency: "TRY", minBudget: 1400000, maxBudget: 3100000, minSqm: 80, maxSqm: 170, targetLocations: "AVM + Cadde", active: true, monthlyGrowth: 10 },
+    { id: 5, name: "Springfield ( Yeni Nesil Dürüm)", sector: "Doner", currency: "TRY", minBudget: 1250000, maxBudget: 2500000, minSqm: 60, maxSqm: 130, targetLocations: "Cadde", active: true, monthlyGrowth: 7 },
+    { id: 6, name: "Yelken Balıkçısı", sector: "Seafood", currency: "TRY", minBudget: 2000000, maxBudget: 5000000, minSqm: 140, maxSqm: 350, targetLocations: "Sahil + Premium Cadde", active: true, monthlyGrowth: 6 },
+    { id: 7, name: "Mogaf Döner", sector: "Doner", currency: "TRY", minBudget: 1100000, maxBudget: 2100000, minSqm: 50, maxSqm: 120, targetLocations: "Cadde + Mahalle", active: true, monthlyGrowth: 8 },
+    { id: 8, name: "Blak Coffee Co", sector: "Coffee", currency: "TRY", minBudget: 1700000, maxBudget: 3600000, minSqm: 90, maxSqm: 180, targetLocations: "Cadde + AVM", active: true, monthlyGrowth: 13 },
+    { id: 9, name: "The Coffee Factory", sector: "Coffee", currency: "TRY", minBudget: 1400000, maxBudget: 3300000, minSqm: 80, maxSqm: 170, targetLocations: "AVM", active: true, monthlyGrowth: 12 },
+    { id: 10, name: "Coffee in Munchies", sector: "Coffee", currency: "TRY", minBudget: 1300000, maxBudget: 2900000, minSqm: 75, maxSqm: 160, targetLocations: "Cadde + AVM", active: true, monthlyGrowth: 9 },
   ],
   locations: [
-    { id: 1, name: "Bağdat Caddesi", type: "Cadde", sqm: 130, currency: "TRY", rent: 380000, potential: "Yüksek", recommendedBrands: ["Blak Coffee Co", "Tavada Tavuk"] },
+    {
+      id: 1,
+      name: "Bağdat Caddesi",
+      type: "Cadde",
+      sqm: 130,
+      currency: "TRY",
+      rent: 380000,
+      potential: "Yüksek",
+      recommendedBrands: ["Blak Coffee Co", "Tavada Tavuk"],
+      address: "Caddebostan, İstanbul",
+      traffic: "Yoğun",
+      owner: "Örnek Gayrimenkul",
+      ownerPhone: "+90 555 333 00 00",
+      notes: "",
+      attachmentName: "",
+      attachmentData: "",
+    },
   ],
   projects: [
     {
@@ -112,6 +139,13 @@ const demoData = {
     },
   ],
   tasks: [{ id: 1, note: "Franchise ekibi: Springfield shortlist hazırla", status: "Açık" }],
+  pnlReports: [
+    { id: 1, month_name: "AĞUSTOS", year_value: 2023, revenue: 503000, expense: 515132.53, profit: -12132.53, note: "Excel başlangıç verisi" },
+    { id: 2, month_name: "EYLÜL", year_value: 2023, revenue: 548017.72, expense: 452365, profit: 95652.72, note: "Excel başlangıç verisi" },
+    { id: 3, month_name: "EKİM", year_value: 2023, revenue: 548017.72, expense: 452365, profit: 95652.72, note: "Excel başlangıç verisi" },
+    { id: 4, month_name: "KASIM", year_value: 2023, revenue: 1250000, expense: 579000, profit: 671000, note: "Excel başlangıç verisi" },
+    { id: 5, month_name: "ARALIK", year_value: 2023, revenue: 570486.74, expense: 416526, profit: 153960.74, note: "Excel başlangıç verisi" },
+  ],
 };
 
 function formatCurrency(value) {
@@ -162,6 +196,35 @@ async function api(path, options = {}) {
   return response.blob();
 }
 
+async function apiForm(path, formData, options = {}) {
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      ...options,
+      headers: {
+        ...(token() ? { Authorization: `Bearer ${token()}` } : {}),
+        ...(options.headers || {}),
+      },
+      body: formData,
+    });
+  } catch (error) {
+    throw new Error("Sunucuya ulaşılamadı. Backend ve PostgreSQL çalışıyor mu kontrol edin.");
+  }
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.message || "Dosya yükleme hatası");
+  }
+  return response.json();
+}
+
+async function uploadFileForModule(file, moduleName) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("moduleName", moduleName);
+  return apiForm("/api/uploads", formData);
+}
+
 function setAuthView(isAuthenticated) {
   document.getElementById("authView").classList.toggle("hidden", isAuthenticated);
   document.getElementById("appView").classList.toggle("hidden", !isAuthenticated);
@@ -210,13 +273,14 @@ function renderBrands() {
   document.getElementById("brandTableBody").innerHTML = state.brands
     .map(
       (row) => `<tr>
-        <td>${row.name}</td>
+        <td><button class="table-btn" data-action="view-brand-profile" data-id="${row.id}">${row.name}</button></td>
         <td>${row.sector}</td>
         <td>${formatMoney(row.minBudget, row.currency || "TRY")} - ${formatMoney(row.maxBudget, row.currency || "TRY")}</td>
         <td>${row.minSqm} - ${row.maxSqm}</td>
         <td>${row.targetLocations}</td>
         <td><span class="${row.active ? "tag tag-success" : "tag tag-danger"}">${row.active ? "Aktif" : "Pasif"}</span></td>
         <td>
+          <button class="table-btn" data-action="view-brand-profile" data-id="${row.id}">Detay</button>
           <button class="table-btn" data-action="edit-brand" data-id="${row.id}">Düzenle</button>
           <button class="table-btn danger" data-action="delete-brand" data-id="${row.id}">Sil</button>
         </td>
@@ -235,6 +299,9 @@ function renderLocations() {
         <td>${formatMoney(row.rent, row.currency || "TRY")}</td>
         <td>${row.potential}</td>
         <td>${(row.recommendedBrands || []).join(", ")}</td>
+        <td>
+          ${(row.attachmentUrl || row.attachmentData) ? `<button class="table-btn" data-action="download-location-file" data-id="${row.id}">${row.attachmentName || "Dosya Aç"}</button>` : "-"}
+        </td>
         <td>
           <button class="table-btn" data-action="edit-location" data-id="${row.id}">Düzenle</button>
           <button class="table-btn danger" data-action="delete-location" data-id="${row.id}">Sil</button>
@@ -273,7 +340,7 @@ function renderContracts() {
           ${item.fileName ? `<br><small>Dosya: ${item.fileName}</small>` : ""}
         </span>
         <span class="list-actions">
-          ${item.fileData ? `<button class="table-btn" data-action="download-contract" data-id="${item.id}">PDF İndir</button>` : ""}
+          ${(item.fileUrl || item.fileData) ? `<button class="table-btn" data-action="download-contract" data-id="${item.id}">PDF Görüntüle</button>` : ""}
           <button class="table-btn" data-action="edit-contract" data-id="${item.id}">Düzenle</button>
           <button class="table-btn danger" data-action="delete-contract" data-id="${item.id}">Sil</button>
         </span>
@@ -351,6 +418,92 @@ function renderTemplates() {
     .join("");
 }
 
+function renderPnL() {
+  const body = document.getElementById("pnlTableBody");
+  if (!body) return;
+  body.innerHTML = state.pnlReports
+    .map(
+      (row) => `<tr>
+        <td>${row.month_name}</td>
+        <td>${row.year_value}</td>
+        <td>${formatMoney(row.revenue, "TRY")}</td>
+        <td>${formatMoney(row.expense, "TRY")}</td>
+        <td>${formatMoney(row.profit, "TRY")}</td>
+        <td>${row.note || "-"}</td>
+        <td>
+          <button class="table-btn" data-action="view-pnl-details" data-id="${row.id}">Detay</button>
+          <button class="table-btn danger" data-action="delete-pnl" data-id="${row.id}">Sil</button>
+        </td>
+      </tr>`,
+    )
+    .join("");
+}
+
+function renderBrandAgreementHistory() {
+  const body = document.getElementById("brandAgreementTableBody");
+  if (!body) return;
+  body.innerHTML = (state.brandAgreements || [])
+    .map(
+      (row) => `<tr>
+        <td>v${row.version_no}</td>
+        <td>${row.title}</td>
+        <td>${row.revision_note || "-"}</td>
+        <td>${row.effective_date || "-"}</td>
+        <td>${row.file_url ? `<a href="${row.file_url}" target="_blank" rel="noreferrer">Aç</a>` : "-"}</td>
+      </tr>`,
+    )
+    .join("");
+}
+
+function renderPnLDetails() {
+  const body = document.getElementById("pnlDetailTableBody");
+  if (!body) return;
+  body.innerHTML = (state.pnlDetailLines || [])
+    .map(
+      (row) => `<tr>
+        <td>${row.category}</td>
+        <td>${row.item_name}</td>
+        <td>${formatMoney(row.amount, "TRY")}</td>
+        <td>${row.ratio ? `%${Number(row.ratio).toFixed(2)}` : "-"}</td>
+      </tr>`,
+    )
+    .join("");
+}
+
+function fillBrandProfile(brandId) {
+  const row = state.brands.find((x) => x.id === brandId);
+  if (!row) return;
+  document.getElementById("brandProfileId").value = String(brandId);
+  document.getElementById("bpTitle").textContent = `${row.name} - Marka Profili`;
+  document.getElementById("bpAgreementStatus").value = row.agreementStatus || "";
+  document.getElementById("bpFranchiseFee").value = row.franchiseFee || 0;
+  document.getElementById("bpRoyaltyRate").value = row.royaltyRate || 0;
+  document.getElementById("bpContractTerm").value = row.contractTermMonths || 0;
+  document.getElementById("bpInitialInvestment").value = row.initialInvestment || 0;
+  document.getElementById("bpBranchCount").value = row.branchCount || 0;
+  document.getElementById("bpContactPerson").value = row.contactPerson || "";
+  document.getElementById("bpContactPhone").value = row.contactPhone || "";
+  document.getElementById("bpBusinessPlan").value = row.businessPlan || "";
+  document.getElementById("bpOperationPlan").value = row.operationPlan || "";
+  document.getElementById("bpOnboardingSteps").value = (row.onboardingSteps || []).join("\n");
+  document.getElementById("bpKpiTargets").value = row.kpiTargets || "";
+  document.getElementById("bpBrandNotes").value = row.brandNotes || "";
+  if (state.isDemo) {
+    state.brandAgreements = [];
+    renderBrandAgreementHistory();
+    return;
+  }
+  api(`/api/brands/${brandId}/agreements`)
+    .then((items) => {
+      state.brandAgreements = items;
+      renderBrandAgreementHistory();
+    })
+    .catch(() => {
+      state.brandAgreements = [];
+      renderBrandAgreementHistory();
+    });
+}
+
 function renderDashboardOverview() {
   const followUpList = document.getElementById("dashboardFollowUpList");
   const taskList = document.getElementById("dashboardTaskList");
@@ -417,25 +570,32 @@ async function loadAllData() {
     state.projects = [...demoData.projects];
     state.contracts = [...demoData.contracts];
     state.tasks = [...demoData.tasks];
+    state.pnlReports = [...demoData.pnlReports];
+    state.brandAgreements = [];
+    state.pnlDetailLines = [];
     state.timeline = [];
     state.templates = [];
     state.reportSummary = null;
     renderPipeline();
     renderInvestors();
     renderBrands();
+    if (state.brands.length) fillBrandProfile(state.brands[0].id);
     renderLocations();
     renderProjects();
     renderContracts();
     renderTasks();
     renderTimeline();
     renderTemplates();
+    renderPnL();
+    renderBrandAgreementHistory();
+    renderPnLDetails();
     renderKpis();
     renderDashboardOverview();
     await refreshDashboard();
     return;
   }
 
-  const [config, investors, brands, locations, projects, contracts, tasks, timeline, templates] = await Promise.all([
+  const [config, investors, brands, locations, projects, contracts, tasks, timeline, templates, pnlReports] = await Promise.all([
     api("/api/config"),
     api("/api/investors"),
     api("/api/brands"),
@@ -445,6 +605,7 @@ async function loadAllData() {
     api("/api/tasks"),
     api("/api/activity?limit=100"),
     api("/api/templates"),
+    api("/api/pnl"),
   ]);
   state.pipelineStages = config.pipelineStages;
   state.investors = investors;
@@ -455,16 +616,23 @@ async function loadAllData() {
   state.tasks = tasks;
   state.timeline = timeline;
   state.templates = templates;
+  state.pnlReports = pnlReports;
+  state.brandAgreements = [];
+  state.pnlDetailLines = [];
   state.reportSummary = null;
   renderPipeline();
   renderInvestors();
   renderBrands();
+  if (state.brands.length) fillBrandProfile(state.brands[0].id);
   renderLocations();
   renderProjects();
   renderContracts();
   renderTasks();
   renderTimeline();
   renderTemplates();
+  renderPnL();
+  renderBrandAgreementHistory();
+  renderPnLDetails();
   renderKpis();
   renderDashboardOverview();
   await refreshDashboard();
@@ -475,37 +643,74 @@ function clearEditForm(module) {
     state.editing.investorId = null;
     document.getElementById("investorId").value = "";
     document.getElementById("investorSubmitBtn").textContent = "Yatırımcı Ekle";
+    document.getElementById("investorDeleteBtn")?.classList.add("hidden");
   }
   if (module === "brand") {
     state.editing.brandId = null;
     document.getElementById("brandId").value = "";
     document.getElementById("brandSubmitBtn").textContent = "Marka Ekle";
+    document.getElementById("brandDeleteBtn")?.classList.add("hidden");
   }
   if (module === "location") {
     state.editing.locationId = null;
     document.getElementById("locationId").value = "";
     document.getElementById("locationSubmitBtn").textContent = "Lokasyon Ekle";
+    document.getElementById("locationAttachment").value = "";
+    document.getElementById("locationDeleteBtn")?.classList.add("hidden");
   }
   if (module === "project") {
     state.editing.projectId = null;
     document.getElementById("projectId").value = "";
     document.getElementById("projectSubmitBtn").textContent = "Proje Ekle";
+    document.getElementById("projectDeleteBtn")?.classList.add("hidden");
   }
   if (module === "contract") {
     state.editing.contractId = null;
     document.getElementById("contractId").value = "";
     document.getElementById("contractSubmitBtn").textContent = "Kayıt Ekle";
     document.getElementById("contractFile").value = "";
+    document.getElementById("contractDeleteBtn")?.classList.add("hidden");
   }
   if (module === "task") {
     state.editing.taskId = null;
     document.getElementById("taskId").value = "";
     document.getElementById("taskSubmitBtn").textContent = "Görev Ekle";
+    document.getElementById("taskDeleteBtn")?.classList.add("hidden");
   }
   if (module === "template") {
     state.editing.templateId = null;
     document.getElementById("templateId").value = "";
     document.getElementById("templateSubmitBtn").textContent = "Şablon Ekle";
+    document.getElementById("templateDeleteBtn")?.classList.add("hidden");
+  }
+}
+
+function setupInlineDeleteButtons() {
+  const configs = [
+    ["investor", "investorForm", "investorDeleteBtn", () => state.editing.investorId],
+    ["brand", "brandForm", "brandDeleteBtn", () => state.editing.brandId],
+    ["location", "locationForm", "locationDeleteBtn", () => state.editing.locationId],
+    ["project", "projectForm", "projectDeleteBtn", () => state.editing.projectId],
+    ["contract", "contractForm", "contractDeleteBtn", () => state.editing.contractId],
+    ["task", "taskForm", "taskDeleteBtn", () => state.editing.taskId],
+    ["template", "templateForm", "templateDeleteBtn", () => state.editing.templateId],
+  ];
+  for (const [module, formId, buttonId, idGetter] of configs) {
+    const form = document.getElementById(formId);
+    if (!form || document.getElementById(buttonId)) continue;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = buttonId;
+    btn.className = "danger-btn hidden";
+    btn.textContent = "Düzenlenen Kaydı Sil";
+    btn.addEventListener("click", async () => {
+      const id = Number(idGetter() || 0);
+      if (!id) return;
+      await deleteByAction(`delete-${module}`, id);
+      form.reset();
+      clearEditForm(module);
+    });
+    form.appendChild(btn);
   }
 }
 
@@ -581,6 +786,7 @@ function bindAuth() {
 }
 
 function bindCoreEvents() {
+  setupInlineDeleteButtons();
   document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.removeItem(TOKEN_KEY);
     setAuthView(false);
@@ -594,6 +800,9 @@ function bindCoreEvents() {
   document.getElementById("exportAllBtn").addEventListener("click", () => downloadExport("all"));
   document.querySelectorAll(".export-btn").forEach((button) => {
     button.addEventListener("click", () => downloadExport(button.dataset.module));
+  });
+  document.querySelectorAll(".pdf-export-btn").forEach((button) => {
+    button.addEventListener("click", () => downloadPdfExport(button.dataset.module));
   });
 
   document.getElementById("reportFilterForm").addEventListener("submit", async (event) => {
@@ -653,6 +862,27 @@ async function downloadExport(moduleName) {
   URL.revokeObjectURL(url);
 }
 
+async function downloadPdfExport(moduleName) {
+  if (state.isDemo) {
+    alert("Demo modda PDF dışa aktarma kapalı. Backend açıldığında aktif olur.");
+    return;
+  }
+  const response = await fetch(`/api/export-pdf/${moduleName}`, {
+    headers: { Authorization: `Bearer ${token()}` },
+  });
+  if (!response.ok) {
+    alert("PDF dışa aktarma başarısız.");
+    return;
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `mi-crm-${moduleName}.pdf`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -660,6 +890,13 @@ function fileToDataUrl(file) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+function downloadDataUrl(dataUrl, fileName) {
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = fileName || "dosya";
+  link.click();
 }
 
 function bindForms() {
@@ -712,6 +949,7 @@ function bindForms() {
 
   document.getElementById("brandForm").addEventListener("submit", async (event) => {
     event.preventDefault();
+    const existing = state.brands.find((x) => x.id === state.editing.brandId);
     const payload = {
       name: document.getElementById("brandName").value,
       sector: document.getElementById("brandSector").value,
@@ -723,6 +961,19 @@ function bindForms() {
       targetLocations: document.getElementById("targetLocations").value,
       monthlyGrowth: Number(document.getElementById("monthlyGrowth").value),
       active: document.getElementById("brandStatus").value === "true",
+      agreementStatus: existing?.agreementStatus || "",
+      franchiseFee: existing?.franchiseFee || 0,
+      royaltyRate: existing?.royaltyRate || 0,
+      contractTermMonths: existing?.contractTermMonths || 0,
+      initialInvestment: existing?.initialInvestment || 0,
+      branchCount: existing?.branchCount || 0,
+      contactPerson: existing?.contactPerson || "",
+      contactPhone: existing?.contactPhone || "",
+      businessPlan: existing?.businessPlan || "",
+      operationPlan: existing?.operationPlan || "",
+      onboardingSteps: existing?.onboardingSteps || [],
+      kpiTargets: existing?.kpiTargets || "",
+      brandNotes: existing?.brandNotes || "",
     };
     if (payload.minBudget > payload.maxBudget || payload.minSqm > payload.maxSqm) {
       alert("Min değerler max değerlerden büyük olamaz.");
@@ -745,12 +996,29 @@ function bindForms() {
       currency: document.getElementById("locationCurrency").value,
       rent: Number(document.getElementById("locationRent").value),
       potential: document.getElementById("locationPotential").value,
+      address: document.getElementById("locationAddress").value,
+      traffic: document.getElementById("locationTraffic").value,
+      owner: document.getElementById("locationOwner").value,
+      ownerPhone: document.getElementById("locationOwnerPhone").value,
+      notes: document.getElementById("locationNotes").value,
       recommendedBrands: document
         .getElementById("recommendedBrands")
         .value.split(",")
         .map((x) => x.trim())
         .filter(Boolean),
     };
+    const locationFileInput = document.getElementById("locationAttachment");
+    const selectedFile = locationFileInput.files && locationFileInput.files[0] ? locationFileInput.files[0] : null;
+    const existing = state.locations.find((x) => x.id === state.editing.locationId);
+    payload.attachmentName = existing?.attachmentName || "";
+    payload.attachmentData = existing?.attachmentData || "";
+    payload.attachmentUrl = existing?.attachmentUrl || "";
+    if (selectedFile) {
+      const uploaded = await uploadFileForModule(selectedFile, "locations");
+      payload.attachmentName = uploaded.original_name;
+      payload.attachmentData = "";
+      payload.attachmentUrl = uploaded.file_url;
+    }
     const id = state.editing.locationId;
     if (id) await api(`/api/locations/${id}`, { method: "PUT", body: JSON.stringify(payload) });
     else await api("/api/locations", { method: "POST", body: JSON.stringify(payload) });
@@ -795,10 +1063,15 @@ function bindForms() {
     const selectedFile = fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
     const existing = state.contracts.find((x) => x.id === state.editing.contractId);
     let fileData = existing?.fileData || "";
+    let fileUrl = existing?.fileUrl || "";
     let fileName = existing?.fileName || "";
+    let fileMimeType = existing?.fileMimeType || "";
     if (selectedFile) {
-      fileData = await fileToDataUrl(selectedFile);
-      fileName = selectedFile.name;
+      const uploaded = await uploadFileForModule(selectedFile, "contracts");
+      fileData = "";
+      fileName = uploaded.original_name;
+      fileUrl = uploaded.file_url;
+      fileMimeType = uploaded.mime_type || "";
     }
 
     const payload = {
@@ -812,6 +1085,8 @@ function bindForms() {
       currency: document.getElementById("contractCurrency").value,
       fileName,
       fileData,
+      fileUrl,
+      fileMimeType,
     };
     const id = state.editing.contractId;
     if (id) await api(`/api/contracts/${id}`, { method: "PUT", body: JSON.stringify(payload) });
@@ -851,6 +1126,91 @@ function bindForms() {
     clearEditForm("template");
     await loadAllData();
   });
+
+  document.getElementById("brandProfileForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const brandId = Number(document.getElementById("brandProfileId").value);
+    const existing = state.brands.find((x) => x.id === brandId);
+    if (!brandId || !existing) return;
+    const payload = {
+      ...existing,
+      agreementStatus: document.getElementById("bpAgreementStatus").value,
+      franchiseFee: Number(document.getElementById("bpFranchiseFee").value || 0),
+      royaltyRate: Number(document.getElementById("bpRoyaltyRate").value || 0),
+      contractTermMonths: Number(document.getElementById("bpContractTerm").value || 0),
+      initialInvestment: Number(document.getElementById("bpInitialInvestment").value || 0),
+      branchCount: Number(document.getElementById("bpBranchCount").value || 0),
+      contactPerson: document.getElementById("bpContactPerson").value,
+      contactPhone: document.getElementById("bpContactPhone").value,
+      businessPlan: document.getElementById("bpBusinessPlan").value,
+      operationPlan: document.getElementById("bpOperationPlan").value,
+      onboardingSteps: document
+        .getElementById("bpOnboardingSteps")
+        .value.split("\n")
+        .map((x) => x.trim())
+        .filter(Boolean),
+      kpiTargets: document.getElementById("bpKpiTargets").value,
+      brandNotes: document.getElementById("bpBrandNotes").value,
+    };
+    await api(`/api/brands/${brandId}`, { method: "PUT", body: JSON.stringify(payload) });
+    await loadAllData();
+    fillBrandProfile(brandId);
+    alert("Marka profili güncellendi.");
+  });
+
+  document.getElementById("brandAgreementForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const brandId = Number(document.getElementById("brandProfileId").value);
+    if (!brandId) {
+      alert("Önce bir marka seçin.");
+      return;
+    }
+    const fileInput = document.getElementById("bpAgreementFile");
+    const selectedFile = fileInput?.files?.[0];
+    let fileMeta = { fileName: null, fileUrl: null, mimeType: null };
+    if (selectedFile) {
+      const uploaded = await uploadFileForModule(selectedFile, "brand-agreements");
+      fileMeta = { fileName: uploaded.original_name, fileUrl: uploaded.file_url, mimeType: uploaded.mime_type || null };
+    }
+    await api(`/api/brands/${brandId}/agreements`, {
+      method: "POST",
+      body: JSON.stringify({
+        title: document.getElementById("bpAgreementTitle").value,
+        revisionNote: document.getElementById("bpAgreementRevisionNote").value,
+        effectiveDate: document.getElementById("bpAgreementEffectiveDate").value || null,
+        ...fileMeta,
+      }),
+    });
+    event.target.reset();
+    fillBrandProfile(brandId);
+    alert("Anlaşma dokümanı yeni versiyon olarak eklendi.");
+  });
+
+  document.getElementById("pnlForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const payload = {
+      monthName: document.getElementById("pnlMonth").value,
+      yearValue: Number(document.getElementById("pnlYear").value),
+      revenue: Number(document.getElementById("pnlRevenue").value || 0),
+      expense: Number(document.getElementById("pnlExpense").value || 0),
+      profit: Number(document.getElementById("pnlProfit").value || 0),
+      note: document.getElementById("pnlNote").value,
+    };
+    await api("/api/pnl", { method: "POST", body: JSON.stringify(payload) });
+    event.target.reset();
+    await loadAllData();
+  });
+
+  document.getElementById("pnlImportBtn")?.addEventListener("click", async () => {
+    const fileInput = document.getElementById("pnlImportFile");
+    const selectedFile = fileInput?.files?.[0];
+    const formData = new FormData();
+    if (selectedFile) formData.append("excelFile", selectedFile);
+    await apiForm("/api/pnl/import", formData);
+    if (fileInput) fileInput.value = "";
+    await loadAllData();
+    alert("Kar/Zarar verileri içe aktarıldı.");
+  });
 }
 
 function fillFormForEdit(action, id) {
@@ -873,6 +1233,7 @@ function fillFormForEdit(action, id) {
     document.getElementById("leadMeetingNotes").value = row.meetingNotes || "";
     document.getElementById("leadFollowUpDate").value = row.followUpDate || "";
     document.getElementById("investorSubmitBtn").textContent = "Yatırımcı Güncelle";
+    document.getElementById("investorDeleteBtn")?.classList.remove("hidden");
   }
   if (action === "edit-brand") {
     const row = state.brands.find((x) => x.id === id);
@@ -889,6 +1250,8 @@ function fillFormForEdit(action, id) {
     document.getElementById("monthlyGrowth").value = row.monthlyGrowth;
     document.getElementById("brandStatus").value = String(row.active);
     document.getElementById("brandSubmitBtn").textContent = "Marka Güncelle";
+    document.getElementById("brandDeleteBtn")?.classList.remove("hidden");
+    fillBrandProfile(id);
   }
   if (action === "edit-location") {
     const row = state.locations.find((x) => x.id === id);
@@ -900,8 +1263,15 @@ function fillFormForEdit(action, id) {
     document.getElementById("locationCurrency").value = row.currency || "TRY";
     document.getElementById("locationRent").value = row.rent;
     document.getElementById("locationPotential").value = row.potential;
+    document.getElementById("locationAddress").value = row.address || "";
+    document.getElementById("locationTraffic").value = row.traffic || "";
+    document.getElementById("locationOwner").value = row.owner || "";
+    document.getElementById("locationOwnerPhone").value = row.ownerPhone || "";
+    document.getElementById("locationNotes").value = row.notes || "";
+    document.getElementById("locationAttachment").value = "";
     document.getElementById("recommendedBrands").value = (row.recommendedBrands || []).join(", ");
     document.getElementById("locationSubmitBtn").textContent = "Lokasyon Güncelle";
+    document.getElementById("locationDeleteBtn")?.classList.remove("hidden");
   }
   if (action === "edit-project") {
     const row = state.projects.find((x) => x.id === id);
@@ -918,6 +1288,7 @@ function fillFormForEdit(action, id) {
     document.getElementById("projectDescription").value = row.description || "";
     document.getElementById("projectChecklist").value = row.checklist ? row.checklist.join("\n") : "";
     document.getElementById("projectSubmitBtn").textContent = "Proje Güncelle";
+    document.getElementById("projectDeleteBtn")?.classList.remove("hidden");
   }
   if (action === "edit-contract") {
     const row = state.contracts.find((x) => x.id === id);
@@ -932,6 +1303,7 @@ function fillFormForEdit(action, id) {
     document.getElementById("contractAmount").value = row.amount || "";
     document.getElementById("contractCurrency").value = row.currency || "TRY";
     document.getElementById("contractSubmitBtn").textContent = "Kayıt Güncelle";
+    document.getElementById("contractDeleteBtn")?.classList.remove("hidden");
   }
   if (action === "edit-task") {
     const row = state.tasks.find((x) => x.id === id);
@@ -940,6 +1312,7 @@ function fillFormForEdit(action, id) {
     document.getElementById("taskText").value = row.note;
     document.getElementById("taskStatus").value = row.status;
     document.getElementById("taskSubmitBtn").textContent = "Görev Güncelle";
+    document.getElementById("taskDeleteBtn")?.classList.remove("hidden");
   }
   if (action === "edit-template") {
     const row = state.templates.find((x) => x.id === id);
@@ -951,6 +1324,7 @@ function fillFormForEdit(action, id) {
     document.getElementById("templateBody").value = row.body;
     document.getElementById("templateActive").value = String(row.active);
     document.getElementById("templateSubmitBtn").textContent = "Şablon Güncelle";
+    document.getElementById("templateDeleteBtn")?.classList.remove("hidden");
   }
 }
 
@@ -963,6 +1337,7 @@ async function deleteByAction(action, id) {
     "delete-contract": "/api/contracts",
     "delete-task": "/api/tasks",
     "delete-template": "/api/templates",
+    "delete-pnl": "/api/pnl",
   };
   const endpoint = map[action];
   if (!endpoint) return;
@@ -976,9 +1351,11 @@ function bindActionDelegation() {
   document.body.addEventListener("click", async (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
-    const action = target.dataset.action;
-    const id = Number(target.dataset.id);
-    if (!action || !id) return;
+    const actionNode = target.closest("[data-action]");
+    if (!(actionNode instanceof HTMLElement)) return;
+    const action = actionNode.dataset.action;
+    const id = Number(actionNode.dataset.id || 0);
+    if (!action) return;
     if (action === "test-template") {
       await api(`/api/templates/${id}/test`, { method: "POST" });
       alert("Test mesajı gönderildi.");
@@ -986,13 +1363,43 @@ function bindActionDelegation() {
     }
     if (action === "download-contract") {
       const item = state.contracts.find((x) => x.id === id);
+      if (item?.fileUrl) {
+        window.open(item.fileUrl, "_blank");
+        return;
+      }
       if (!item?.fileData) return;
-      const link = document.createElement("a");
-      link.href = item.fileData;
-      link.download = item.fileName || `sozlesme-${id}.pdf`;
-      link.click();
+      downloadDataUrl(item.fileData, item.fileName || `sozlesme-${id}.pdf`);
       return;
     }
+    if (action === "download-location-file") {
+      const item = state.locations.find((x) => x.id === id);
+      if (item?.attachmentUrl) {
+        window.open(item.attachmentUrl, "_blank");
+        return;
+      }
+      if (!item?.attachmentData) return;
+      downloadDataUrl(item.attachmentData, item.attachmentName || `lokasyon-${id}`);
+      return;
+    }
+    if (action === "view-brand-profile") {
+      const page = document.getElementById("page-brands");
+      document.querySelectorAll(".menu-link").forEach((x) => x.classList.toggle("active", x.dataset.page === "brands"));
+      document.querySelectorAll(".page-section").forEach((section) => section.classList.remove("active"));
+      if (page) page.classList.add("active");
+      fillBrandProfile(id);
+      return;
+    }
+    if (action === "view-pnl-details") {
+      if (!id || state.isDemo) {
+        state.pnlDetailLines = [];
+        renderPnLDetails();
+        return;
+      }
+      state.pnlDetailLines = await api(`/api/pnl/${id}/details`);
+      renderPnLDetails();
+      return;
+    }
+    if (!id) return;
     if (action.startsWith("edit-")) fillFormForEdit(action, id);
     if (action.startsWith("delete-")) await deleteByAction(action, id);
   });

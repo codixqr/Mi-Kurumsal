@@ -42,6 +42,19 @@ CREATE TABLE IF NOT EXISTS brands (
   target_locations TEXT NOT NULL,
   active BOOLEAN NOT NULL DEFAULT TRUE,
   monthly_growth INTEGER NOT NULL DEFAULT 0,
+  agreement_status TEXT,
+  franchise_fee BIGINT,
+  royalty_rate NUMERIC(5,2),
+  contract_term_months INTEGER,
+  initial_investment BIGINT,
+  branch_count INTEGER,
+  contact_person TEXT,
+  contact_phone TEXT,
+  business_plan TEXT,
+  operation_plan TEXT,
+  onboarding_steps TEXT[] NOT NULL DEFAULT '{}',
+  kpi_targets TEXT,
+  brand_notes TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   deleted_at TIMESTAMP
@@ -56,6 +69,14 @@ CREATE TABLE IF NOT EXISTS locations (
   currency TEXT NOT NULL DEFAULT 'TRY',
   potential TEXT NOT NULL,
   recommended_brands TEXT[] NOT NULL DEFAULT '{}',
+  address TEXT,
+  traffic TEXT,
+  owner TEXT,
+  owner_phone TEXT,
+  notes TEXT,
+  attachment_name TEXT,
+  attachment_data TEXT,
+  attachment_url TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   deleted_at TIMESTAMP
@@ -90,9 +111,62 @@ CREATE TABLE IF NOT EXISTS contracts (
   currency TEXT NOT NULL DEFAULT 'TRY',
   file_name TEXT,
   file_data TEXT,
+  file_url TEXT,
+  file_mime_type TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   deleted_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS uploaded_files (
+  id SERIAL PRIMARY KEY,
+  module_name TEXT NOT NULL,
+  original_name TEXT NOT NULL,
+  stored_name TEXT NOT NULL,
+  file_url TEXT NOT NULL,
+  mime_type TEXT,
+  size_bytes BIGINT,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS pnl_reports (
+  id SERIAL PRIMARY KEY,
+  month_name TEXT NOT NULL,
+  year_value INTEGER NOT NULL,
+  revenue NUMERIC(14,2) NOT NULL DEFAULT 0,
+  expense NUMERIC(14,2) NOT NULL DEFAULT 0,
+  profit NUMERIC(14,2) NOT NULL DEFAULT 0,
+  note TEXT,
+  source_file TEXT,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS brand_agreements (
+  id SERIAL PRIMARY KEY,
+  brand_id INTEGER NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
+  version_no INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  revision_note TEXT,
+  effective_date DATE,
+  file_name TEXT,
+  file_url TEXT,
+  mime_type TEXT,
+  uploaded_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS pnl_detail_lines (
+  id SERIAL PRIMARY KEY,
+  pnl_report_id INTEGER NOT NULL REFERENCES pnl_reports(id) ON DELETE CASCADE,
+  category TEXT NOT NULL,
+  item_name TEXT NOT NULL,
+  amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+  ratio NUMERIC(10,4),
+  source_file TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS tasks (
