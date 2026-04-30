@@ -660,10 +660,31 @@ app.get("/api/admin/db-status", async (req, res) => {
   }
 });
 
-// 13. Database Auto-Fix API
+// 13. Database Auto-Fix API (Güçlendirilmiş)
 app.post("/api/admin/db-fix", async (req, res) => {
   try {
     const pg = pool;
+    console.log("Database repair started...");
+
+    // Önce tabloların var olduğundan emin olalım (schema.sql'den temel yapılar)
+    const createTables = [
+      "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT, email TEXT UNIQUE, password TEXT, role TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS investors (id SERIAL PRIMARY KEY, name TEXT, budget BIGINT, city TEXT, sector TEXT, investment_type TEXT, pipeline_stage TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS brands (id SERIAL PRIMARY KEY, name TEXT, sector TEXT, min_budget BIGINT, max_budget BIGINT, min_sqm INTEGER, max_sqm INTEGER, target_locations TEXT, active BOOLEAN, monthly_growth INTEGER, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS locations (id SERIAL PRIMARY KEY, name TEXT, location_type TEXT, sqm INTEGER, rent BIGINT, potential TEXT, recommended_brands TEXT[], created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS projects (id SERIAL PRIMARY KEY, name TEXT, type TEXT, owner_team TEXT, priority TEXT, progress INTEGER, stage TEXT, due_date DATE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS contracts (id SERIAL PRIMARY KEY, note TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS tasks (id SERIAL PRIMARY KEY, note TEXT, status TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS pnl (id SERIAL PRIMARY KEY, month_name TEXT, year_value INTEGER, revenue BIGINT, expense BIGINT, profit BIGINT, note TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS message_templates (id SERIAL PRIMARY KEY, channel TEXT, event_name TEXT, title TEXT, body TEXT, active BOOLEAN, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS activity_logs (id SERIAL PRIMARY KEY, user_id INTEGER, user_name TEXT, module_name TEXT, action_type TEXT, summary TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+    ];
+
+    for (const sql of createTables) {
+      await pg.query(sql);
+    }
+
+    // Şimdi eksik sütunları ekleyelim
     const alters = [
       "ALTER TABLE investors ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP",
       "ALTER TABLE investors ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'",
@@ -675,13 +696,13 @@ app.post("/api/admin/db-fix", async (req, res) => {
       "ALTER TABLE investors ADD COLUMN IF NOT EXISTS meeting_notes TEXT",
       "ALTER TABLE investors ADD COLUMN IF NOT EXISTS follow_up_date DATE",
       "ALTER TABLE investors ADD COLUMN IF NOT EXISTS documents TEXT[] NOT NULL DEFAULT '{}'",
+      "ALTER TABLE investors ADD COLUMN IF NOT EXISTS created_by INTEGER",
       
       "ALTER TABLE brands ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP",
       "ALTER TABLE brands ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'",
       
       "ALTER TABLE locations ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP",
       "ALTER TABLE locations ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'",
-      "ALTER TABLE locations ADD COLUMN IF NOT EXISTS recommended_brands TEXT[]",
       
       "ALTER TABLE projects ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP",
       "ALTER TABLE projects ADD COLUMN IF NOT EXISTS assignees TEXT[] NOT NULL DEFAULT '{}'",
@@ -703,10 +724,10 @@ app.post("/api/admin/db-fix", async (req, res) => {
     ];
 
     for (const sql of alters) {
-      await pg.query(sql).catch(e => console.error("Fix error:", e.message));
+      await pg.query(sql).catch(e => console.log("Alter skip or error:", e.message));
     }
 
-    res.json({ success: true, message: "Veritabanı sütunları başarıyla güncellendi." });
+    res.json({ success: true, message: "Tablolar ve sütunlar başarıyla senkronize edildi." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
