@@ -5,57 +5,111 @@ import { apiClient } from '@/lib/apiClient';
 
 export default function TemplatesPage() {
   const [templates, setTemplates] = useState([]);
-  const [form, setForm] = useState({ channel: 'whatsapp', eventName: '', title: '', body: '', active: 'true' });
+  const [investors, setInvestors] = useState([]);
+  const [selectedInvestorId, setSelectedInvestorId] = useState('');
+  const [form, setForm] = useState({ title: '', body: '', channel: 'WhatsApp' });
+  const [loading, setLoading] = useState(true);
 
-  const fetchTemplates = async () => {
-    try { const data = await apiClient.get('/templates'); setTemplates(data); } catch (err) {}
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [tData, iData] = await Promise.all([
+        apiClient.get('/templates'),
+        apiClient.get('/investors')
+      ]);
+      setTemplates(tData);
+      setInvestors(iData);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchTemplates(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await apiClient.post('/templates', form);
-      setForm({ channel: 'whatsapp', eventName: '', title: '', body: '', active: 'true' });
-      fetchTemplates();
-    } catch (err) {}
+      setForm({ title: '', body: '', channel: 'WhatsApp' });
+      fetchData();
+    } catch (err) {
+      alert('Hata oluştu');
+    }
+  };
+
+  const sendTemplate = (template, type) => {
+    if (!selectedInvestorId) {
+      alert('Lütfen önce bir kişi seçin.');
+      return;
+    }
+    const investor = investors.find(i => i.id === Number(selectedInvestorId));
+    if (!investor) return;
+
+    const message = template.body.replace('{{name}}', investor.name);
+    
+    if (type === 'whatsapp') {
+      const phone = investor.phone?.replace(/\D/g, '');
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+    } else {
+      window.open(`mailto:${investor.email}?subject=${encodeURIComponent(template.title)}&body=${encodeURIComponent(message)}`, '_blank');
+    }
   };
 
   return (
     <section className="card page-section active">
-      <h2>Şablon Yönetimi</h2>
-      <form onSubmit={handleSubmit} className="entry-form">
-        <div className="field">
-          <label>Kanal</label>
-          <select value={form.channel} onChange={e => setForm({...form, channel: e.target.value})}>
-            <option value="whatsapp">WhatsApp</option>
-            <option value="mail">Mail</option>
-          </select>
-        </div>
-        <div className="field"><label>Event</label><input value={form.eventName} onChange={e => setForm({...form, eventName: e.target.value})} placeholder="Yeni Lead vb." required /></div>
-        <div className="field"><label>Başlık</label><input value={form.title} onChange={e => setForm({...form, title: e.target.value})} required /></div>
-        <div className="field field-wide"><label>Mesaj İçeriği</label><textarea value={form.body} onChange={e => setForm({...form, body: e.target.value})} rows="3"></textarea></div>
-        <button type="submit">Şablon Kaydet</button>
-      </form>
+      <div className="module-head">
+        <h2>Mesaj Şablonları & Hızlı Gönderim</h2>
+      </div>
 
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Kanal</th><th>Event</th><th>Başlık</th><th>Durum</th><th>İşlem</th></tr>
-          </thead>
-          <tbody>
+      <div className="dashboard-grid">
+        <article className="card">
+          <h3>Yeni Şablon Oluştur</h3>
+          <form onSubmit={handleSubmit} className="entry-form" style={{display: 'flex', flexDirection: 'column', gap: '10px'}}>
+            <div className="field">
+              <label>Başlık</label>
+              <input value={form.title} onChange={e => setForm({...form, title: e.target.value})} required placeholder="Örn: İlk Tanışma Mesajı" />
+            </div>
+            <div className="field">
+              <label>Kanal</label>
+              <select value={form.channel} onChange={e => setForm({...form, channel: e.target.value})}>
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="Email">Email</option>
+                <option value="SMS">SMS</option>
+              </select>
+            </div>
+            <div className="field">
+              <label>Mesaj (Kişi adı için {"{{name}}"} kullanın)</label>
+              <textarea rows="5" value={form.body} onChange={e => setForm({...form, body: e.target.value})} required placeholder="Merhaba {{name}}, yatırım fırsatları hakkında..."></textarea>
+            </div>
+            <button type="submit" className="primary-btn">Şablonu Kaydet</button>
+          </form>
+        </article>
+
+        <article className="card">
+          <h3>Hızlı Gönderim Paneli</h3>
+          <div className="field" style={{marginBottom: '20px'}}>
+            <label>Mesaj Gönderilecek Kişi Seçin</label>
+            <select value={selectedInvestorId} onChange={e => setSelectedInvestorId(e.target.value)} style={{fontSize: '16px', padding: '10px'}}>
+              <option value="">-- Kişi Seçin --</option>
+              {investors.map(i => <option key={i.id} value={i.id}>{i.name} ({i.phone})</option>)}
+            </select>
+          </div>
+
+          <div className="template-list">
             {templates.map(t => (
-              <tr key={t.id}>
-                <td>{t.channel}</td>
-                <td>{t.event_name}</td>
-                <td>{t.title}</td>
-                <td>{t.active ? 'Aktif' : 'Pasif'}</td>
-                <td><button onClick={async () => { await apiClient.delete(`/templates/${t.id}`); fetchTemplates(); }} className="danger-btn">Sil</button></td>
-              </tr>
+              <div key={t.id} className="card" style={{marginBottom: '10px', border: '1px solid #eee'}}>
+                <h4>{t.title} <small className="badge">{t.channel}</small></h4>
+                <p style={{fontSize: '14px', color: '#666'}}>{t.body}</p>
+                <div style={{display: 'flex', gap: '10px', marginTop: '10px'}}>
+                  <button onClick={() => sendTemplate(t, 'whatsapp')} className="success-btn" style={{flex: 1, backgroundColor: '#25D366', color: 'white', border: 'none', padding: '8px', borderRadius: '5px', cursor: 'pointer'}}>WhatsApp ile Gönder</button>
+                  <button onClick={() => sendTemplate(t, 'email')} className="primary-btn" style={{flex: 1, padding: '8px'}}>E-posta ile Gönder</button>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        </article>
       </div>
     </section>
   );

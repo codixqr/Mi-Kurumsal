@@ -557,8 +557,26 @@ thead th {
   font-size: 14px;
 }
 
+.selected-row {
+  background-color: #f0f7ff !important;
+}
+
+.success-btn {
+  background-color: #10b981 !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.success-btn:hover {
+  background-color: #059669 !important;
+}
+
 tbody td {
-  padding: 10px 8px;
+  padding: 12px 10px;
   border-bottom: 1px solid #edf2f7;
 }
 
