@@ -638,6 +638,80 @@ app.get("/api/uploads/:module", authMiddleware, async (req, res) => {
   res.json(rows.rows);
 });
 
+// 12. Database Health Check API
+app.get("/api/admin/db-status", async (req, res) => {
+  try {
+    const pg = pool;
+    const tables = ['users', 'investors', 'brands', 'locations', 'projects', 'contracts', 'tasks', 'pnl', 'message_templates', 'activity_logs'];
+    const status = {};
+
+    for (const table of tables) {
+      const columnsRes = await pg.query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = $1
+      `, [table]);
+      status[table] = columnsRes.rows.map(r => r.column_name);
+    }
+
+    res.json(status);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 13. Database Auto-Fix API
+app.post("/api/admin/db-fix", async (req, res) => {
+  try {
+    const pg = pool;
+    const alters = [
+      "ALTER TABLE investors ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP",
+      "ALTER TABLE investors ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'",
+      "ALTER TABLE investors ADD COLUMN IF NOT EXISTS phone TEXT",
+      "ALTER TABLE investors ADD COLUMN IF NOT EXISTS email TEXT",
+      "ALTER TABLE investors ADD COLUMN IF NOT EXISTS district TEXT",
+      "ALTER TABLE investors ADD COLUMN IF NOT EXISTS goal TEXT",
+      "ALTER TABLE investors ADD COLUMN IF NOT EXISTS contact_history TEXT",
+      "ALTER TABLE investors ADD COLUMN IF NOT EXISTS meeting_notes TEXT",
+      "ALTER TABLE investors ADD COLUMN IF NOT EXISTS follow_up_date DATE",
+      "ALTER TABLE investors ADD COLUMN IF NOT EXISTS documents TEXT[] NOT NULL DEFAULT '{}'",
+      
+      "ALTER TABLE brands ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP",
+      "ALTER TABLE brands ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'",
+      
+      "ALTER TABLE locations ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP",
+      "ALTER TABLE locations ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'",
+      "ALTER TABLE locations ADD COLUMN IF NOT EXISTS recommended_brands TEXT[]",
+      
+      "ALTER TABLE projects ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP",
+      "ALTER TABLE projects ADD COLUMN IF NOT EXISTS assignees TEXT[] NOT NULL DEFAULT '{}'",
+      "ALTER TABLE projects ADD COLUMN IF NOT EXISTS priority TEXT NOT NULL DEFAULT 'Orta'",
+      "ALTER TABLE projects ADD COLUMN IF NOT EXISTS progress INTEGER NOT NULL DEFAULT 0",
+      "ALTER TABLE projects ADD COLUMN IF NOT EXISTS description TEXT",
+      "ALTER TABLE projects ADD COLUMN IF NOT EXISTS checklist TEXT[] NOT NULL DEFAULT '{}'",
+      
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS contract_type TEXT",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS status TEXT",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS counterparty TEXT",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS start_date DATE",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS end_date DATE",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS amount BIGINT",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'",
+
+      "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP"
+    ];
+
+    for (const sql of alters) {
+      await pg.query(sql).catch(e => console.error("Fix error:", e.message));
+    }
+
+    res.json({ success: true, message: "Veritabanı sütunları başarıyla güncellendi." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get("/api/admin/seed", async (req, res) => {
   try {
     const pg = pool;

@@ -24,6 +24,7 @@ export default function DashboardLayout({ children }) {
     { name: 'Timeline', path: '/timeline', id: 'timeline' },
     { name: 'Şablonlar', path: '/templates', id: 'templates' },
     { name: 'Eşleştirme Motoru', path: '/matching', id: 'matching' },
+    { name: 'DB Kontrol', path: '/db-check', id: 'db-check' },
   ];
 
   return (
