@@ -32,15 +32,15 @@ export default function DashboardLayout({ children }) {
         <div className="brand">
           <div className="brand-mark logo-inside">
             <img
-              src="/logo/mikurumsal_logo.png"
-              alt="Mi Kurumsal Logo"
+              src="/logo/mi_core_logo.png"
+              alt="Mi Core Logo"
               className="brand-logo"
               onError={(e) => { e.target.style.display='none'; e.target.parentElement.textContent='Mi'; }}
             />
           </div>
           <div className="brand-text">
-            <strong>Mi Core CRM</strong>
-            <span>Franchise CRM</span>
+            <strong>Mi Core Yönetim Paneli</strong>
+            <span>Franchise Yönetimi</span>
           </div>
         </div>
         <nav className="menu">
@@ -63,8 +63,7 @@ export default function DashboardLayout({ children }) {
       <main className="content">
         <header className="header">
           <div>
-            <img src="/logo/mikurumsal_logo.png" alt="Mi Kurumsal Logo" className="header-logo" style={{height: '60px', marginBottom: '5px'}} />
-            <h1>Mi Kurumsal CRM Yönetim Paneli</h1>
+            <h1>Mi Core Yönetim Paneli</h1>
           </div>
           <div className="header-actions">
             <button type="button" className="secondary-btn">Excel (Tümü)</button>

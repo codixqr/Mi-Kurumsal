@@ -58,13 +58,6 @@ body {
   object-fit: contain;
 }
 
-.header-logo {
-  height: 56px;
-  width: auto;
-  object-fit: contain;
-  margin-bottom: 8px;
-}
-
 .logo-pdf.small {
   height: 36px;
   border: 0;
@@ -147,8 +140,8 @@ body {
 }
 
 .brand-mark {
-  width: 52px;
-  height: 52px;
+  width: 64px;
+  height: 64px;
   border-radius: 0;
   display: grid;
   place-items: center;
@@ -170,12 +163,20 @@ body {
 .brand-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+}
+
+.brand-text strong {
+  font-size: 18px;
+  line-height: 1.15;
+  text-shadow: 0 2px 6px rgba(1, 41, 30, 0.45);
 }
 
 .brand-text span {
-  opacity: 0.85;
-  font-size: 12px;
+  opacity: 0.9;
+  font-size: 13px;
+  color: #d6f3e3;
+  text-shadow: 0 1px 4px rgba(1, 41, 30, 0.35);
 }
 
 .menu {
@@ -226,6 +227,9 @@ body {
 
 .header h1 {
   margin: 0 0 4px;
+  color: #0d5137;
+  text-shadow: 0 2px 8px rgba(13, 81, 55, 0.25);
+  letter-spacing: 0.2px;
 }
 
 .header p {
@@ -244,7 +248,8 @@ body {
   margin: -16px -16px 20px;
   font-size: 16px;
   font-weight: 700;
-  color: var(--text);
+  color: #0e5b3d;
+  text-shadow: 0 2px 8px rgba(14, 91, 61, 0.16);
   padding: 16px;
   border-bottom: 1px solid var(--border);
   background: #f8fafc;
@@ -312,7 +317,29 @@ body {
 }
 
 .danger-btn {
-  background: #9f3b3b !important;
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border: none !important;
+  transition: all 0.2s ease;
+}
+
+.danger-btn:hover {
+  background: #b91c1c !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+.primary-btn {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+  border: none !important;
+  transition: all 0.2s ease;
+}
+
+.primary-btn:hover {
+  background: var(--primary-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(15, 118, 110, 0.2);
 }
 
 .stats-grid {
@@ -367,7 +394,8 @@ body {
 h2 {
   margin: 0 0 12px;
   font-size: 24px;
-  color: #166347;
+  color: #0f5a3e;
+  text-shadow: 0 2px 7px rgba(15, 90, 62, 0.16);
   padding: 8px 10px;
   border-left: 4px solid #2a9d70;
   background: #eef9f3;
