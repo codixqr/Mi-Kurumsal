@@ -20,12 +20,14 @@ export default function MatchingPage() {
     setLoading(true);
     try {
       const [i, b, l] = await Promise.all([
-        apiClient.get('/investors'),
-        apiClient.get('/brands'),
-        apiClient.get('/locations')
+        apiClient.get('/investors?pageSize=500&page=1'),
+        apiClient.get('/brands?pageSize=500&page=1'),
+        apiClient.get('/locations'),
       ]);
-      setInvestors(i);
-      setBrands(b);
+      const invList = Array.isArray(i) ? i : i.items || [];
+      setInvestors(invList);
+      const brandList = Array.isArray(b) ? b : b.items || [];
+      setBrands(brandList);
       setLocations(l);
     } catch (err) {
       console.error(err);
@@ -51,11 +53,13 @@ export default function MatchingPage() {
         let score = 0;
         let reasons = [];
 
-        // Budget match
-        if (inv.budget >= brand.minBudget && inv.budget <= brand.maxBudget) {
+        const invMin = inv.budgetMin ?? inv.budget ?? 0;
+        const invMax = inv.budgetMax ?? inv.budget ?? invMin;
+        // Budget overlap with brand range
+        if (invMax >= brand.minBudget && invMin <= brand.maxBudget) {
           score += 40;
           reasons.push("Bütçe Uyumu");
-        } else if (inv.budget > brand.maxBudget) {
+        } else if (invMin > brand.maxBudget) {
           score += 20;
           reasons.push("Yüksek Bütçe Potansiyeli");
         }
@@ -94,7 +98,16 @@ export default function MatchingPage() {
             <label>Yatırımcıya Göre Ara</label>
             <select value={filters.investorId} onChange={e => setFilters({...filters, investorId: e.target.value})}>
               <option value="">-- Yatırımcı Seçin --</option>
-              {investors.map(i => <option key={i.id} value={i.id}>{i.name} ({i.budget?.toLocaleString()} {i.currency})</option>)}
+              {investors.map((inv) => {
+                const lo = inv.budgetMin ?? inv.budget;
+                const hi = inv.budgetMax ?? inv.budget;
+                const range = lo === hi ? `${lo?.toLocaleString?.() ?? lo}` : `${lo?.toLocaleString?.() ?? lo}–${hi?.toLocaleString?.() ?? hi}`;
+                return (
+                  <option key={inv.id} value={inv.id}>
+                    {inv.name} ({range} {inv.currency})
+                  </option>
+                );
+              })}
             </select>
           </div>
           <div className="field">

@@ -11,6 +11,7 @@ export default function DashboardPage() {
     strongMatches: 0
   });
   const [followUps, setFollowUps] = useState([]);
+  const [staleHot, setStaleHot] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [brands, setBrands] = useState([]);
 
@@ -19,15 +20,23 @@ export default function DashboardPage() {
       try {
         const s = await apiClient.get('/dashboard/stats');
         setStats(s);
-        
-        const i = await apiClient.get('/investors');
-        setFollowUps(i.filter(inv => inv.followUpDate).slice(0, 5));
-        
+        const rawFollow = s.investorFollowUps || [];
+        setFollowUps(
+          rawFollow.slice(0, 5).map((r) => ({
+            id: r.id,
+            name: r.name,
+            followUpDate: r.follow_up_date,
+            priority: r.priority,
+          })),
+        );
+        setStaleHot((s.investorStaleHot || []).slice(0, 5));
+
         const t = await apiClient.get('/tasks');
         setTasks(t.filter(task => task.status !== 'Tamamlandı').slice(0, 5));
         
-        const b = await apiClient.get('/brands');
-        setBrands(b.filter(brand => brand.active).slice(0, 5));
+        const b = await apiClient.get('/brands?pageSize=50&page=1');
+        const brandList = Array.isArray(b) ? b : b.items || [];
+        setBrands(brandList.filter((brand) => brand.active).slice(0, 5));
       } catch (err) {
         console.error('Dashboard veri çekme hatası:', err);
       }
@@ -70,12 +79,29 @@ export default function DashboardPage() {
         <article className="card dashboard-card">
           <h3>Yaklaşan Takipler</h3>
           <ul className="dashboard-list">
-            {followUps.map(inv => (
+            {followUps.map((inv) => (
               <li key={inv.id}>
-                <strong>{inv.name}</strong> - {new Date(inv.followUpDate).toLocaleDateString('tr-TR')}
+                <strong>{inv.name}</strong> — {inv.followUpDate ? new Date(inv.followUpDate).toLocaleDateString('tr-TR') : '—'}
+                {inv.priority ? ` (${inv.priority})` : ''}
               </li>
             ))}
             {followUps.length === 0 && <li>Yakın zamanda takip yok.</li>}
+          </ul>
+        </article>
+
+        <article className="card dashboard-card">
+          <h3>Sıcak yatırımcı uyarıları</h3>
+          <p className="dashboard-muted" style={{ fontSize: '0.85rem', color: '#64748b', marginTop: 0 }}>
+            7 gündür işlem yapılmayan yüksek öncelikli kayıtlar
+          </p>
+          <ul className="dashboard-list">
+            {staleHot.map((inv) => (
+              <li key={inv.id}>
+                <strong>{inv.name}</strong>
+                {inv.priority ? ` — ${inv.priority}` : ''}
+              </li>
+            ))}
+            {staleHot.length === 0 && <li>Uyarı gerektiren kayıt yok.</li>}
           </ul>
         </article>
 

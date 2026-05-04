@@ -59,6 +59,7 @@ export default function PnlPage() {
   const [importPreview, setImportPreview] = useState(null);
   const [importMappings, setImportMappings] = useState({});
   const [importing, setImporting] = useState(false);
+  const [annualYear, setAnnualYear] = useState(String(new Date().getFullYear()));
 
   const buildQuery = useCallback(() => {
     const p = new URLSearchParams();
@@ -176,6 +177,54 @@ export default function PnlPage() {
     setShowPerForm(true);
   };
 
+  const copyRevenueToManual = async (r) => {
+    await apiClient.post('/pnl/revenues', {
+      entryDate: r.entry_date?.split('T')[0] || new Date().toISOString().split('T')[0],
+      branch: r.branch,
+      revenueType: r.revenue_type,
+      description: `${r.description || ''} (Excel kopyası)`.trim(),
+      amount: r.amount,
+      monthName: r.month_name,
+      yearValue: r.year_value,
+      source: 'Manuel',
+    });
+    await loadRevenues();
+    await loadSummary();
+  };
+
+  const copyExpenseToManual = async (r) => {
+    await apiClient.post('/pnl/expenses', {
+      entryDate: r.entry_date?.split('T')[0] || new Date().toISOString().split('T')[0],
+      branch: r.branch,
+      category: r.category,
+      subCategory: r.sub_category || '',
+      description: `${r.description || ''} (Excel kopyası)`.trim(),
+      amount: r.amount,
+      monthName: r.month_name,
+      yearValue: r.year_value,
+      source: 'Manuel',
+    });
+    await loadExpenses();
+    await loadSummary();
+  };
+
+  const copyPersonnelToManual = async (r) => {
+    await apiClient.post('/pnl/personnel', {
+      entryDate: r.entry_date?.split('T')[0] || new Date().toISOString().split('T')[0],
+      branch: r.branch,
+      personName: r.person_name,
+      position: r.position || '',
+      salary: r.salary,
+      bonus: r.bonus,
+      deduction: r.deduction,
+      monthName: r.month_name,
+      yearValue: r.year_value,
+      source: 'Manuel',
+    });
+    await loadPersonnel();
+    await loadSummary();
+  };
+
   // Excel Import
   const handleImportPreview = async () => {
     if (!importFile) return alert('Lütfen bir Excel dosyası seçiniz.');
@@ -210,6 +259,7 @@ export default function PnlPage() {
       sheet.recognized?.forEach(r => rows.push({ ...r, entryDate: new Date().toISOString().split('T')[0] }));
       sheet.unmapped?.forEach(r => {
         const m = importMappings[r.label] || { category: 'Diğer', type: 'expense' };
+        if (m.category === 'Atla') return;
         rows.push({ ...r, category: m.category, type: m.type, entryDate: new Date().toISOString().split('T')[0] });
         mappingsToSave.push({ label: r.label, category: m.category, type: m.type });
       });
@@ -258,6 +308,35 @@ export default function PnlPage() {
       ))}
     </div>
   );
+
+  const monthToIndex = (monthName) => MONTHS.indexOf(monthName);
+  const sortedMonthly = [...monthlySummaries].sort((a, b) => {
+    if (a.yearValue !== b.yearValue) return b.yearValue - a.yearValue;
+    return monthToIndex(b.monthName) - monthToIndex(a.monthName);
+  });
+  const currentPeriod = filterMonth
+    ? sortedMonthly.find((x) => x.monthName === filterMonth && String(x.yearValue) === String(filterYear))
+    : sortedMonthly[0];
+  const previousPeriod = currentPeriod
+    ? sortedMonthly.find((x) => {
+        if (x.yearValue < currentPeriod.yearValue) return true;
+        if (x.yearValue === currentPeriod.yearValue && monthToIndex(x.monthName) < monthToIndex(currentPeriod.monthName)) return true;
+        return false;
+      })
+    : null;
+  const periodDiff = currentPeriod && previousPeriod
+    ? {
+        revenue: currentPeriod.revenue - previousPeriod.revenue,
+        expense: currentPeriod.expense - previousPeriod.expense,
+        netProfit: currentPeriod.netProfit - previousPeriod.netProfit,
+      }
+    : null;
+  const annualRows = monthlySummaries.filter((x) => String(x.yearValue) === String(annualYear));
+  const annualSummary = {
+    revenue: annualRows.reduce((s, x) => s + Number(x.revenue || 0), 0),
+    expense: annualRows.reduce((s, x) => s + Number(x.expense || 0), 0),
+    netProfit: annualRows.reduce((s, x) => s + Number(x.netProfit || 0), 0),
+  };
 
   return (
     <section className="card page-section active">
@@ -310,6 +389,19 @@ export default function PnlPage() {
                 {summaryCard('Gıda Maliyeti', pct(summary.foodRatio), 'Gıda / Ciro', '#0891b2')}
               </div>
 
+              {periodDiff && currentPeriod && previousPeriod && (
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                  <h3 style={{ margin: '0 0 10px', color: '#0f172a', fontSize: 14 }}>
+                    Önceki Ay Karşılaştırması ({currentPeriod.monthName} {currentPeriod.yearValue} ↔ {previousPeriod.monthName} {previousPeriod.yearValue})
+                  </h3>
+                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13 }}>
+                    <span style={{ color: periodDiff.revenue >= 0 ? '#16a34a' : '#dc2626' }}>Ciro Farkı: {periodDiff.revenue >= 0 ? '+' : ''}{fmt(periodDiff.revenue)} TL</span>
+                    <span style={{ color: periodDiff.expense <= 0 ? '#16a34a' : '#dc2626' }}>Gider Farkı: {periodDiff.expense >= 0 ? '+' : ''}{fmt(periodDiff.expense)} TL</span>
+                    <span style={{ color: periodDiff.netProfit >= 0 ? '#16a34a' : '#dc2626' }}>Net Kar Farkı: {periodDiff.netProfit >= 0 ? '+' : ''}{fmt(periodDiff.netProfit)} TL</span>
+                  </div>
+                </div>
+              )}
+
               {/* Expense Breakdown Chart */}
               {summary.expenseByCategory?.length > 0 && (
                 <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 20, marginBottom: 20 }}>
@@ -352,6 +444,23 @@ export default function PnlPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 20, marginTop: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 style={{ margin: 0, color: '#16a34a', fontSize: 15 }}>Yıllık Toplam Rapor</h3>
+              <input
+                type="number"
+                value={annualYear}
+                onChange={(e) => setAnnualYear(e.target.value)}
+                style={{ width: 100, padding: '4px 8px' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              {summaryCard(`${annualYear} Ciro`, `${fmt(annualSummary.revenue)} TL`, 'Yıllık toplam', '#16a34a')}
+              {summaryCard(`${annualYear} Gider`, `${fmt(annualSummary.expense)} TL`, 'Yıllık toplam', '#dc2626')}
+              {summaryCard(`${annualYear} Net Kar`, `${annualSummary.netProfit >= 0 ? '+' : ''}${fmt(annualSummary.netProfit)} TL`, 'Yıllık toplam', annualSummary.netProfit >= 0 ? '#16a34a' : '#dc2626')}
             </div>
           </div>
         </div>
@@ -411,8 +520,14 @@ export default function PnlPage() {
                     <td style={{ color: '#16a34a', fontWeight: 600 }}>{fmt(r.amount)} TL</td>
                     <td><span style={{ background: r.source === 'Excel' ? '#dbeafe' : '#dcfce7', color: r.source === 'Excel' ? '#1d4ed8' : '#166534', borderRadius: 5, padding: '1px 7px', fontSize: 11 }}>{r.source}</span></td>
                     <td>
-                      <button className="edit-btn" onClick={() => startEditRev(r)}>Düzenle</button>
-                      <button className="danger-btn" onClick={() => deleteRev(r.id)}>Sil</button>
+                      {r.source === 'Excel' ? (
+                        <button className="secondary-btn" onClick={() => copyRevenueToManual(r)}>Kopyala ve Düzenle</button>
+                      ) : (
+                        <>
+                          <button className="edit-btn" onClick={() => startEditRev(r)}>Düzenle</button>
+                          <button className="danger-btn" onClick={() => deleteRev(r.id)}>Sil</button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -478,10 +593,10 @@ export default function PnlPage() {
 
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Tarih</th><th>Şube</th><th>Ay/Yıl</th><th>Kategori</th><th>Alt Kategori</th><th>Açıklama</th><th>Tutar</th><th>Kaynak</th><th>İşlem</th></tr></thead>
+              <thead><tr><th>Tarih</th><th>Şube</th><th>Ay/Yıl</th><th>Kategori</th><th>Alt Kategori</th><th>Açıklama</th><th>Tutar</th><th>Ciroya Oranı</th><th>Kaynak</th><th>İşlem</th></tr></thead>
               <tbody>
                 {expenses.length === 0 ? (
-                  <tr><td colSpan={9} style={{ textAlign: 'center', color: '#888' }}>Kayıt bulunamadı.</td></tr>
+                  <tr><td colSpan={10} style={{ textAlign: 'center', color: '#888' }}>Kayıt bulunamadı.</td></tr>
                 ) : expenses.map(r => (
                   <tr key={r.id}>
                     <td>{r.entry_date?.split('T')[0]}</td>
@@ -491,10 +606,17 @@ export default function PnlPage() {
                     <td>{r.sub_category || '-'}</td>
                     <td>{r.description || '-'}</td>
                     <td style={{ color: '#dc2626', fontWeight: 600 }}>{fmt(r.amount)} TL</td>
+                    <td>{summary?.totalRevenue > 0 ? pct((Number(r.amount) / Number(summary.totalRevenue)) * 100) : '%0.0'}</td>
                     <td><span style={{ background: r.source === 'Excel' ? '#dbeafe' : '#f0fdf4', color: r.source === 'Excel' ? '#1d4ed8' : '#166534', borderRadius: 5, padding: '1px 7px', fontSize: 11 }}>{r.source}</span></td>
                     <td>
-                      <button className="edit-btn" onClick={() => startEditExp(r)}>Düzenle</button>
-                      <button className="danger-btn" onClick={() => deleteExp(r.id)}>Sil</button>
+                      {r.source === 'Excel' ? (
+                        <button className="secondary-btn" onClick={() => copyExpenseToManual(r)}>Kopyala ve Düzenle</button>
+                      ) : (
+                        <>
+                          <button className="edit-btn" onClick={() => startEditExp(r)}>Düzenle</button>
+                          <button className="danger-btn" onClick={() => deleteExp(r.id)}>Sil</button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -566,8 +688,14 @@ export default function PnlPage() {
                     <td style={{ fontWeight: 700, color: '#ea580c' }}>{fmt(r.total_cost)} TL</td>
                     <td><span style={{ background: r.source === 'Excel' ? '#dbeafe' : '#fff7ed', color: r.source === 'Excel' ? '#1d4ed8' : '#9a3412', borderRadius: 5, padding: '1px 7px', fontSize: 11 }}>{r.source}</span></td>
                     <td>
-                      <button className="edit-btn" onClick={() => startEditPer(r)}>Düzenle</button>
-                      <button className="danger-btn" onClick={() => deletePer(r.id)}>Sil</button>
+                      {r.source === 'Excel' ? (
+                        <button className="secondary-btn" onClick={() => copyPersonnelToManual(r)}>Kopyala ve Düzenle</button>
+                      ) : (
+                        <>
+                          <button className="edit-btn" onClick={() => startEditPer(r)}>Düzenle</button>
+                          <button className="danger-btn" onClick={() => deletePer(r.id)}>Sil</button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}

@@ -250,10 +250,14 @@ async function triggerAutomation(eventName, payload) {
 }
 
 function mapInvestor(row) {
+  const bmin = row.budget_min != null ? Number(row.budget_min) : null;
+  const bmax = row.budget_max != null ? Number(row.budget_max) : null;
   return {
     id: row.id,
     name: row.name,
     budget: Number(row.budget),
+    budgetMin: bmin != null && !Number.isNaN(bmin) ? bmin : Number(row.budget),
+    budgetMax: bmax != null && !Number.isNaN(bmax) ? bmax : Number(row.budget),
     currency: row.currency || "TRY",
     city: row.city,
     sector: row.sector,
@@ -265,8 +269,25 @@ function mapInvestor(row) {
     goal: row.goal || "",
     contactHistory: row.contact_history || "",
     meetingNotes: row.meeting_notes || "",
-    followUpDate: row.follow_up_date || "",
+    followUpDate: row.follow_up_date ? String(row.follow_up_date).split("T")[0] : "",
     documents: row.documents || [],
+    investorType: row.investor_type || "Bireysel",
+    contactPerson: row.contact_person || "",
+    whatsappPhone: row.whatsapp_phone || "",
+    targetCities: row.target_cities || "",
+    targetLocationType: row.target_location_type || "",
+    subSector: row.sub_sector || "",
+    investmentTiming: row.investment_timing || "",
+    financingStatus: row.financing_status || "",
+    priority: row.priority || "Orta",
+    leadSource: row.lead_source || "",
+    assignedMemberId: row.assigned_member_id || null,
+    lastMeetingDate: row.last_meeting_date ? String(row.last_meeting_date).split("T")[0] : "",
+    nextAction: row.next_action || "",
+    notes: row.notes || "",
+    lastActivityAt: row.last_activity_at || row.created_at || null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -296,6 +317,36 @@ function mapBrand(row) {
     onboardingSteps: row.onboarding_steps || [],
     kpiTargets: row.kpi_targets || "",
     brandNotes: row.brand_notes || "",
+    subSector: row.sub_sector || "",
+    whatsappPhone: row.whatsapp_phone || "",
+    email: row.email || "",
+    website: row.website || "",
+    brandType: row.brand_type || "",
+    targetRegions: row.target_regions || "",
+    locationType: row.location_type || "",
+    storefrontNeed: row.storefront_need || "",
+    chimneyNeed: row.chimney_need || "",
+    techInfrastructure: row.tech_infrastructure || "",
+    staffNeed: row.staff_need || "",
+    adContributionPct: row.ad_contribution_pct != null ? Number(row.ad_contribution_pct) : null,
+    avgMonthlyRevenue: row.avg_monthly_revenue != null ? Number(row.avg_monthly_revenue) : null,
+    profitMarginPct: row.profit_margin_pct != null ? Number(row.profit_margin_pct) : null,
+    paybackMonths: row.payback_months != null ? Number(row.payback_months) : null,
+    presentationUrl: row.presentation_url || "",
+    logoUrl: row.logo_url || "",
+    contractDraftUrl: row.contract_draft_url || "",
+    documents: row.documents || [],
+    givesFranchise: row.gives_franchise !== false,
+    hasRoyalty: row.has_royalty !== false,
+    scoreOperation: row.score_operation != null ? Number(row.score_operation) : null,
+    scoreFranchiseFit: row.score_franchise_fit != null ? Number(row.score_franchise_fit) : null,
+    scoreLocationFlex: row.score_location_flex != null ? Number(row.score_location_flex) : null,
+    scoreInvestorInterest: row.score_investor_interest != null ? Number(row.score_investor_interest) : null,
+    scoreProfitability: row.score_profitability != null ? Number(row.score_profitability) : null,
+    scoreGrowth: row.score_growth != null ? Number(row.score_growth) : null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    matchingEligible: row.active === true && String(row.agreement_status || "") === "Anlaşmalı",
   };
 }
 
@@ -333,6 +384,8 @@ function mapProject(row) {
     dueDate: row.due_date,
     description: row.description || "",
     checklist: row.checklist || [],
+    investorId: row.investor_id || null,
+    brandId: row.brand_id || null,
   };
 }
 
@@ -345,6 +398,8 @@ function mapTask(row) {
     assigneeName: row.assignee_name || "",
     priority: row.priority || "Orta",
     dueDate: row.due_date || null,
+    investorId: row.investor_id || null,
+    brandId: row.brand_id || null,
   };
 }
 
@@ -377,6 +432,8 @@ function mapContract(row) {
     fileData: row.file_data || "",
     fileUrl: row.file_url || "",
     fileMimeType: row.file_mime_type || "",
+    investorId: row.investor_id || null,
+    brandId: row.brand_id || null,
   };
 }
 
@@ -436,6 +493,36 @@ async function initDb() {
   await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS onboarding_steps TEXT[] NOT NULL DEFAULT '{}'");
   await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS kpi_targets TEXT");
   await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS brand_notes TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS sub_sector TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS whatsapp_phone TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS email TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS website TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS brand_type TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS target_regions TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS location_type TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS storefront_need TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS chimney_need TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS tech_infrastructure TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS staff_need TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS ad_contribution_pct NUMERIC(6,2)");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS avg_monthly_revenue BIGINT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS profit_margin_pct NUMERIC(6,2)");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS payback_months INTEGER");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS presentation_url TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS logo_url TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS contract_draft_url TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS documents TEXT[] NOT NULL DEFAULT '{}'");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS gives_franchise BOOLEAN NOT NULL DEFAULT TRUE");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS has_royalty BOOLEAN NOT NULL DEFAULT TRUE");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS score_operation INTEGER");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS score_franchise_fit INTEGER");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS score_location_flex INTEGER");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS score_investor_interest INTEGER");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS score_profitability INTEGER");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS score_growth INTEGER");
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL");
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'");
   await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS phone TEXT");
   await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS email TEXT");
@@ -477,6 +564,53 @@ async function initDb() {
   await pool.query("ALTER TABLE team_members ADD COLUMN IF NOT EXISTS user_id INTEGER");
   await pool.query("CREATE TABLE IF NOT EXISTS team_members (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT, phone TEXT, department TEXT, role_name TEXT NOT NULL DEFAULT 'Temsilci', permissions TEXT[] NOT NULL DEFAULT '{}', active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW())");
   await pool.query("CREATE TABLE IF NOT EXISTS app_settings (id SERIAL PRIMARY KEY, setting_key TEXT UNIQUE NOT NULL, setting_value JSONB NOT NULL DEFAULT '{}'::jsonb, updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL, updated_at TIMESTAMP NOT NULL DEFAULT NOW())");
+
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS investor_type TEXT NOT NULL DEFAULT 'Bireysel'");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS contact_person TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS whatsapp_phone TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS target_cities TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS target_location_type TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS sub_sector TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS budget_min BIGINT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS budget_max BIGINT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS investment_timing TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS financing_status TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS priority TEXT NOT NULL DEFAULT 'Orta'");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS lead_source TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS assigned_member_id INTEGER");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS last_meeting_date DATE");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS next_action TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS notes TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS last_activity_at TIMESTAMP NOT NULL DEFAULT NOW()");
+  await pool.query("UPDATE investors SET budget_min = budget, budget_max = budget WHERE budget_min IS NULL AND budget_max IS NULL");
+
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS investor_id INTEGER REFERENCES investors(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS investor_id INTEGER REFERENCES investors(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS investor_id INTEGER REFERENCES investors(id) ON DELETE SET NULL");
+
+  await pool.query(`CREATE TABLE IF NOT EXISTS investor_meetings (
+    id SERIAL PRIMARY KEY,
+    investor_id INTEGER NOT NULL REFERENCES investors(id) ON DELETE CASCADE,
+    meeting_type TEXT NOT NULL,
+    meeting_date DATE NOT NULL,
+    met_by TEXT,
+    met_by_member_id INTEGER,
+    notes TEXT,
+    next_action TEXT,
+    reminder_date DATE,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS investor_brand_matches (
+    id SERIAL PRIMARY KEY,
+    investor_id INTEGER NOT NULL REFERENCES investors(id) ON DELETE CASCADE,
+    brand_id INTEGER NOT NULL REFERENCES brands(id) ON DELETE CASCADE,
+    score NUMERIC(10,2),
+    notes TEXT,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    UNIQUE(investor_id, brand_id)
+  )`);
 }
 
 async function seedDefaultDataIfNeeded() {
@@ -943,13 +1077,13 @@ app.get("/api/admin/seed", authMiddleware, requireAdmin, async (req, res) => {
 
     // 4. Seed Brands
     await pg.query(`
-      INSERT INTO brands(name, sector, min_budget, max_budget, min_sqm, max_sqm, target_locations, active, monthly_growth)
+      INSERT INTO brands(name, sector, min_budget, max_budget, currency, min_sqm, max_sqm, target_locations, active, monthly_growth, agreement_status, location_type)
       VALUES 
-      ('Burger Master', 'Gıda', 3000000, 6000000, 80, 200, 'AVM, Cadde', true, 12),
-      ('Glow Beauty', 'Kozmetik', 1500000, 3000000, 40, 100, 'Cadde', true, 8),
-      ('EduPlay', 'Eğitim', 5000000, 12000000, 300, 800, 'Merkezi Lokasyon', true, 15),
-      ('AutoCheck', 'Otomotiv', 4000000, 8000000, 500, 1500, 'Sanayi, Ana Yol', true, 5),
-      ('Pizzasimo', 'Gıda', 2000000, 4500000, 60, 120, 'AVM, Cadde', true, 10)
+      ('Burger Master', 'Gıda', 3000000, 6000000, 'TRY', 80, 200, 'İstanbul, Ankara', true, 12, 'Anlaşmalı', 'AVM'),
+      ('Glow Beauty', 'Kozmetik', 1500000, 3000000, 'TRY', 40, 100, 'Ankara, İzmir', true, 8, 'Anlaşmalı', 'Cadde'),
+      ('EduPlay', 'Eğitim', 5000000, 12000000, 'TRY', 300, 800, 'İstanbul', true, 15, 'Anlaşmalı', 'AVM'),
+      ('AutoCheck', 'Otomotiv', 4000000, 8000000, 'TRY', 500, 1500, 'Bursa, Kocaeli', true, 5, 'Görüşülüyor', 'Sanayi'),
+      ('Pizzasimo', 'Gıda', 2000000, 4500000, 'TRY', 60, 120, 'AVM, Cadde', true, 10, 'Beklemede', 'AVM')
     `);
 
     // 5. Seed Locations
@@ -1041,49 +1175,434 @@ app.get("/api/dashboard", authMiddleware, async (req, res) => {
   });
 });
 
+function investorDateOrNull(v) {
+  if (v === undefined || v === null || String(v).trim() === "") return null;
+  return String(v).split("T")[0];
+}
+
+function investorRowFromBody(body) {
+  const b = body || {};
+  const type = b.type || b.investmentType || "Franchise";
+  const pipeline = b.pipeline || b.pipelineStage || "Yeni Lead";
+  const bMin = Number(b.budgetMin ?? b.budget_min ?? NaN);
+  const bMax = Number(b.budgetMax ?? b.budget_max ?? NaN);
+  const legacyBudget = Number(b.budget ?? NaN);
+  const budgetMin = Number.isFinite(bMin) ? bMin : Number.isFinite(legacyBudget) ? legacyBudget : 0;
+  const budgetMax = Number.isFinite(bMax) ? bMax : Number.isFinite(legacyBudget) ? legacyBudget : budgetMin;
+  const budget = Math.max(budgetMin, budgetMax, legacyBudget || 0, 0);
+  const rawAssign = b.assignedMemberId ?? b.assigned_member_id;
+  const assignId =
+    rawAssign === "" || rawAssign === undefined || rawAssign === null ? null : Number(rawAssign);
+  return {
+    name: b.name,
+    budget,
+    budgetMin,
+    budgetMax,
+    currency: b.currency || "TRY",
+    city: b.city,
+    sector: b.sector,
+    investment_type: type,
+    pipeline_stage: pipeline,
+    phone: b.phone || null,
+    email: b.email || null,
+    district: b.district || null,
+    goal: b.goal || null,
+    contact_history: b.contactHistory || b.contact_history || null,
+    meeting_notes: b.meetingNotes || b.meeting_notes || null,
+    follow_up_date: investorDateOrNull(b.followUpDate || b.follow_up_date),
+    documents: Array.isArray(b.documents) ? b.documents : [],
+    investor_type: b.investorType || b.investor_type || "Bireysel",
+    contact_person: b.contactPerson || b.contact_person || null,
+    whatsapp_phone: b.whatsappPhone || b.whatsapp_phone || null,
+    target_cities: b.targetCities || b.target_cities || null,
+    target_location_type: b.targetLocationType || b.target_location_type || null,
+    sub_sector: b.subSector || b.sub_sector || null,
+    investment_timing: b.investmentTiming || b.investment_timing || null,
+    financing_status: b.financingStatus || b.financing_status || null,
+    priority: b.priority || "Orta",
+    lead_source: b.leadSource || b.lead_source || null,
+    assigned_member_id: Number.isFinite(assignId) ? assignId : null,
+    last_meeting_date: investorDateOrNull(b.lastMeetingDate || b.last_meeting_date),
+    next_action: b.nextAction || b.next_action || null,
+    notes: b.notes || null,
+  };
+}
+
+async function computeInvestorKpis() {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+  const activeStages = ["Yeni Lead", "İlk Temas", "İhtiyaç Analizi", "Marka Eşleşmesi", "Sunum", "Lokasyon Çalışması", "Teklif", "Sözleşme"];
+  const [total, newLeads, active, hot, closedMonth, avgBudget] = await Promise.all([
+    pool.query("SELECT COUNT(*)::int AS c FROM investors"),
+    pool.query("SELECT COUNT(*)::int AS c FROM investors WHERE pipeline_stage = $1", ["Yeni Lead"]),
+    pool.query(`SELECT COUNT(*)::int AS c FROM investors WHERE pipeline_stage = ANY($1::text[])`, [activeStages]),
+    pool.query(`SELECT COUNT(*)::int AS c FROM investors WHERE priority IN ('Yüksek','Çok sıcak')`),
+    pool.query(
+      `SELECT COUNT(*)::int AS c FROM investors WHERE pipeline_stage = 'Kapanış' AND updated_at >= $1::date`,
+      [monthStart],
+    ),
+    pool.query(
+      `SELECT COALESCE(AVG(
+        CASE WHEN budget_max IS NOT NULL AND budget_min IS NOT NULL THEN (budget_min::numeric + budget_max::numeric)/2
+        ELSE budget::numeric END
+      )),0)::numeric AS a FROM investors`,
+    ),
+  ]);
+  return {
+    total: total.rows[0].c,
+    newLeads: newLeads.rows[0].c,
+    activePipeline: active.rows[0].c,
+    hotInvestors: hot.rows[0].c,
+    closedThisMonth: closedMonth.rows[0].c,
+    avgBudget: Number(avgBudget.rows[0].a || 0),
+  };
+}
+
+async function investorReminders() {
+  const today = new Date().toISOString().split("T")[0];
+  const staleDate = new Date(Date.now() - 7 * 86400000).toISOString();
+  const follow = await pool.query(
+    `SELECT id,name,follow_up_date,priority FROM investors
+     WHERE follow_up_date IS NOT NULL AND follow_up_date <= $1::date
+     ORDER BY follow_up_date ASC LIMIT 50`,
+    [today],
+  );
+  const stale = await pool.query(
+    `SELECT id,name,priority,last_activity_at,created_at FROM investors
+     WHERE priority IN ('Yüksek','Çok sıcak')
+     AND COALESCE(last_activity_at, created_at) < $1::timestamptz
+     ORDER BY COALESCE(last_activity_at, created_at) ASC LIMIT 50`,
+    [staleDate],
+  );
+  return { followUpDue: follow.rows, staleHot: stale.rows };
+}
+
+function brandOnboardingFromBody(b) {
+  const raw = b.onboardingSteps ?? b.onboarding_steps;
+  if (Array.isArray(raw)) return raw.map(String).filter(Boolean);
+  if (typeof raw === "string") return raw.split("\n").map((s) => s.trim()).filter(Boolean);
+  return [];
+}
+
+function brandWriteValues(body) {
+  const b = body || {};
+  const steps = brandOnboardingFromBody(b);
+  const docs = Array.isArray(b.documents) ? b.documents.map(String) : [];
+  const n = (v) => (v === "" || v === undefined || v === null ? null : Number(v));
+  return [
+    b.name,
+    b.sector,
+    Number(b.minBudget ?? 0),
+    Number(b.maxBudget ?? 0),
+    b.currency || "TRY",
+    Number(b.minSqm ?? 0),
+    Number(b.maxSqm ?? 0),
+    b.targetLocations ?? b.target_locations ?? "",
+    b.active !== false,
+    Number(b.monthlyGrowth ?? 0),
+    b.agreementStatus ?? b.agreement_status ?? null,
+    n(b.franchiseFee),
+    n(b.royaltyRate),
+    n(b.contractTermMonths),
+    n(b.initialInvestment),
+    n(b.branchCount),
+    b.contactPerson || null,
+    b.contactPhone || null,
+    b.businessPlan || null,
+    b.operationPlan || null,
+    steps,
+    b.kpiTargets || null,
+    b.brandNotes || null,
+    b.subSector || null,
+    b.whatsappPhone || null,
+    b.email || null,
+    b.website || null,
+    b.brandType || null,
+    b.targetRegions || null,
+    b.locationType || null,
+    b.storefrontNeed || null,
+    b.chimneyNeed || null,
+    b.techInfrastructure || null,
+    b.staffNeed || null,
+    n(b.adContributionPct),
+    n(b.avgMonthlyRevenue),
+    n(b.profitMarginPct),
+    n(b.paybackMonths),
+    b.presentationUrl || null,
+    b.logoUrl || null,
+    b.contractDraftUrl || null,
+    docs,
+    b.givesFranchise !== false,
+    b.hasRoyalty !== false,
+    n(b.scoreOperation),
+    n(b.scoreFranchiseFit),
+    n(b.scoreLocationFlex),
+    n(b.scoreInvestorInterest),
+    n(b.scoreProfitability),
+    n(b.scoreGrowth),
+  ];
+}
+
+async function computeBrandKpis() {
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
+  const [total, activeAgreed, inDiscussion, passive, avgInv, newMonth] = await Promise.all([
+    pool.query("SELECT COUNT(*)::int AS c FROM brands"),
+    pool.query(
+      "SELECT COUNT(*)::int AS c FROM brands WHERE active = true AND COALESCE(agreement_status,'') = 'Anlaşmalı'",
+    ),
+    pool.query(
+      "SELECT COUNT(*)::int AS c FROM brands WHERE COALESCE(agreement_status,'') IN ('Görüşülüyor','Beklemede')",
+    ),
+    pool.query(
+      "SELECT COUNT(*)::int AS c FROM brands WHERE active = false OR COALESCE(agreement_status,'') IN ('Pasif','Reddedildi')",
+    ),
+    pool.query(
+      "SELECT COALESCE(AVG((min_budget::numeric + max_budget::numeric) / 2), 0)::numeric AS a FROM brands WHERE min_budget IS NOT NULL AND max_budget IS NOT NULL",
+    ),
+    pool.query("SELECT COUNT(*)::int AS c FROM brands WHERE created_at::date >= $1::date", [monthStart]),
+  ]);
+  return {
+    total: total.rows[0].c,
+    activeAgreed: activeAgreed.rows[0].c,
+    inDiscussion: inDiscussion.rows[0].c,
+    passive: passive.rows[0].c,
+    avgInvestment: Number(avgInv.rows[0].a || 0),
+    newThisMonth: newMonth.rows[0].c,
+  };
+}
+
 app.get("/api/investors", authMiddleware, async (req, res) => {
-  const result = await pool.query("SELECT * FROM investors ORDER BY id DESC");
-  res.json(result.rows.map(mapInvestor));
+  const q = req.query || {};
+  const page = Math.max(1, Number(q.page) || 1);
+  const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 20));
+  const offset = (page - 1) * pageSize;
+  const sortMap = {
+    name: "i.name",
+    budget: "i.budget",
+    city: "i.city",
+    created_at: "i.created_at",
+    follow_up_date: "i.follow_up_date",
+    pipeline: "i.pipeline_stage",
+    priority: "i.priority",
+  };
+  const sortCol = sortMap[q.sort] || "i.created_at";
+  const order = String(q.order || "desc").toLowerCase() === "asc" ? "ASC" : "DESC";
+
+  const conds = ["1=1"];
+  const params = [];
+  const add = (sql, val) => {
+    params.push(val);
+    conds.push(`${sql}$${params.length}`);
+  };
+
+  if (q.q) {
+    params.push(`%${String(q.q)}%`);
+    conds.push(`(i.name ILIKE $${params.length} OR i.email ILIKE $${params.length} OR i.phone ILIKE $${params.length} OR i.city ILIKE $${params.length})`);
+  }
+  if (q.name) add("i.name ILIKE ", `%${q.name}%`);
+  if (q.phone) add("i.phone ILIKE ", `%${q.phone}%`);
+  if (q.email) add("i.email ILIKE ", `%${q.email}%`);
+  if (q.city) add("i.city ILIKE ", `%${q.city}%`);
+  if (q.district) add("i.district ILIKE ", `%${q.district}%`);
+  if (q.sector) add("i.sector ILIKE ", `%${q.sector}%`);
+  if (q.currency) add("i.currency = ", q.currency);
+  if (q.pipeline) add("i.pipeline_stage = ", q.pipeline);
+  if (q.priority) add("i.priority = ", q.priority);
+  if (q.investmentType) add("i.investment_type = ", q.investmentType);
+  if (q.assignedMemberId) add("i.assigned_member_id = ", Number(q.assignedMemberId));
+  if (q.budgetMin) add("COALESCE(i.budget_max, i.budget_min, i.budget) >= ", Number(q.budgetMin));
+  if (q.budgetMax) add("COALESCE(i.budget_min, i.budget_max, i.budget) <= ", Number(q.budgetMax));
+  if (q.followUpFrom) add("i.follow_up_date >= ", q.followUpFrom);
+  if (q.followUpTo) add("i.follow_up_date <= ", q.followUpTo);
+  if (q.createdFrom) add("i.created_at::date >= ", q.createdFrom);
+  if (q.createdTo) add("i.created_at::date <= ", q.createdTo);
+
+  const whereSql = conds.join(" AND ");
+  const countR = await pool.query(`SELECT COUNT(*)::int AS c FROM investors i WHERE ${whereSql}`, params);
+  const total = countR.rows[0].c;
+  const listParams = [...params, pageSize, offset];
+  const result = await pool.query(
+    `SELECT i.*, tm.name AS assigned_member_name
+     FROM investors i
+     LEFT JOIN team_members tm ON tm.id = i.assigned_member_id
+     WHERE ${whereSql}
+     ORDER BY ${sortCol} ${order}
+     LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    listParams,
+  );
+  const rows = result.rows.map((row) => {
+    const m = mapInvestor(row);
+    m.assignedMemberName = row.assigned_member_name || "";
+    return m;
+  });
+  const kpis = await computeInvestorKpis();
+  const reminders = await investorReminders();
+  res.json({ items: rows, total, page, pageSize, kpis, reminders });
+});
+
+app.post("/api/investors/bulk", authMiddleware, async (req, res) => {
+  const { ids = [], assignedMemberId, pipeline } = req.body || {};
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: "Seçim gerekli." });
+  }
+  if (assignedMemberId === undefined && !pipeline) {
+    return res.status(400).json({ message: "Atanan danışman veya pipeline gerekli." });
+  }
+  let updated = 0;
+  for (const id of ids) {
+    const sets = [];
+    const vals = [];
+    if (assignedMemberId !== undefined) {
+      vals.push(assignedMemberId === "" || assignedMemberId === null ? null : Number(assignedMemberId));
+      sets.push(`assigned_member_id=$${vals.length}`);
+    }
+    if (pipeline) {
+      vals.push(pipeline);
+      sets.push(`pipeline_stage=$${vals.length}`);
+    }
+    if (!sets.length) continue;
+    vals.push(id);
+    await pool.query(
+      `UPDATE investors SET ${sets.join(", ")}, last_activity_at=NOW(), updated_at=NOW() WHERE id=$${vals.length}`,
+      vals,
+    );
+    updated++;
+  }
+  res.json({ updated });
+});
+
+app.get("/api/investors/:id/detail", authMiddleware, async (req, res) => {
+  const inv = await pool.query(
+    `SELECT i.*, tm.name AS assigned_member_name FROM investors i
+     LEFT JOIN team_members tm ON tm.id = i.assigned_member_id WHERE i.id=$1`,
+    [req.params.id],
+  );
+  if (inv.rowCount === 0) return res.status(404).json({ message: "Bulunamadı." });
+  const investor = mapInvestor(inv.rows[0]);
+  investor.assignedMemberName = inv.rows[0].assigned_member_name || "";
+  const [meetings, matches, projects, tasks, contracts] = await Promise.all([
+    pool.query(
+      `SELECT m.*, u.name AS created_by_name FROM investor_meetings m
+       LEFT JOIN users u ON u.id = m.created_by WHERE m.investor_id=$1 ORDER BY m.meeting_date DESC, m.id DESC`,
+      [req.params.id],
+    ),
+    pool.query(
+      `SELECT ibm.*, b.name AS brand_name FROM investor_brand_matches ibm
+       JOIN brands b ON b.id = ibm.brand_id WHERE ibm.investor_id=$1 ORDER BY ibm.score DESC NULLS LAST`,
+      [req.params.id],
+    ),
+    pool.query(`SELECT * FROM projects WHERE investor_id=$1 ORDER BY id DESC`, [req.params.id]),
+    pool.query(`SELECT id,note,status,assignee_id,assignee_name,priority,due_date,investor_id FROM tasks WHERE investor_id=$1 ORDER BY id DESC`, [req.params.id]),
+    pool.query(`SELECT * FROM contracts WHERE investor_id=$1 ORDER BY id DESC`, [req.params.id]),
+  ]);
+  res.json({
+    investor,
+    meetings: meetings.rows,
+    brandMatches: matches.rows,
+    projects: projects.rows.map(mapProject),
+    tasks: tasks.rows.map(mapTask),
+    contracts: contracts.rows.map(mapContract),
+  });
+});
+
+app.post("/api/investors/:id/meetings", authMiddleware, async (req, res) => {
+  const b = req.body || {};
+  const inserted = await pool.query(
+    `INSERT INTO investor_meetings(investor_id,meeting_type,meeting_date,met_by,met_by_member_id,notes,next_action,reminder_date,created_by)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+    [
+      req.params.id,
+      b.meetingType || b.meeting_type || "Telefon",
+      b.meetingDate || b.meeting_date,
+      b.metBy || b.met_by || req.user.name || "",
+      b.metByMemberId || b.met_by_member_id || null,
+      b.notes || null,
+      b.nextAction || b.next_action || null,
+      b.reminderDate || b.reminder_date || null,
+      req.user.id,
+    ],
+  );
+  await pool.query(
+    `UPDATE investors SET last_meeting_date=$1, next_action=$2, last_activity_at=NOW(), updated_at=NOW() WHERE id=$3`,
+    [b.meetingDate || b.meeting_date, b.nextAction || b.next_action || null, req.params.id],
+  );
+  res.status(201).json(inserted.rows[0]);
+});
+
+app.post("/api/investors/:id/match-brands", authMiddleware, async (req, res) => {
+  const { matches = [] } = req.body || {};
+  if (!Array.isArray(matches) || matches.length === 0) {
+    return res.status(400).json({ message: "Eşleşme listesi boş." });
+  }
+  for (const m of matches) {
+    await pool.query(
+      `INSERT INTO investor_brand_matches(investor_id,brand_id,score,notes,created_by)
+       VALUES($1,$2,$3,$4,$5)
+       ON CONFLICT(investor_id, brand_id) DO UPDATE SET score=EXCLUDED.score, notes=EXCLUDED.notes`,
+      [req.params.id, m.brandId || m.brand_id, Number(m.score || 0), m.notes || null, req.user.id],
+    );
+  }
+  await pool.query(
+    `UPDATE investors SET pipeline_stage=CASE WHEN pipeline_stage IN ('Yeni Lead','İlk Temas') THEN 'Marka Eşleşmesi' ELSE pipeline_stage END,
+     last_activity_at=NOW(), updated_at=NOW() WHERE id=$1`,
+    [req.params.id],
+  );
+  await logActivity({
+    userId: req.user.id,
+    moduleName: "investors",
+    actionType: "update",
+    recordId: Number(req.params.id),
+    summary: "Marka eşleştirmesi kaydedildi",
+    afterData: { matches },
+  });
+  res.json({ saved: matches.length });
 });
 
 app.post("/api/investors", authMiddleware, async (req, res) => {
-  const {
-    name,
-    budget,
-    currency = "TRY",
-    city,
-    sector,
-    type,
-    pipeline,
-    phone = null,
-    email = null,
-    district = null,
-    goal = null,
-    contactHistory = null,
-    meetingNotes = null,
-    followUpDate = null,
-    documents = [],
-  } = req.body || {};
+  const r = investorRowFromBody(req.body);
   const inserted = await pool.query(
-    `INSERT INTO investors(name,budget,currency,city,sector,investment_type,pipeline_stage,phone,email,district,goal,contact_history,meeting_notes,follow_up_date,documents,created_by)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
+    `INSERT INTO investors(
+      name,budget,budget_min,budget_max,currency,city,sector,investment_type,pipeline_stage,
+      phone,email,district,goal,contact_history,meeting_notes,follow_up_date,documents,created_by,
+      investor_type,contact_person,whatsapp_phone,target_cities,target_location_type,sub_sector,
+      investment_timing,financing_status,priority,lead_source,assigned_member_id,last_meeting_date,next_action,notes,last_activity_at
+    ) VALUES(
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,
+      $19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,NOW()
+    ) RETURNING *`,
     [
-      name,
-      budget,
-      currency,
-      city,
-      sector,
-      type,
-      pipeline,
-      phone,
-      email,
-      district,
-      goal,
-      contactHistory,
-      meetingNotes,
-      followUpDate || null,
-      documents,
+      r.name,
+      r.budget,
+      r.budgetMin,
+      r.budgetMax,
+      r.currency,
+      r.city,
+      r.sector,
+      r.investment_type,
+      r.pipeline_stage,
+      r.phone,
+      r.email,
+      r.district,
+      r.goal,
+      r.contact_history,
+      r.meeting_notes,
+      r.follow_up_date,
+      r.documents,
       req.user.id,
+      r.investor_type,
+      r.contact_person,
+      r.whatsapp_phone,
+      r.target_cities,
+      r.target_location_type,
+      r.sub_sector,
+      r.investment_timing,
+      r.financing_status,
+      r.priority,
+      r.lead_source,
+      r.assigned_member_id,
+      r.last_meeting_date,
+      r.next_action,
+      r.notes,
     ],
   );
   const investor = mapInvestor(inserted.rows[0]);
@@ -1096,48 +1615,56 @@ app.post("/api/investors", authMiddleware, async (req, res) => {
     afterData: investor,
   });
   await triggerAutomation("Yeni Lead", { summary: `${investor.name} lead olarak eklendi`, investor });
+  await pool.query(
+    `INSERT INTO tasks(note,status,priority,due_date,investor_id) VALUES($1,'Açık','Orta', CURRENT_DATE + INTERVAL '1 day', $2)`,
+    [`İlk temas kur: ${investor.name}`, investor.id],
+  );
   res.status(201).json(investor);
 });
 
 app.put("/api/investors/:id", authMiddleware, async (req, res) => {
-  const {
-    name,
-    budget,
-    currency = "TRY",
-    city,
-    sector,
-    type,
-    pipeline,
-    phone = null,
-    email = null,
-    district = null,
-    goal = null,
-    contactHistory = null,
-    meetingNotes = null,
-    followUpDate = null,
-    documents = [],
-  } = req.body || {};
+  const r = investorRowFromBody(req.body);
   const before = await pool.query("SELECT * FROM investors WHERE id=$1", [req.params.id]);
   const updated = await pool.query(
-    `UPDATE investors
-     SET name=$1,budget=$2,currency=$3,city=$4,sector=$5,investment_type=$6,pipeline_stage=$7,phone=$8,email=$9,district=$10,goal=$11,contact_history=$12,meeting_notes=$13,follow_up_date=$14,documents=$15,updated_at=NOW()
-     WHERE id=$16 RETURNING *`,
+    `UPDATE investors SET
+      name=$1,budget=$2,budget_min=$3,budget_max=$4,currency=$5,city=$6,sector=$7,investment_type=$8,pipeline_stage=$9,
+      phone=$10,email=$11,district=$12,goal=$13,contact_history=$14,meeting_notes=$15,follow_up_date=$16,documents=$17,
+      investor_type=$18,contact_person=$19,whatsapp_phone=$20,target_cities=$21,target_location_type=$22,sub_sector=$23,
+      investment_timing=$24,financing_status=$25,priority=$26,lead_source=$27,assigned_member_id=$28,last_meeting_date=$29,next_action=$30,notes=$31,
+      last_activity_at=NOW(),updated_at=NOW()
+     WHERE id=$32 RETURNING *`,
     [
-      name,
-      budget,
-      currency,
-      city,
-      sector,
-      type,
-      pipeline,
-      phone,
-      email,
-      district,
-      goal,
-      contactHistory,
-      meetingNotes,
-      followUpDate || null,
-      documents,
+      r.name,
+      r.budget,
+      r.budgetMin,
+      r.budgetMax,
+      r.currency,
+      r.city,
+      r.sector,
+      r.investment_type,
+      r.pipeline_stage,
+      r.phone,
+      r.email,
+      r.district,
+      r.goal,
+      r.contact_history,
+      r.meeting_notes,
+      r.follow_up_date,
+      r.documents,
+      r.investor_type,
+      r.contact_person,
+      r.whatsapp_phone,
+      r.target_cities,
+      r.target_location_type,
+      r.sub_sector,
+      r.investment_timing,
+      r.financing_status,
+      r.priority,
+      r.lead_source,
+      r.assigned_member_id,
+      r.last_meeting_date,
+      r.next_action,
+      r.notes,
       req.params.id,
     ],
   );
@@ -1174,40 +1701,133 @@ app.delete("/api/investors/:id", authMiddleware, async (req, res) => {
 });
 
 app.get("/api/brands", authMiddleware, async (req, res) => {
-  const result = await pool.query("SELECT * FROM brands ORDER BY id DESC");
-  res.json(result.rows.map(mapBrand));
+  const q = req.query || {};
+  const page = Math.max(1, Number(q.page) || 1);
+  const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 20));
+  const offset = (page - 1) * pageSize;
+  const sortMap = {
+    name: "b.name",
+    sector: "b.sector",
+    min_budget: "b.min_budget",
+    max_budget: "b.max_budget",
+    created_at: "b.created_at",
+    agreement_status: "b.agreement_status",
+  };
+  const sortCol = sortMap[q.sort] || "b.created_at";
+  const order = String(q.order || "desc").toLowerCase() === "asc" ? "ASC" : "DESC";
+  const conds = ["1=1"];
+  const params = [];
+  const add = (sql, val) => {
+    params.push(val);
+    conds.push(`${sql}$${params.length}`);
+  };
+  if (q.q) {
+    params.push(`%${String(q.q)}%`);
+    conds.push(`(b.name ILIKE $${params.length} OR b.sector ILIKE $${params.length} OR COALESCE(b.sub_sector,'') ILIKE $${params.length})`);
+  }
+  if (q.name) add("b.name ILIKE ", `%${q.name}%`);
+  if (q.sector) add("b.sector ILIKE ", `%${q.sector}%`);
+  if (q.subSector) add("b.sub_sector ILIKE ", `%${q.subSector}%`);
+  if (q.targetCity) add("b.target_locations ILIKE ", `%${q.targetCity}%`);
+  if (q.budgetMin) add("b.max_budget >= ", Number(q.budgetMin));
+  if (q.budgetMax) add("b.min_budget <= ", Number(q.budgetMax));
+  if (q.locationType) add("b.location_type = ", q.locationType);
+  if (q.agreementStatus) add("b.agreement_status = ", q.agreementStatus);
+  if (q.active === "true" || q.active === true) add("b.active = ", true);
+  if (q.active === "false" || q.active === false) add("b.active = ", false);
+  if (q.givesFranchise === "true" || q.givesFranchise === true) add("b.gives_franchise = ", true);
+  if (q.givesFranchise === "false" || q.givesFranchise === false) add("b.gives_franchise = ", false);
+  if (q.hasRoyalty === "true" || q.hasRoyalty === true) add("b.has_royalty = ", true);
+  if (q.hasRoyalty === "false" || q.hasRoyalty === false) add("b.has_royalty = ", false);
+  if (q.createdFrom) add("b.created_at::date >= ", q.createdFrom);
+  if (q.createdTo) add("b.created_at::date <= ", q.createdTo);
+  const whereSql = conds.join(" AND ");
+  const countR = await pool.query(`SELECT COUNT(*)::int AS c FROM brands b WHERE ${whereSql}`, params);
+  const total = countR.rows[0].c;
+  const listParams = [...params, pageSize, offset];
+  const result = await pool.query(
+    `SELECT b.* FROM brands b WHERE ${whereSql} ORDER BY ${sortCol} ${order} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    listParams,
+  );
+  const rows = result.rows.map(mapBrand);
+  const kpis = await computeBrandKpis();
+  res.json({ items: rows, total, page, pageSize, kpis });
+});
+
+app.post("/api/brands/bulk", authMiddleware, async (req, res) => {
+  const { ids = [], agreementStatus, active } = req.body || {};
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: "ids zorunlu." });
+  }
+  const idList = ids.map((x) => Number(x)).filter((n) => Number.isFinite(n));
+  if (!idList.length) {
+    return res.status(400).json({ message: "Geçersiz id listesi." });
+  }
+  if (agreementStatus !== undefined && agreementStatus !== null && agreementStatus !== "") {
+    await pool.query(`UPDATE brands SET agreement_status=$1, updated_at=NOW() WHERE id = ANY($2::int[])`, [
+      agreementStatus,
+      idList,
+    ]);
+  }
+  if (active === true || active === false) {
+    await pool.query(`UPDATE brands SET active=$1, updated_at=NOW() WHERE id = ANY($2::int[])`, [active, idList]);
+  }
+  res.json({ ok: true, updated: idList.length });
+});
+
+app.get("/api/brands/:id/detail", authMiddleware, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    return res.status(400).json({ message: "Geçersiz id." });
+  }
+  const brandRow = await pool.query("SELECT * FROM brands WHERE id=$1", [id]);
+  if (brandRow.rowCount === 0) {
+    return res.status(404).json({ message: "Marka bulunamadı." });
+  }
+  const brand = mapBrand(brandRow.rows[0]);
+  const [matches, projects, contracts, tasks, agreements, locRows] = await Promise.all([
+    pool.query(
+      `SELECT ibm.*, i.name AS investor_name, i.city AS investor_city, i.sector AS investor_sector
+       FROM investor_brand_matches ibm JOIN investors i ON i.id = ibm.investor_id WHERE ibm.brand_id=$1 ORDER BY ibm.score DESC NULLS LAST`,
+      [id],
+    ),
+    pool.query("SELECT * FROM projects WHERE brand_id=$1 AND deleted_at IS NULL ORDER BY id DESC", [id]),
+    pool.query("SELECT * FROM contracts WHERE brand_id=$1 AND deleted_at IS NULL ORDER BY id DESC", [id]),
+    pool.query("SELECT * FROM tasks WHERE brand_id=$1 ORDER BY id DESC LIMIT 100", [id]),
+    pool.query("SELECT * FROM brand_agreements WHERE brand_id=$1 ORDER BY version_no DESC, created_at DESC", [id]),
+    pool.query(
+      `SELECT * FROM locations WHERE deleted_at IS NULL AND (
+        CAST($1 AS text) = ANY(recommended_brands) OR array_to_string(recommended_brands, ',') ILIKE '%' || $2 || '%'
+      ) ORDER BY id DESC LIMIT 50`,
+      [String(id), brand.name || ""],
+    ),
+  ]);
+  res.json({
+    brand,
+    investorMatches: matches.rows,
+    projects: projects.rows.map(mapProject),
+    contracts: contracts.rows.map(mapContract),
+    tasks: tasks.rows.map(mapTask),
+    agreements: agreements.rows,
+    locations: locRows.rows.map(mapLocation),
+  });
 });
 
 app.post("/api/brands", authMiddleware, async (req, res) => {
   const body = req.body || {};
+  const vals = brandWriteValues(body);
   const inserted = await pool.query(
-    `INSERT INTO brands(name,sector,min_budget,max_budget,currency,min_sqm,max_sqm,target_locations,active,monthly_growth,agreement_status,franchise_fee,royalty_rate,contract_term_months,initial_investment,branch_count,contact_person,contact_phone,business_plan,operation_plan,onboarding_steps,kpi_targets,brand_notes)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23) RETURNING *`,
-    [
-      body.name,
-      body.sector,
-      body.minBudget,
-      body.maxBudget,
-      body.currency || "TRY",
-      body.minSqm,
-      body.maxSqm,
-      body.targetLocations,
-      body.active,
-      body.monthlyGrowth,
-      body.agreementStatus || null,
-      body.franchiseFee || null,
-      body.royaltyRate || null,
-      body.contractTermMonths || null,
-      body.initialInvestment || null,
-      body.branchCount || null,
-      body.contactPerson || null,
-      body.contactPhone || null,
-      body.businessPlan || null,
-      body.operationPlan || null,
-      body.onboardingSteps || [],
-      body.kpiTargets || null,
-      body.brandNotes || null,
-    ],
+    `INSERT INTO brands(
+      name,sector,min_budget,max_budget,currency,min_sqm,max_sqm,target_locations,active,monthly_growth,
+      agreement_status,franchise_fee,royalty_rate,contract_term_months,initial_investment,branch_count,
+      contact_person,contact_phone,business_plan,operation_plan,onboarding_steps,kpi_targets,brand_notes,
+      sub_sector,whatsapp_phone,email,website,brand_type,target_regions,location_type,
+      storefront_need,chimney_need,tech_infrastructure,staff_need,ad_contribution_pct,avg_monthly_revenue,
+      profit_margin_pct,payback_months,presentation_url,logo_url,contract_draft_url,documents,
+      gives_franchise,has_royalty,score_operation,score_franchise_fit,score_location_flex,score_investor_interest,score_profitability,score_growth
+    ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50)
+    RETURNING *`,
+    vals,
   );
   const item = mapBrand(inserted.rows[0]);
   await logActivity({
@@ -1218,42 +1838,29 @@ app.post("/api/brands", authMiddleware, async (req, res) => {
     summary: `${item.name} eklendi`,
     afterData: item,
   });
+  await pool.query(
+    `INSERT INTO tasks(note,status,priority,due_date,brand_id) VALUES($1,'Açık','Orta', CURRENT_DATE + INTERVAL '2 day', $2)`,
+    [`Marka analizini tamamla: ${item.name}`, item.id],
+  );
   res.status(201).json(item);
 });
 
 app.put("/api/brands/:id", authMiddleware, async (req, res) => {
   const body = req.body || {};
   const before = await pool.query("SELECT * FROM brands WHERE id=$1", [req.params.id]);
+  const vals = brandWriteValues(body);
   const updated = await pool.query(
-    `UPDATE brands
-     SET name=$1,sector=$2,min_budget=$3,max_budget=$4,currency=$5,min_sqm=$6,max_sqm=$7,target_locations=$8,active=$9,monthly_growth=$10,agreement_status=$11,franchise_fee=$12,royalty_rate=$13,contract_term_months=$14,initial_investment=$15,branch_count=$16,contact_person=$17,contact_phone=$18,business_plan=$19,operation_plan=$20,onboarding_steps=$21,kpi_targets=$22,brand_notes=$23,updated_at=NOW()
-     WHERE id=$24 RETURNING *`,
-    [
-      body.name,
-      body.sector,
-      body.minBudget,
-      body.maxBudget,
-      body.currency || "TRY",
-      body.minSqm,
-      body.maxSqm,
-      body.targetLocations,
-      body.active,
-      body.monthlyGrowth,
-      body.agreementStatus || null,
-      body.franchiseFee || null,
-      body.royaltyRate || null,
-      body.contractTermMonths || null,
-      body.initialInvestment || null,
-      body.branchCount || null,
-      body.contactPerson || null,
-      body.contactPhone || null,
-      body.businessPlan || null,
-      body.operationPlan || null,
-      body.onboardingSteps || [],
-      body.kpiTargets || null,
-      body.brandNotes || null,
-      req.params.id,
-    ],
+    `UPDATE brands SET
+      name=$1,sector=$2,min_budget=$3,max_budget=$4,currency=$5,min_sqm=$6,max_sqm=$7,target_locations=$8,active=$9,monthly_growth=$10,
+      agreement_status=$11,franchise_fee=$12,royalty_rate=$13,contract_term_months=$14,initial_investment=$15,branch_count=$16,
+      contact_person=$17,contact_phone=$18,business_plan=$19,operation_plan=$20,onboarding_steps=$21,kpi_targets=$22,brand_notes=$23,
+      sub_sector=$24,whatsapp_phone=$25,email=$26,website=$27,brand_type=$28,target_regions=$29,location_type=$30,
+      storefront_need=$31,chimney_need=$32,tech_infrastructure=$33,staff_need=$34,ad_contribution_pct=$35,avg_monthly_revenue=$36,
+      profit_margin_pct=$37,payback_months=$38,presentation_url=$39,logo_url=$40,contract_draft_url=$41,documents=$42,
+      gives_franchise=$43,has_royalty=$44,score_operation=$45,score_franchise_fit=$46,score_location_flex=$47,score_investor_interest=$48,score_profitability=$49,score_growth=$50,
+      updated_at=NOW()
+     WHERE id=$51 RETURNING *`,
+    [...vals, req.params.id],
   );
   if (updated.rowCount === 0) {
     return res.status(404).json({ message: "Kayıt bulunamadı." });
@@ -1429,8 +2036,8 @@ app.get("/api/projects", authMiddleware, async (req, res) => {
 app.post("/api/projects", authMiddleware, async (req, res) => {
   const body = req.body || {};
   const inserted = await pool.query(
-    `INSERT INTO projects(name,project_type,owner_team,assignees,priority,progress,stage,due_date,description,checklist)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+    `INSERT INTO projects(name,project_type,owner_team,assignees,priority,progress,stage,due_date,description,checklist,investor_id,brand_id)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
     [
       body.name,
       body.type,
@@ -1442,9 +2049,17 @@ app.post("/api/projects", authMiddleware, async (req, res) => {
       body.dueDate,
       body.description || null,
       body.checklist || [],
+      body.investorId || body.investor_id || null,
+      body.brandId || body.brand_id || null,
     ],
   );
   const project = mapProject(inserted.rows[0]);
+  if (project.investorId) {
+    await pool.query(`UPDATE investors SET last_activity_at=NOW(), updated_at=NOW() WHERE id=$1`, [project.investorId]);
+  }
+  if (project.brandId) {
+    await pool.query(`UPDATE brands SET updated_at=NOW() WHERE id=$1`, [project.brandId]);
+  }
   await logActivity({
     userId: req.user.id,
     moduleName: "projects",
@@ -1462,8 +2077,8 @@ app.put("/api/projects/:id", authMiddleware, async (req, res) => {
   const before = await pool.query("SELECT * FROM projects WHERE id=$1", [req.params.id]);
   const updated = await pool.query(
     `UPDATE projects
-     SET name=$1,project_type=$2,owner_team=$3,assignees=$4,priority=$5,progress=$6,stage=$7,due_date=$8,description=$9,checklist=$10,updated_at=NOW()
-     WHERE id=$11 RETURNING *`,
+     SET name=$1,project_type=$2,owner_team=$3,assignees=$4,priority=$5,progress=$6,stage=$7,due_date=$8,description=$9,checklist=$10,investor_id=$11,brand_id=$12,updated_at=NOW()
+     WHERE id=$13 RETURNING *`,
     [
       body.name,
       body.type,
@@ -1475,6 +2090,8 @@ app.put("/api/projects/:id", authMiddleware, async (req, res) => {
       body.dueDate,
       body.description || null,
       body.checklist || [],
+      body.investorId ?? body.investor_id ?? before.rows[0]?.investor_id ?? null,
+      body.brandId ?? body.brand_id ?? before.rows[0]?.brand_id ?? null,
       req.params.id,
     ],
   );
@@ -1529,12 +2146,29 @@ app.post("/api/contracts", authMiddleware, async (req, res) => {
     fileData = null,
     fileUrl = null,
     fileMimeType = null,
+    investorId = null,
+    brandId = null,
   } = req.body || {};
   const inserted = await pool.query(
-    `INSERT INTO contracts(note,contract_type,status,counterparty,start_date,end_date,amount,currency,file_name,file_data,file_url,file_mime_type)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+    `INSERT INTO contracts(note,contract_type,status,counterparty,start_date,end_date,amount,currency,file_name,file_data,file_url,file_mime_type,investor_id,brand_id)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
      RETURNING *`,
-    [note, type, status, counterparty, startDate, endDate, amount, currency, fileName, fileData, fileUrl, fileMimeType],
+    [
+      note,
+      type,
+      status,
+      counterparty,
+      startDate,
+      endDate,
+      amount,
+      currency,
+      fileName,
+      fileData,
+      fileUrl,
+      fileMimeType,
+      investorId || null,
+      brandId || null,
+    ],
   );
   const item = mapContract(inserted.rows[0]);
   await logActivity({
@@ -1563,13 +2197,31 @@ app.put("/api/contracts/:id", authMiddleware, async (req, res) => {
     fileData = null,
     fileUrl = null,
     fileMimeType = null,
+    investorId = null,
+    brandId = null,
   } = req.body || {};
   const before = await pool.query("SELECT * FROM contracts WHERE id=$1", [req.params.id]);
   const updated = await pool.query(
     `UPDATE contracts
-     SET note=$1,contract_type=$2,status=$3,counterparty=$4,start_date=$5,end_date=$6,amount=$7,currency=$8,file_name=$9,file_data=$10,file_url=$11,file_mime_type=$12,updated_at=NOW()
-     WHERE id=$13 RETURNING *`,
-    [note, type, status, counterparty, startDate, endDate, amount, currency, fileName, fileData, fileUrl, fileMimeType, req.params.id],
+     SET note=$1,contract_type=$2,status=$3,counterparty=$4,start_date=$5,end_date=$6,amount=$7,currency=$8,file_name=$9,file_data=$10,file_url=$11,file_mime_type=$12,investor_id=$13,brand_id=$14,updated_at=NOW()
+     WHERE id=$15 RETURNING *`,
+    [
+      note,
+      type,
+      status,
+      counterparty,
+      startDate,
+      endDate,
+      amount,
+      currency,
+      fileName,
+      fileData,
+      fileUrl,
+      fileMimeType,
+      investorId ?? before.rows[0]?.investor_id ?? null,
+      brandId ?? before.rows[0]?.brand_id ?? null,
+      req.params.id,
+    ],
   );
   if (updated.rowCount === 0) {
     return res.status(404).json({ message: "Kayıt bulunamadı." });
@@ -1659,14 +2311,16 @@ app.delete("/api/team-members/:id", authMiddleware, requireAdmin, async (req, re
 app.get("/api/tasks", authMiddleware, async (req, res) => {
   let result;
   if (req.user.role === "admin") {
-    result = await pool.query("SELECT id,note,status,assignee_id,assignee_name,priority,due_date FROM tasks ORDER BY id DESC");
+    result = await pool.query(
+      "SELECT id,note,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id FROM tasks ORDER BY id DESC",
+    );
   } else {
     const member = await pool.query("SELECT id FROM team_members WHERE user_id=$1 LIMIT 1", [req.user.id]);
     if (member.rowCount === 0) {
       return res.json([]);
     }
     result = await pool.query(
-      "SELECT id,note,status,assignee_id,assignee_name,priority,due_date FROM tasks WHERE assignee_id=$1 ORDER BY id DESC",
+      "SELECT id,note,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id FROM tasks WHERE assignee_id=$1 ORDER BY id DESC",
       [member.rows[0].id],
     );
   }
@@ -1674,10 +2328,19 @@ app.get("/api/tasks", authMiddleware, async (req, res) => {
 });
 
 app.post("/api/tasks", authMiddleware, requireAdmin, async (req, res) => {
-  const { note, status = "Açık", assigneeId = null, assigneeName = null, priority = "Orta", dueDate = null } = req.body || {};
+  const {
+    note,
+    status = "Açık",
+    assigneeId = null,
+    assigneeName = null,
+    priority = "Orta",
+    dueDate = null,
+    investorId = null,
+    brandId = null,
+  } = req.body || {};
   const inserted = await pool.query(
-    "INSERT INTO tasks(note,status,assignee_id,assignee_name,priority,due_date) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,note,status,assignee_id,assignee_name,priority,due_date",
-    [note, status, assigneeId, assigneeName, priority, dueDate],
+    "INSERT INTO tasks(note,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,note,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id",
+    [note, status, assigneeId, assigneeName, priority, dueDate, investorId || null, brandId || null],
   );
   const item = mapTask(inserted.rows[0]);
   await logActivity({
@@ -1706,11 +2369,23 @@ app.post("/api/tasks", authMiddleware, requireAdmin, async (req, res) => {
 });
 
 app.put("/api/tasks/:id", authMiddleware, requireAdmin, async (req, res) => {
-  const { note, status, assigneeId = null, assigneeName = null, priority = "Orta", dueDate = null } = req.body || {};
-  const before = await pool.query("SELECT id,note,status,assignee_id,assignee_name,priority,due_date FROM tasks WHERE id=$1", [req.params.id]);
+  const {
+    note,
+    status,
+    assigneeId = null,
+    assigneeName = null,
+    priority = "Orta",
+    dueDate = null,
+    investorId = null,
+    brandId = null,
+  } = req.body || {};
+  const before = await pool.query(
+    "SELECT id,note,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id FROM tasks WHERE id=$1",
+    [req.params.id],
+  );
   const updated = await pool.query(
-    "UPDATE tasks SET note=$1,status=$2,assignee_id=$3,assignee_name=$4,priority=$5,due_date=$6,updated_at=NOW() WHERE id=$7 RETURNING id,note,status,assignee_id,assignee_name,priority,due_date",
-    [note, status, assigneeId, assigneeName, priority, dueDate, req.params.id],
+    "UPDATE tasks SET note=$1,status=$2,assignee_id=$3,assignee_name=$4,priority=$5,due_date=$6,investor_id=$7,brand_id=$8,updated_at=NOW() WHERE id=$9 RETURNING id,note,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id",
+    [note, status, assigneeId, assigneeName, priority, dueDate, investorId || null, brandId || null, req.params.id],
   );
   if (updated.rowCount === 0) {
     return res.status(404).json({ message: "Kayıt bulunamadı." });
@@ -1751,7 +2426,9 @@ app.post("/api/matching", authMiddleware, async (req, res) => {
 app.post("/api/matching/suggest", authMiddleware, async (req, res) => {
   // Alias for matching
   const { investorName, budget, city, sector, sqm } = req.body || {};
-  const brandsResult = await pool.query("SELECT * FROM brands WHERE active = true");
+  const brandsResult = await pool.query(
+    `SELECT * FROM brands WHERE active = true AND COALESCE(agreement_status,'') = 'Anlaşmalı' AND deleted_at IS NULL`,
+  );
   const brandList = brandsResult.rows.map(mapBrand);
   const results = brandList
     .map((brand) => {
@@ -1780,12 +2457,18 @@ app.get("/api/export/:module", authMiddleware, async (req, res) => {
   const moduleName = req.params.module;
   const config = {
     investors: {
-      sql: "SELECT id,name,budget,city,sector,investment_type AS type,pipeline_stage AS pipeline,created_at FROM investors ORDER BY id DESC",
+      sql: `SELECT id,name,investor_type,contact_person,phone,whatsapp_phone,email,city,district,target_cities,target_location_type,
+            sector,sub_sector,budget_min,budget_max,currency,investment_type,investment_timing,financing_status,priority,pipeline_stage,lead_source,
+            assigned_member_id,follow_up_date,last_meeting_date,next_action,notes,created_at
+            FROM investors ORDER BY id DESC`,
       file: "yatirimcilar.xlsx",
       sheet: "Yatirimcilar",
     },
     brands: {
-      sql: "SELECT id,name,sector,min_budget,max_budget,min_sqm,max_sqm,target_locations,active,monthly_growth,created_at FROM brands ORDER BY id DESC",
+      sql: `SELECT id,name,sector,sub_sector,min_budget,max_budget,currency,min_sqm,max_sqm,target_locations,target_regions,location_type,
+            active,agreement_status,brand_type,gives_franchise,has_royalty,franchise_fee,royalty_rate,ad_contribution_pct,
+            contact_person,contact_phone,email,website,created_at
+            FROM brands ORDER BY id DESC`,
       file: "markalar.xlsx",
       sheet: "Markalar",
     },
@@ -1852,7 +2535,7 @@ app.get("/api/export/:module", authMiddleware, async (req, res) => {
 app.get("/api/export-pdf/:module", authMiddleware, async (req, res) => {
   const moduleName = req.params.module;
   const config = {
-    investors: "SELECT id,name,budget,city,sector,investment_type AS type,pipeline_stage AS pipeline,created_at FROM investors ORDER BY id DESC",
+    investors: `SELECT id,name,city,sector,budget_min,budget_max,currency,investment_type,pipeline_stage,priority,phone,email,created_at FROM investors ORDER BY id DESC`,
     brands: "SELECT id,name,sector,min_budget,max_budget,target_locations,agreement_status,created_at FROM brands ORDER BY id DESC",
     locations: "SELECT id,name,location_type,sqm,rent,potential,created_at FROM locations ORDER BY id DESC",
     projects: "SELECT id,name,project_type,owner_team,stage,due_date,created_at FROM projects ORDER BY id DESC",
@@ -1929,6 +2612,11 @@ app.post("/api/pnl/revenues", authMiddleware, async (req, res) => {
 
 app.put("/api/pnl/revenues/:id", authMiddleware, async (req, res) => {
   const { entryDate, branch, revenueType, description, amount, monthName, yearValue } = req.body || {};
+  const sourceCheck = await pool.query("SELECT source FROM pnl_revenues WHERE id=$1", [req.params.id]);
+  if (sourceCheck.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
+  if (sourceCheck.rows[0].source === "Excel") {
+    return res.status(403).json({ message: "Excel kayıtları kilitlidir. 'Kopyala ve Düzenle' kullanın." });
+  }
   const updated = await pool.query(
     `UPDATE pnl_revenues SET entry_date=$1,branch=$2,revenue_type=$3,description=$4,amount=$5,month_name=$6,year_value=$7
      WHERE id=$8 RETURNING *`,
@@ -1939,6 +2627,11 @@ app.put("/api/pnl/revenues/:id", authMiddleware, async (req, res) => {
 });
 
 app.delete("/api/pnl/revenues/:id", authMiddleware, async (req, res) => {
+  const sourceCheck = await pool.query("SELECT source FROM pnl_revenues WHERE id=$1", [req.params.id]);
+  if (sourceCheck.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
+  if (sourceCheck.rows[0].source === "Excel") {
+    return res.status(403).json({ message: "Excel kayıtları kilitlidir. Önce kopyalayın." });
+  }
   await pool.query("DELETE FROM pnl_revenues WHERE id=$1", [req.params.id]);
   res.status(204).send();
 });
@@ -1970,6 +2663,11 @@ app.post("/api/pnl/expenses", authMiddleware, async (req, res) => {
 
 app.put("/api/pnl/expenses/:id", authMiddleware, async (req, res) => {
   const { entryDate, branch, category, subCategory, description, amount, monthName, yearValue } = req.body || {};
+  const sourceCheck = await pool.query("SELECT source FROM pnl_expenses WHERE id=$1", [req.params.id]);
+  if (sourceCheck.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
+  if (sourceCheck.rows[0].source === "Excel") {
+    return res.status(403).json({ message: "Excel kayıtları kilitlidir. 'Kopyala ve Düzenle' kullanın." });
+  }
   const updated = await pool.query(
     `UPDATE pnl_expenses SET entry_date=$1,branch=$2,category=$3,sub_category=$4,description=$5,amount=$6,month_name=$7,year_value=$8
      WHERE id=$9 RETURNING *`,
@@ -1980,6 +2678,11 @@ app.put("/api/pnl/expenses/:id", authMiddleware, async (req, res) => {
 });
 
 app.delete("/api/pnl/expenses/:id", authMiddleware, async (req, res) => {
+  const sourceCheck = await pool.query("SELECT source FROM pnl_expenses WHERE id=$1", [req.params.id]);
+  if (sourceCheck.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
+  if (sourceCheck.rows[0].source === "Excel") {
+    return res.status(403).json({ message: "Excel kayıtları kilitlidir. Önce kopyalayın." });
+  }
   await pool.query("DELETE FROM pnl_expenses WHERE id=$1", [req.params.id]);
   res.status(204).send();
 });
@@ -2012,6 +2715,11 @@ app.post("/api/pnl/personnel", authMiddleware, async (req, res) => {
 
 app.put("/api/pnl/personnel/:id", authMiddleware, async (req, res) => {
   const { entryDate, branch, personName, position, salary = 0, bonus = 0, deduction = 0, monthName, yearValue } = req.body || {};
+  const sourceCheck = await pool.query("SELECT source FROM pnl_personnel WHERE id=$1", [req.params.id]);
+  if (sourceCheck.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
+  if (sourceCheck.rows[0].source === "Excel") {
+    return res.status(403).json({ message: "Excel kayıtları kilitlidir. 'Kopyala ve Düzenle' kullanın." });
+  }
   const totalCost = Number(salary) + Number(bonus) - Number(deduction);
   const updated = await pool.query(
     `UPDATE pnl_personnel SET entry_date=$1,branch=$2,person_name=$3,position=$4,salary=$5,bonus=$6,deduction=$7,total_cost=$8,month_name=$9,year_value=$10
@@ -2023,6 +2731,11 @@ app.put("/api/pnl/personnel/:id", authMiddleware, async (req, res) => {
 });
 
 app.delete("/api/pnl/personnel/:id", authMiddleware, async (req, res) => {
+  const sourceCheck = await pool.query("SELECT source FROM pnl_personnel WHERE id=$1", [req.params.id]);
+  if (sourceCheck.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
+  if (sourceCheck.rows[0].source === "Excel") {
+    return res.status(403).json({ message: "Excel kayıtları kilitlidir. Önce kopyalayın." });
+  }
   await pool.query("DELETE FROM pnl_personnel WHERE id=$1", [req.params.id]);
   res.status(204).send();
 });
@@ -2198,6 +2911,7 @@ app.post("/api/pnl/import-confirm", authMiddleware, async (req, res) => {
 
   // Save new mappings
   for (const m of mappingsToSave) {
+    if (!m?.label || !m?.category || m.category === "Atla") continue;
     await pool.query(
       `INSERT INTO pnl_field_mappings(source_header,mapped_category,mapped_type)
        VALUES($1,$2,$3)
@@ -2212,6 +2926,7 @@ app.post("/api/pnl/import-confirm", authMiddleware, async (req, res) => {
     const entryDate = row.entryDate || today;
     const monthName = row.monthName || 'BİLİNMEYEN';
     const amount = Number(row.amount || 0);
+    if (row.category === "Atla") continue;
     if (amount <= 0) continue;
 
     if (row.type === 'revenue') {
@@ -2410,12 +3125,15 @@ app.get("/api/dashboard/stats", authMiddleware, async (req, res) => {
      WHERE status != 'Tamamlandı'`,
   );
 
+  const invRem = await investorReminders();
   res.json({
     activeInvestors: leadCount.rows[0].value,
     activeProjects: projectCount.rows[0].value,
     openTasks: taskCount.rows[0].value,
     strongMatches: winCount.rows[0].value,
-    financeCount: financeCount.rows[0].value
+    financeCount: financeCount.rows[0].value,
+    investorFollowUps: invRem.followUpDue,
+    investorStaleHot: invRem.staleHot,
   });
 });
 

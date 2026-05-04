@@ -18,10 +18,10 @@ export default function TemplatesPage() {
     try {
       const [tData, iData] = await Promise.all([
         apiClient.get('/templates'),
-        apiClient.get('/investors')
+        apiClient.get('/investors?pageSize=500&page=1'),
       ]);
       setTemplates(tData);
-      setInvestors(iData);
+      setInvestors(Array.isArray(iData) ? iData : iData.items || []);
     } catch (err) {
       console.error(err);
     } finally {

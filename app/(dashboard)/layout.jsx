@@ -23,8 +23,8 @@ export default function DashboardLayout({ children }) {
 
   const menuItems = [
     { name: 'Dashboard', path: '/', id: 'dashboard' },
-    { name: 'Yatırımcılar', path: '/investors', id: 'investors' },
-    { name: 'Markalar', path: '/brands', id: 'brands' },
+    { name: 'Yatırımcı Yönetimi', path: '/investors', id: 'investors' },
+    { name: 'Marka Portföy Yönetimi', path: '/brands', id: 'brands' },
     { name: 'Lokasyonlar', path: '/locations', id: 'locations' },
     { name: 'Projeler', path: '/projects', id: 'projects' },
     { name: 'Sözleşme & Finans', path: '/contracts', id: 'contracts' },
@@ -50,8 +50,8 @@ export default function DashboardLayout({ children }) {
         </div>
         <nav className="menu">
           <Link href="/" className={`menu-link ${pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
-          <Link href="/investors" className={`menu-link ${pathname === '/investors' ? 'active' : ''}`}>Yatırımcılar</Link>
-          <Link href="/brands" className={`menu-link ${pathname === '/brands' ? 'active' : ''}`}>Markalar</Link>
+          <Link href="/investors" className={`menu-link ${pathname === '/investors' ? 'active' : ''}`}>Yatırımcı Yönetimi</Link>
+          <Link href="/brands" className={`menu-link ${pathname === '/brands' ? 'active' : ''}`}>Marka Portföy Yönetimi</Link>
           <Link href="/locations" className={`menu-link ${pathname === '/locations' ? 'active' : ''}`}>Lokasyonlar</Link>
           <Link href="/projects" className={`menu-link ${pathname === '/projects' ? 'active' : ''}`}>Projeler</Link>
           <Link href="/contracts" className={`menu-link ${pathname === '/contracts' ? 'active' : ''}`}>Sözleşme & Finans</Link>
