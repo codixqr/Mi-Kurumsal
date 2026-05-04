@@ -980,6 +980,7 @@ export default function BrandsPage() {
             <div className="inv-tabs">
               {[
                 ['genel', 'Genel'],
+                ['ihtiyac', 'İhtiyaç analizi'],
                 ['franchise', 'Franchise şartları'],
                 ['lokasyon', 'Lokasyon kriterleri'],
                 ['finans', 'Finansal'],
@@ -989,6 +990,7 @@ export default function BrandsPage() {
                 ['lok', 'Eşleşen lokasyonlar'],
                 ['proj', 'Projeler'],
                 ['soz', 'Sözleşmeler'],
+                ['gorev', 'Görevler'],
                 ['dosya', 'Dosyalar'],
                 ['not', 'Notlar'],
               ].map(([id, label]) => (
@@ -1012,6 +1014,22 @@ export default function BrandsPage() {
                   <dt>Web</dt>
                   <dd>{detail.brand.website ? <a href={detail.brand.website}>{detail.brand.website}</a> : '—'}</dd>
                 </dl>
+              )}
+              {!detailLoading && detailTab === 'ihtiyac' && (
+                <div>
+                  <h4 style={{ margin: '0 0 8px' }}>İş planı</h4>
+                  <p style={{ whiteSpace: 'pre-wrap', marginBottom: 16 }}>{detail.brand.businessPlan || '—'}</p>
+                  <h4 style={{ margin: '0 0 8px' }}>Operasyon planı</h4>
+                  <p style={{ whiteSpace: 'pre-wrap', marginBottom: 16 }}>{detail.brand.operationPlan || '—'}</p>
+                  <h4 style={{ margin: '0 0 8px' }}>Açılış adımları</h4>
+                  <p style={{ whiteSpace: 'pre-wrap', marginBottom: 16 }}>
+                    {Array.isArray(detail.brand.onboardingSteps) && detail.brand.onboardingSteps.length
+                      ? detail.brand.onboardingSteps.join(', ')
+                      : '—'}
+                  </p>
+                  <h4 style={{ margin: '0 0 8px' }}>KPI hedefleri</h4>
+                  <p style={{ whiteSpace: 'pre-wrap' }}>{detail.brand.kpiTargets || '—'}</p>
+                </div>
               )}
               {!detailLoading && detailTab === 'franchise' && (
                 <dl className="inv-dl">
@@ -1115,6 +1133,16 @@ export default function BrandsPage() {
                     <li key={c.id}>{c.note} — {c.status || '—'}</li>
                   ))}
                   {!(detail.contracts || []).length && <li>Sözleşme kaydı yok.</li>}
+                </ul>
+              )}
+              {!detailLoading && detailTab === 'gorev' && (
+                <ul className="dashboard-list">
+                  {(detail.tasks || []).map((t) => (
+                    <li key={t.id}>
+                      {t.note} — <span className="badge">{t.status}</span>
+                    </li>
+                  ))}
+                  {!(detail.tasks || []).length && <li>Görev yok.</li>}
                 </ul>
               )}
               {!detailLoading && detailTab === 'dosya' && (
