@@ -937,6 +937,9 @@ export default function BrandsPage() {
                       <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => createProject(b)}>
                         Proje
                       </button>
+                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => { window.location.href = '/tasks'; }}>
+                        Görev
+                      </button>
                       {b.presentationUrl && (
                         <a className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px', display: 'inline-block' }} href={b.presentationUrl} target="_blank" rel="noreferrer">
                           Sunum
