@@ -122,6 +122,13 @@ function authMiddleware(req, res, next) {
   }
 }
 
+function requireAdmin(req, res, next) {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({ message: "Bu işlem sadece yöneticiye açıktır." });
+  }
+  return next();
+}
+
 function signToken(user) {
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role, name: user.name },
@@ -170,6 +177,23 @@ async function sendMailNotification(subject, text) {
     auth: { user, pass },
   });
 
+  await transporter.sendMail({ from, to, subject, text });
+}
+
+async function sendMailToRecipient(to, subject, text) {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.NOTIFY_EMAIL_FROM || user;
+  if (!host || !user || !pass || !to) {
+    throw new Error("SMTP veya alıcı bilgisi eksik.");
+  }
+  const transporter = nodemailer.createTransport({
+    host,
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: process.env.SMTP_SECURE === "true",
+    auth: { user, pass },
+  });
   await transporter.sendMail({ from, to, subject, text });
 }
 
@@ -327,6 +351,7 @@ function mapTask(row) {
 function mapTeamMember(row) {
   return {
     id: row.id,
+    userId: row.user_id || null,
     name: row.name,
     email: row.email || "",
     phone: row.phone || "",
@@ -449,7 +474,9 @@ async function initDb() {
   await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority TEXT NOT NULL DEFAULT 'Orta'");
   await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_date DATE");
   await pool.query("ALTER TABLE message_templates ADD COLUMN IF NOT EXISTS image_url TEXT");
+  await pool.query("ALTER TABLE team_members ADD COLUMN IF NOT EXISTS user_id INTEGER");
   await pool.query("CREATE TABLE IF NOT EXISTS team_members (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT, phone TEXT, department TEXT, role_name TEXT NOT NULL DEFAULT 'Temsilci', permissions TEXT[] NOT NULL DEFAULT '{}', active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW())");
+  await pool.query("CREATE TABLE IF NOT EXISTS app_settings (id SERIAL PRIMARY KEY, setting_key TEXT UNIQUE NOT NULL, setting_value JSONB NOT NULL DEFAULT '{}'::jsonb, updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL, updated_at TIMESTAMP NOT NULL DEFAULT NOW())");
 }
 
 async function seedDefaultDataIfNeeded() {
@@ -747,7 +774,7 @@ app.get("/api/admin/db-status", async (req, res) => {
 });
 
 // 13. Database Auto-Fix API (Güçlendirilmiş)
-app.post("/api/admin/db-fix", async (req, res) => {
+app.post("/api/admin/db-fix", authMiddleware, requireAdmin, async (req, res) => {
   try {
     const pg = pool;
     console.log("Database repair started...");
@@ -762,6 +789,7 @@ app.post("/api/admin/db-fix", async (req, res) => {
       "CREATE TABLE IF NOT EXISTS contracts (id SERIAL PRIMARY KEY, note TEXT, contract_type TEXT, status TEXT, counterparty TEXT, start_date DATE, end_date DATE, amount BIGINT, currency TEXT, file_url TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
       "CREATE TABLE IF NOT EXISTS tasks (id SERIAL PRIMARY KEY, note TEXT, status TEXT, assignee_name TEXT, assignee_id INTEGER, priority TEXT, due_date DATE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
       "CREATE TABLE IF NOT EXISTS team_members (id SERIAL PRIMARY KEY, name TEXT, email TEXT, phone TEXT, department TEXT, role_name TEXT, permissions TEXT[], active BOOLEAN, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS app_settings (id SERIAL PRIMARY KEY, setting_key TEXT UNIQUE, setting_value JSONB, updated_by INTEGER, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
       "CREATE TABLE IF NOT EXISTS pnl (id SERIAL PRIMARY KEY, month_name TEXT, year_value INTEGER, revenue BIGINT, expense BIGINT, profit BIGINT, note TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
       "CREATE TABLE IF NOT EXISTS message_templates (id SERIAL PRIMARY KEY, channel TEXT, event_name TEXT, title TEXT, body TEXT, active BOOLEAN, image_url TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
       "CREATE TABLE IF NOT EXISTS activity_logs (id SERIAL PRIMARY KEY, user_id INTEGER, user_name TEXT, module_name TEXT, action_type TEXT, summary TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
@@ -821,7 +849,61 @@ app.post("/api/admin/db-fix", async (req, res) => {
       "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assignee_name TEXT",
       "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assignee_id INTEGER",
       "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority TEXT",
-      "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_date DATE"
+      "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_date DATE",
+      "ALTER TABLE team_members ADD COLUMN IF NOT EXISTS user_id INTEGER",
+      // New PnL tables
+      `CREATE TABLE IF NOT EXISTS pnl_revenues (
+        id SERIAL PRIMARY KEY,
+        entry_date DATE NOT NULL,
+        branch TEXT NOT NULL DEFAULT 'Genel',
+        revenue_type TEXT NOT NULL DEFAULT 'Satış',
+        description TEXT,
+        amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+        source TEXT NOT NULL DEFAULT 'Manuel',
+        month_name TEXT NOT NULL,
+        year_value INTEGER NOT NULL,
+        created_by INTEGER,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )`,
+      `CREATE TABLE IF NOT EXISTS pnl_expenses (
+        id SERIAL PRIMARY KEY,
+        entry_date DATE NOT NULL,
+        branch TEXT NOT NULL DEFAULT 'Genel',
+        category TEXT NOT NULL DEFAULT 'Diğer',
+        sub_category TEXT,
+        description TEXT,
+        amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+        revenue_ratio NUMERIC(10,4),
+        source TEXT NOT NULL DEFAULT 'Manuel',
+        month_name TEXT NOT NULL,
+        year_value INTEGER NOT NULL,
+        created_by INTEGER,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )`,
+      `CREATE TABLE IF NOT EXISTS pnl_personnel (
+        id SERIAL PRIMARY KEY,
+        entry_date DATE NOT NULL,
+        branch TEXT NOT NULL DEFAULT 'Genel',
+        person_name TEXT NOT NULL,
+        position TEXT,
+        salary NUMERIC(14,2) NOT NULL DEFAULT 0,
+        bonus NUMERIC(14,2) NOT NULL DEFAULT 0,
+        deduction NUMERIC(14,2) NOT NULL DEFAULT 0,
+        total_cost NUMERIC(14,2) NOT NULL DEFAULT 0,
+        source TEXT NOT NULL DEFAULT 'Manuel',
+        month_name TEXT NOT NULL,
+        year_value INTEGER NOT NULL,
+        created_by INTEGER,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )`,
+      `CREATE TABLE IF NOT EXISTS pnl_field_mappings (
+        id SERIAL PRIMARY KEY,
+        source_header TEXT NOT NULL,
+        mapped_category TEXT NOT NULL,
+        mapped_type TEXT NOT NULL DEFAULT 'expense',
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        UNIQUE(source_header)
+      )`
     ];
 
     for (const sql of alters) {
@@ -834,7 +916,7 @@ app.post("/api/admin/db-fix", async (req, res) => {
   }
 });
 
-app.get("/api/admin/seed", async (req, res) => {
+app.get("/api/admin/seed", authMiddleware, requireAdmin, async (req, res) => {
   try {
     const pg = pool;
     console.log("Manual seeding started...");
@@ -1521,25 +1603,41 @@ app.delete("/api/contracts/:id", authMiddleware, async (req, res) => {
   res.status(204).send();
 });
 
-app.get("/api/team-members", authMiddleware, async (req, res) => {
+app.get("/api/team-members", authMiddleware, requireAdmin, async (req, res) => {
   const rows = await pool.query("SELECT * FROM team_members ORDER BY id DESC");
   res.json(rows.rows.map(mapTeamMember));
 });
 
-app.post("/api/team-members", authMiddleware, async (req, res) => {
-  const { name, email = null, phone = null, department = null, roleName = "Temsilci", permissions = [], active = true } = req.body || {};
-  if (!name) {
-    return res.status(400).json({ message: "İsim zorunludur." });
+app.get("/api/team-members/options", authMiddleware, async (req, res) => {
+  const rows = await pool.query("SELECT id,name,role_name FROM team_members WHERE active=true ORDER BY name ASC");
+  res.json(rows.rows.map((x) => ({ id: x.id, name: x.name, roleName: x.role_name })));
+});
+
+app.post("/api/team-members", authMiddleware, requireAdmin, async (req, res) => {
+  const { name, email, password, phone = null, department = null, roleName = "Temsilci", permissions = [], active = true } = req.body || {};
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: "İsim, e-posta ve parola zorunludur." });
   }
+  const userExists = await pool.query("SELECT id FROM users WHERE email=$1", [email]);
+  if (userExists.rowCount > 0) {
+    return res.status(409).json({ message: "Bu e-posta için kullanıcı zaten mevcut." });
+  }
+  const passwordHash = await bcrypt.hash(password, 10);
+  const userRole = roleName === "Yönetici" ? "admin" : "agent";
+  const insertedUser = await pool.query(
+    `INSERT INTO users(name,email,password_hash,role)
+     VALUES($1,$2,$3,$4) RETURNING id`,
+    [name, email, passwordHash, userRole],
+  );
   const inserted = await pool.query(
-    `INSERT INTO team_members(name,email,phone,department,role_name,permissions,active)
-     VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-    [name, email, phone, department, roleName, permissions, active],
+    `INSERT INTO team_members(user_id,name,email,phone,department,role_name,permissions,active)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+    [insertedUser.rows[0].id, name, email, phone, department, roleName, permissions, active],
   );
   res.status(201).json(mapTeamMember(inserted.rows[0]));
 });
 
-app.put("/api/team-members/:id", authMiddleware, async (req, res) => {
+app.put("/api/team-members/:id", authMiddleware, requireAdmin, async (req, res) => {
   const { name, email = null, phone = null, department = null, roleName = "Temsilci", permissions = [], active = true } = req.body || {};
   const updated = await pool.query(
     `UPDATE team_members
@@ -1553,17 +1651,29 @@ app.put("/api/team-members/:id", authMiddleware, async (req, res) => {
   res.json(mapTeamMember(updated.rows[0]));
 });
 
-app.delete("/api/team-members/:id", authMiddleware, async (req, res) => {
+app.delete("/api/team-members/:id", authMiddleware, requireAdmin, async (req, res) => {
   await pool.query("DELETE FROM team_members WHERE id=$1", [req.params.id]);
   res.status(204).send();
 });
 
 app.get("/api/tasks", authMiddleware, async (req, res) => {
-  const result = await pool.query("SELECT id,note,status,assignee_id,assignee_name,priority,due_date FROM tasks ORDER BY id DESC");
+  let result;
+  if (req.user.role === "admin") {
+    result = await pool.query("SELECT id,note,status,assignee_id,assignee_name,priority,due_date FROM tasks ORDER BY id DESC");
+  } else {
+    const member = await pool.query("SELECT id FROM team_members WHERE user_id=$1 LIMIT 1", [req.user.id]);
+    if (member.rowCount === 0) {
+      return res.json([]);
+    }
+    result = await pool.query(
+      "SELECT id,note,status,assignee_id,assignee_name,priority,due_date FROM tasks WHERE assignee_id=$1 ORDER BY id DESC",
+      [member.rows[0].id],
+    );
+  }
   res.json(result.rows.map(mapTask));
 });
 
-app.post("/api/tasks", authMiddleware, async (req, res) => {
+app.post("/api/tasks", authMiddleware, requireAdmin, async (req, res) => {
   const { note, status = "Açık", assigneeId = null, assigneeName = null, priority = "Orta", dueDate = null } = req.body || {};
   const inserted = await pool.query(
     "INSERT INTO tasks(note,status,assignee_id,assignee_name,priority,due_date) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,note,status,assignee_id,assignee_name,priority,due_date",
@@ -1578,10 +1688,24 @@ app.post("/api/tasks", authMiddleware, async (req, res) => {
     summary: "Görev eklendi",
     afterData: item,
   });
+  if (assigneeId) {
+    const member = await pool.query("SELECT email,name FROM team_members WHERE id=$1", [assigneeId]);
+    if (member.rowCount > 0 && member.rows[0].email) {
+      try {
+        await sendMailToRecipient(
+          member.rows[0].email,
+          `Yeni Görev Ataması: ${note}`,
+          `Merhaba ${member.rows[0].name || assigneeName || ""},\n\nSize yeni bir görev atandı.\nGörev: ${note}\nÖncelik: ${priority}\nDurum: ${status}\nSon Tarih: ${dueDate || "-"}\n\nMi Core CRM`,
+        );
+      } catch (error) {
+        console.log("Task reminder email failed:", error.message);
+      }
+    }
+  }
   res.status(201).json(item);
 });
 
-app.put("/api/tasks/:id", authMiddleware, async (req, res) => {
+app.put("/api/tasks/:id", authMiddleware, requireAdmin, async (req, res) => {
   const { note, status, assigneeId = null, assigneeName = null, priority = "Orta", dueDate = null } = req.body || {};
   const before = await pool.query("SELECT id,note,status,assignee_id,assignee_name,priority,due_date FROM tasks WHERE id=$1", [req.params.id]);
   const updated = await pool.query(
@@ -1604,7 +1728,7 @@ app.put("/api/tasks/:id", authMiddleware, async (req, res) => {
   res.json(item);
 });
 
-app.delete("/api/tasks/:id", authMiddleware, async (req, res) => {
+app.delete("/api/tasks/:id", authMiddleware, requireAdmin, async (req, res) => {
   const row = await pool.query("SELECT id,note,status FROM tasks WHERE id=$1", [req.params.id]);
   await pool.query("DELETE FROM tasks WHERE id=$1", [req.params.id]);
   if (row.rowCount > 0) {
@@ -1778,6 +1902,339 @@ app.get("/api/recycle-bin", authMiddleware, async (req, res) => {
   res.json([]);
 });
 
+// =====================================================
+// PnL - Gelirler (Revenues) CRUD
+// =====================================================
+app.get("/api/pnl/revenues", authMiddleware, async (req, res) => {
+  const { month, year, branch } = req.query;
+  let query = "SELECT * FROM pnl_revenues WHERE 1=1";
+  const params = [];
+  if (month) { params.push(month); query += ` AND month_name=$${params.length}`; }
+  if (year) { params.push(Number(year)); query += ` AND year_value=$${params.length}`; }
+  if (branch && branch !== 'all') { params.push(branch); query += ` AND branch=$${params.length}`; }
+  query += " ORDER BY entry_date DESC, id DESC";
+  const rows = await pool.query(query, params);
+  res.json(rows.rows);
+});
+
+app.post("/api/pnl/revenues", authMiddleware, async (req, res) => {
+  const { entryDate, branch = 'Genel', revenueType = 'Satış', description = null, amount, source = 'Manuel', monthName, yearValue } = req.body || {};
+  const inserted = await pool.query(
+    `INSERT INTO pnl_revenues(entry_date,branch,revenue_type,description,amount,source,month_name,year_value,created_by)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+    [entryDate, branch, revenueType, description, Number(amount || 0), source, monthName, Number(yearValue), req.user.id]
+  );
+  res.status(201).json(inserted.rows[0]);
+});
+
+app.put("/api/pnl/revenues/:id", authMiddleware, async (req, res) => {
+  const { entryDate, branch, revenueType, description, amount, monthName, yearValue } = req.body || {};
+  const updated = await pool.query(
+    `UPDATE pnl_revenues SET entry_date=$1,branch=$2,revenue_type=$3,description=$4,amount=$5,month_name=$6,year_value=$7
+     WHERE id=$8 RETURNING *`,
+    [entryDate, branch, revenueType, description, Number(amount || 0), monthName, Number(yearValue), req.params.id]
+  );
+  if (updated.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
+  res.json(updated.rows[0]);
+});
+
+app.delete("/api/pnl/revenues/:id", authMiddleware, async (req, res) => {
+  await pool.query("DELETE FROM pnl_revenues WHERE id=$1", [req.params.id]);
+  res.status(204).send();
+});
+
+// =====================================================
+// PnL - Giderler (Expenses) CRUD
+// =====================================================
+app.get("/api/pnl/expenses", authMiddleware, async (req, res) => {
+  const { month, year, branch } = req.query;
+  let query = "SELECT * FROM pnl_expenses WHERE 1=1";
+  const params = [];
+  if (month) { params.push(month); query += ` AND month_name=$${params.length}`; }
+  if (year) { params.push(Number(year)); query += ` AND year_value=$${params.length}`; }
+  if (branch && branch !== 'all') { params.push(branch); query += ` AND branch=$${params.length}`; }
+  query += " ORDER BY entry_date DESC, id DESC";
+  const rows = await pool.query(query, params);
+  res.json(rows.rows);
+});
+
+app.post("/api/pnl/expenses", authMiddleware, async (req, res) => {
+  const { entryDate, branch = 'Genel', category = 'Diğer', subCategory = null, description = null, amount, source = 'Manuel', monthName, yearValue } = req.body || {};
+  const inserted = await pool.query(
+    `INSERT INTO pnl_expenses(entry_date,branch,category,sub_category,description,amount,source,month_name,year_value,created_by)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+    [entryDate, branch, category, subCategory, description, Number(amount || 0), source, monthName, Number(yearValue), req.user.id]
+  );
+  res.status(201).json(inserted.rows[0]);
+});
+
+app.put("/api/pnl/expenses/:id", authMiddleware, async (req, res) => {
+  const { entryDate, branch, category, subCategory, description, amount, monthName, yearValue } = req.body || {};
+  const updated = await pool.query(
+    `UPDATE pnl_expenses SET entry_date=$1,branch=$2,category=$3,sub_category=$4,description=$5,amount=$6,month_name=$7,year_value=$8
+     WHERE id=$9 RETURNING *`,
+    [entryDate, branch, category, subCategory, description, Number(amount || 0), monthName, Number(yearValue), req.params.id]
+  );
+  if (updated.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
+  res.json(updated.rows[0]);
+});
+
+app.delete("/api/pnl/expenses/:id", authMiddleware, async (req, res) => {
+  await pool.query("DELETE FROM pnl_expenses WHERE id=$1", [req.params.id]);
+  res.status(204).send();
+});
+
+// =====================================================
+// PnL - Personel Giderleri CRUD
+// =====================================================
+app.get("/api/pnl/personnel", authMiddleware, async (req, res) => {
+  const { month, year, branch } = req.query;
+  let query = "SELECT * FROM pnl_personnel WHERE 1=1";
+  const params = [];
+  if (month) { params.push(month); query += ` AND month_name=$${params.length}`; }
+  if (year) { params.push(Number(year)); query += ` AND year_value=$${params.length}`; }
+  if (branch && branch !== 'all') { params.push(branch); query += ` AND branch=$${params.length}`; }
+  query += " ORDER BY entry_date DESC, id DESC";
+  const rows = await pool.query(query, params);
+  res.json(rows.rows);
+});
+
+app.post("/api/pnl/personnel", authMiddleware, async (req, res) => {
+  const { entryDate, branch = 'Genel', personName, position = null, salary = 0, bonus = 0, deduction = 0, source = 'Manuel', monthName, yearValue } = req.body || {};
+  const totalCost = Number(salary) + Number(bonus) - Number(deduction);
+  const inserted = await pool.query(
+    `INSERT INTO pnl_personnel(entry_date,branch,person_name,position,salary,bonus,deduction,total_cost,source,month_name,year_value,created_by)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+    [entryDate, branch, personName, position, Number(salary), Number(bonus), Number(deduction), totalCost, source, monthName, Number(yearValue), req.user.id]
+  );
+  res.status(201).json(inserted.rows[0]);
+});
+
+app.put("/api/pnl/personnel/:id", authMiddleware, async (req, res) => {
+  const { entryDate, branch, personName, position, salary = 0, bonus = 0, deduction = 0, monthName, yearValue } = req.body || {};
+  const totalCost = Number(salary) + Number(bonus) - Number(deduction);
+  const updated = await pool.query(
+    `UPDATE pnl_personnel SET entry_date=$1,branch=$2,person_name=$3,position=$4,salary=$5,bonus=$6,deduction=$7,total_cost=$8,month_name=$9,year_value=$10
+     WHERE id=$11 RETURNING *`,
+    [entryDate, branch, personName, position, Number(salary), Number(bonus), Number(deduction), totalCost, monthName, Number(yearValue), req.params.id]
+  );
+  if (updated.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
+  res.json(updated.rows[0]);
+});
+
+app.delete("/api/pnl/personnel/:id", authMiddleware, async (req, res) => {
+  await pool.query("DELETE FROM pnl_personnel WHERE id=$1", [req.params.id]);
+  res.status(204).send();
+});
+
+// =====================================================
+// PnL - Özet & Aylık Rapor
+// =====================================================
+app.get("/api/pnl/summary", authMiddleware, async (req, res) => {
+  const { month, year, branch } = req.query;
+  const buildWhere = (prefix) => {
+    const conds = [];
+    const params = [];
+    if (month) { params.push(month); conds.push(`month_name=$${params.length}`); }
+    if (year) { params.push(Number(year)); conds.push(`year_value=$${params.length}`); }
+    if (branch && branch !== 'all') { params.push(branch); conds.push(`branch=$${params.length}`); }
+    return { where: conds.length ? ' WHERE ' + conds.join(' AND ') : '', params };
+  };
+  const { where, params } = buildWhere();
+  const [revRes, expRes, perRes, catRes] = await Promise.all([
+    pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM pnl_revenues${where}`, params),
+    pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM pnl_expenses${where}`, params),
+    pool.query(`SELECT COALESCE(SUM(total_cost),0) AS total FROM pnl_personnel${where}`, params),
+    pool.query(`SELECT category, COALESCE(SUM(amount),0) AS total FROM pnl_expenses${where} GROUP BY category ORDER BY total DESC`, params),
+  ]);
+  const totalRevenue = Number(revRes.rows[0].total);
+  const totalExpensesOnly = Number(expRes.rows[0].total);
+  const totalPersonnel = Number(perRes.rows[0].total);
+  const totalExpense = totalExpensesOnly + totalPersonnel;
+  const netProfit = totalRevenue - totalExpense;
+  const profitMargin = totalRevenue > 0 ? netProfit / totalRevenue * 100 : 0;
+  const expenseRatio = totalRevenue > 0 ? totalExpense / totalRevenue * 100 : 0;
+  const personnelRatio = totalRevenue > 0 ? totalPersonnel / totalRevenue * 100 : 0;
+  const foodExpense = catRes.rows.find(r => r.category === 'Gıda')?.total || 0;
+  const foodRatio = totalRevenue > 0 ? Number(foodExpense) / totalRevenue * 100 : 0;
+  res.json({
+    totalRevenue,
+    totalExpense,
+    totalPersonnel,
+    netProfit,
+    profitMargin: +profitMargin.toFixed(2),
+    expenseRatio: +expenseRatio.toFixed(2),
+    personnelRatio: +personnelRatio.toFixed(2),
+    foodRatio: +foodRatio.toFixed(2),
+    expenseByCategory: catRes.rows.map(r => ({ category: r.category, total: Number(r.total) })),
+  });
+});
+
+app.get("/api/pnl/monthly-summaries", authMiddleware, async (req, res) => {
+  const monthOrder = `CASE month_name WHEN 'OCAK' THEN 1 WHEN 'ŞUBAT' THEN 2 WHEN 'MART' THEN 3 WHEN 'NİSAN' THEN 4 WHEN 'MAYIS' THEN 5 WHEN 'HAZİRAN' THEN 6 WHEN 'TEMMUZ' THEN 7 WHEN 'AĞUSTOS' THEN 8 WHEN 'EYLÜL' THEN 9 WHEN 'EKİM' THEN 10 WHEN 'KASIM' THEN 11 WHEN 'ARALIK' THEN 12 ELSE 99 END`;
+  const months = await pool.query(`
+    SELECT DISTINCT month_name, year_value FROM (
+      SELECT month_name, year_value FROM pnl_revenues
+      UNION SELECT month_name, year_value FROM pnl_expenses
+      UNION SELECT month_name, year_value FROM pnl_personnel
+    ) t ORDER BY year_value DESC, ${monthOrder} DESC
+  `);
+  const result = [];
+  for (const m of months.rows) {
+    const [r, e, p] = await Promise.all([
+      pool.query('SELECT COALESCE(SUM(amount),0) AS t FROM pnl_revenues WHERE month_name=$1 AND year_value=$2', [m.month_name, m.year_value]),
+      pool.query('SELECT COALESCE(SUM(amount),0) AS t FROM pnl_expenses WHERE month_name=$1 AND year_value=$2', [m.month_name, m.year_value]),
+      pool.query('SELECT COALESCE(SUM(total_cost),0) AS t FROM pnl_personnel WHERE month_name=$1 AND year_value=$2', [m.month_name, m.year_value]),
+    ]);
+    const rev = Number(r.rows[0].t);
+    const exp = Number(e.rows[0].t) + Number(p.rows[0].t);
+    const net = rev - exp;
+    result.push({
+      monthName: m.month_name, yearValue: m.year_value,
+      revenue: rev, expense: exp, netProfit: net,
+      profitMargin: rev > 0 ? +(net / rev * 100).toFixed(2) : 0,
+    });
+  }
+  res.json(result);
+});
+
+// =====================================================
+// PnL - Başlık Eşleştirme (Field Mappings)
+// =====================================================
+app.get("/api/pnl/mappings", authMiddleware, async (req, res) => {
+  const rows = await pool.query("SELECT * FROM pnl_field_mappings ORDER BY source_header ASC");
+  res.json(rows.rows);
+});
+
+app.post("/api/pnl/mappings", authMiddleware, async (req, res) => {
+  const { sourceHeader, mappedCategory, mappedType = 'expense' } = req.body || {};
+  const upserted = await pool.query(
+    `INSERT INTO pnl_field_mappings(source_header,mapped_category,mapped_type)
+     VALUES($1,$2,$3)
+     ON CONFLICT(source_header) DO UPDATE SET mapped_category=EXCLUDED.mapped_category, mapped_type=EXCLUDED.mapped_type
+     RETURNING *`,
+    [String(sourceHeader).trim(), mappedCategory, mappedType]
+  );
+  res.status(201).json(upserted.rows[0]);
+});
+
+// =====================================================
+// PnL - Excel İçe Aktarma (Preview + Confirm)
+// =====================================================
+const PNL_BUILTIN_MAPPINGS = {
+  "satışlar": { category: "Satış", type: "revenue" },
+  "aylık toplam ciro": { category: "Satış", type: "revenue" },
+  "ciro": { category: "Satış", type: "revenue" },
+  "gelir": { category: "Satış", type: "revenue" },
+  "gıda": { category: "Gıda", type: "expense" },
+  "food cost": { category: "Gıda", type: "expense" },
+  "malzeme": { category: "Gıda", type: "expense" },
+  "personel": { category: "Personel", type: "expense" },
+  "maaş": { category: "Personel", type: "expense" },
+  "kira": { category: "Kira", type: "expense" },
+  "aidat": { category: "Kira", type: "expense" },
+  "elektrik": { category: "Elektrik", type: "expense" },
+  "su": { category: "Su", type: "expense" },
+  "doğalgaz": { category: "Doğalgaz", type: "expense" },
+  "dogalgaz": { category: "Doğalgaz", type: "expense" },
+  "pos komisyon": { category: "POS Komisyon", type: "expense" },
+  "pos": { category: "POS Komisyon", type: "expense" },
+  "paket servis": { category: "Paket Servis", type: "expense" },
+  "vergi": { category: "Vergi", type: "expense" },
+  "devir sayım": { category: "Devir Sayım / Stok Farkı", type: "expense" },
+  "stok": { category: "Devir Sayım / Stok Farkı", type: "expense" },
+  "diğer": { category: "Diğer", type: "expense" },
+};
+
+function resolveMapping(header, savedMappings) {
+  const lc = String(header).toLowerCase("tr-TR").trim();
+  if (PNL_BUILTIN_MAPPINGS[lc]) return PNL_BUILTIN_MAPPINGS[lc];
+  for (const [key, val] of Object.entries(PNL_BUILTIN_MAPPINGS)) {
+    if (lc.includes(key)) return val;
+  }
+  const saved = savedMappings.find(m => m.source_header.toLowerCase() === lc);
+  if (saved) return { category: saved.mapped_category, type: saved.mapped_type };
+  return null;
+}
+
+app.post("/api/pnl/import-preview", authMiddleware, upload.single("excelFile"), async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "Dosya yüklenmedi." });
+  const workbook = xlsx.readFile(req.file.path);
+  const savedMappings = (await pool.query("SELECT * FROM pnl_field_mappings")).rows;
+  const sheetResults = [];
+
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const rawRows = xlsx.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+    const monthName = normalizeMonthName(sheetName);
+    const recognized = [];
+    const unmapped = [];
+
+    for (const row of rawRows) {
+      if (!Array.isArray(row)) continue;
+      const label = String(row[1] || row[0] || "").trim();
+      if (!label) continue;
+      const amount = pickNumeric(row[2] ?? row[1]);
+      if (amount === null || amount === 0) continue;
+      const mapping = resolveMapping(label, savedMappings);
+      if (mapping) {
+        recognized.push({ label, amount, category: mapping.category, type: mapping.type, monthName });
+      } else {
+        unmapped.push({ label, amount, monthName, suggestedCategory: "Diğer" });
+      }
+    }
+    if (recognized.length > 0 || unmapped.length > 0) {
+      sheetResults.push({ sheetName, monthName, recognized, unmapped });
+    }
+  }
+  res.json({ sheetResults, fileName: req.file.originalname });
+});
+
+app.post("/api/pnl/import-confirm", authMiddleware, async (req, res) => {
+  const { rows, year = new Date().getFullYear(), branch = 'Genel', mappingsToSave = [] } = req.body || {};
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return res.status(400).json({ message: "İçe aktarılacak satır bulunamadı." });
+  }
+
+  // Save new mappings
+  for (const m of mappingsToSave) {
+    await pool.query(
+      `INSERT INTO pnl_field_mappings(source_header,mapped_category,mapped_type)
+       VALUES($1,$2,$3)
+       ON CONFLICT(source_header) DO UPDATE SET mapped_category=EXCLUDED.mapped_category, mapped_type=EXCLUDED.mapped_type`,
+      [m.label, m.category, m.type || 'expense']
+    ).catch(() => {});
+  }
+
+  let importedCount = 0;
+  const today = new Date().toISOString().split('T')[0];
+  for (const row of rows) {
+    const entryDate = row.entryDate || today;
+    const monthName = row.monthName || 'BİLİNMEYEN';
+    const amount = Number(row.amount || 0);
+    if (amount <= 0) continue;
+
+    if (row.type === 'revenue') {
+      await pool.query(
+        `INSERT INTO pnl_revenues(entry_date,branch,revenue_type,description,amount,source,month_name,year_value,created_by)
+         VALUES($1,$2,$3,$4,$5,'Excel',$6,$7,$8)`,
+        [entryDate, branch, row.category || 'Satış', row.label, amount, monthName, Number(year), req.user.id]
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO pnl_expenses(entry_date,branch,category,description,amount,source,month_name,year_value,created_by)
+         VALUES($1,$2,$3,$4,$5,'Excel',$6,$7,$8)`,
+        [entryDate, branch, row.category || 'Diğer', row.label, amount, monthName, Number(year), req.user.id]
+      );
+    }
+    importedCount++;
+  }
+  res.json({ message: `${importedCount} kayıt başarıyla içe aktarıldı.`, importedCount });
+});
+
+// =====================================================
+// PnL - Legacy (eski özet listesi, geriye dönük uyum)
+// =====================================================
 app.get("/api/pnl", authMiddleware, async (req, res) => {
   const rows = await pool.query("SELECT * FROM pnl_reports ORDER BY year_value DESC, id DESC");
   res.json(rows.rows);
@@ -2040,6 +2497,28 @@ app.post("/api/templates/:id/test", authMiddleware, async (req, res) => {
     await sendMailNotification(title, body);
   } else if (template.channel === "whatsapp") {
     await sendWhatsAppNotification(body);
+  }
+  res.json({ success: true });
+});
+
+app.get("/api/settings", authMiddleware, requireAdmin, async (req, res) => {
+  const rows = await pool.query("SELECT setting_key, setting_value FROM app_settings ORDER BY setting_key ASC");
+  const payload = {};
+  for (const row of rows.rows) payload[row.setting_key] = row.setting_value;
+  res.json(payload);
+});
+
+app.put("/api/settings", authMiddleware, requireAdmin, async (req, res) => {
+  const settings = req.body || {};
+  const keys = Object.keys(settings);
+  for (const key of keys) {
+    await pool.query(
+      `INSERT INTO app_settings(setting_key,setting_value,updated_by,updated_at)
+       VALUES($1,$2::jsonb,$3,NOW())
+       ON CONFLICT (setting_key)
+       DO UPDATE SET setting_value=EXCLUDED.setting_value, updated_by=EXCLUDED.updated_by, updated_at=NOW()`,
+      [key, JSON.stringify(settings[key] || {}), req.user.id],
+    );
   }
   res.json({ success: true });
 });

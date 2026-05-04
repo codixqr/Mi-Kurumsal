@@ -9,7 +9,8 @@ export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const loadSampleData = async () => {
     try {
-      await fetch('/api/admin/seed', { method: 'GET' });
+      const token = localStorage.getItem('access_token');
+      await fetch('/api/admin/seed', { method: 'GET', headers: { Authorization: `Bearer ${token}` } });
       alert('Örnek veriler yüklendi. Sayfa yenilenecek.');
       window.location.reload();
     } catch (error) {
@@ -30,7 +31,6 @@ export default function DashboardLayout({ children }) {
     { name: 'Görevler', path: '/tasks', id: 'tasks' },
     { name: 'Raporlar', path: '/reports', id: 'reports' },
     { name: 'Kar / Zarar', path: '/pnl', id: 'pnl' },
-    { name: 'Timeline', path: '/timeline', id: 'timeline' },
     { name: 'Şablonlar', path: '/templates', id: 'templates' },
     { name: 'Eşleştirme Motoru', path: '/matching', id: 'matching' },
     { name: 'DB Kontrol', path: '/db-check', id: 'db-check' },
@@ -47,10 +47,6 @@ export default function DashboardLayout({ children }) {
               onError={(e) => { e.target.style.display='none'; e.target.parentElement.textContent='Mi'; }}
             />
           </div>
-          <div className="brand-text">
-            <strong>Mi Core Yönetim Paneli</strong>
-            <span>Franchise Yönetimi</span>
-          </div>
         </div>
         <nav className="menu">
           <Link href="/" className={`menu-link ${pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
@@ -64,8 +60,8 @@ export default function DashboardLayout({ children }) {
           <Link href="/pnl" className={`menu-link ${pathname === '/pnl' ? 'active' : ''}`}>Kar / Zarar</Link>
           <Link href="/templates" className={`menu-link ${pathname === '/templates' ? 'active' : ''}`}>Şablonlar</Link>
           <Link href="/matching" className={`menu-link ${pathname === '/matching' ? 'active' : ''}`}>Eşleştirme Motoru</Link>
-          <Link href="/db-check" className={`menu-link ${pathname === '/db-check' ? 'active' : ''}`} style={{opacity: 0.5}}>DB Kontrol</Link>
-          <Link href="/timeline" className={`menu-link ${pathname === '/timeline' ? 'active' : ''}`}>Timeline</Link>
+          {user.role === 'admin' && <Link href="/settings" className={`menu-link ${pathname === '/settings' ? 'active' : ''}`}>Ayarlar</Link>}
+          {user.role === 'admin' && <Link href="/db-check" className={`menu-link ${pathname === '/db-check' ? 'active' : ''}`} style={{opacity: 0.5}}>DB Kontrol</Link>}
         </nav>
       </aside>
 
@@ -76,7 +72,7 @@ export default function DashboardLayout({ children }) {
           </div>
           <div className="header-actions">
             <button type="button" className="secondary-btn">Excel (Tümü)</button>
-            <button type="button" className="secondary-btn" onClick={loadSampleData}>Örnek Veri Yükle</button>
+            {user.role === 'admin' && <button type="button" className="secondary-btn" onClick={loadSampleData}>Örnek Veri Yükle</button>}
             <button type="button" className="primary-btn" onClick={() => window.location.href='/investors'}>+ Yeni Lead</button>
             <button onClick={logout} className="danger-btn">Çıkış</button>
           </div>

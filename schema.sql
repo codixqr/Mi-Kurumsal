@@ -169,6 +169,62 @@ CREATE TABLE IF NOT EXISTS pnl_detail_lines (
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS pnl_revenues (
+  id SERIAL PRIMARY KEY,
+  entry_date DATE NOT NULL,
+  branch TEXT NOT NULL DEFAULT 'Genel',
+  revenue_type TEXT NOT NULL DEFAULT 'Satış',
+  description TEXT,
+  amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+  source TEXT NOT NULL DEFAULT 'Manuel',
+  month_name TEXT NOT NULL,
+  year_value INTEGER NOT NULL,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS pnl_expenses (
+  id SERIAL PRIMARY KEY,
+  entry_date DATE NOT NULL,
+  branch TEXT NOT NULL DEFAULT 'Genel',
+  category TEXT NOT NULL DEFAULT 'Diğer',
+  sub_category TEXT,
+  description TEXT,
+  amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+  revenue_ratio NUMERIC(10,4),
+  source TEXT NOT NULL DEFAULT 'Manuel',
+  month_name TEXT NOT NULL,
+  year_value INTEGER NOT NULL,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS pnl_personnel (
+  id SERIAL PRIMARY KEY,
+  entry_date DATE NOT NULL,
+  branch TEXT NOT NULL DEFAULT 'Genel',
+  person_name TEXT NOT NULL,
+  position TEXT,
+  salary NUMERIC(14,2) NOT NULL DEFAULT 0,
+  bonus NUMERIC(14,2) NOT NULL DEFAULT 0,
+  deduction NUMERIC(14,2) NOT NULL DEFAULT 0,
+  total_cost NUMERIC(14,2) NOT NULL DEFAULT 0,
+  source TEXT NOT NULL DEFAULT 'Manuel',
+  month_name TEXT NOT NULL,
+  year_value INTEGER NOT NULL,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS pnl_field_mappings (
+  id SERIAL PRIMARY KEY,
+  source_header TEXT NOT NULL,
+  mapped_category TEXT NOT NULL,
+  mapped_type TEXT NOT NULL DEFAULT 'expense',
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  UNIQUE(source_header)
+);
+
 CREATE TABLE IF NOT EXISTS tasks (
   id SERIAL PRIMARY KEY,
   note TEXT NOT NULL,
@@ -184,6 +240,7 @@ CREATE TABLE IF NOT EXISTS tasks (
 
 CREATE TABLE IF NOT EXISTS team_members (
   id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   name TEXT NOT NULL,
   email TEXT,
   phone TEXT,
@@ -192,6 +249,14 @@ CREATE TABLE IF NOT EXISTS team_members (
   permissions TEXT[] NOT NULL DEFAULT '{}',
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS app_settings (
+  id SERIAL PRIMARY KEY,
+  setting_key TEXT UNIQUE NOT NULL,
+  setting_value JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 

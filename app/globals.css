@@ -133,15 +133,15 @@ body {
 
 .brand {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  justify-content: center;
+  align-items: center;
   margin-bottom: 28px;
-  padding: 8px 6px;
+  padding: 8px 0;
 }
 
 .brand-mark {
-  width: 58px;
-  height: 58px;
+  width: 170px;
+  height: 72px;
   border-radius: 0;
   display: grid;
   place-items: center;
@@ -158,25 +158,10 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  margin-top: 2px;
 }
 
 .brand-text {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-top: 1px;
-}
-
-.brand-text strong {
-  font-size: 18px;
-  line-height: 1.15;
-}
-
-.brand-text span {
-  opacity: 0.9;
-  font-size: 13px;
-  color: #d6f3e3;
+  display: none;
 }
 
 .menu {
