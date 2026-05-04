@@ -317,6 +317,23 @@ function mapTask(row) {
     id: row.id,
     note: row.note,
     status: row.status,
+    assigneeId: row.assignee_id || null,
+    assigneeName: row.assignee_name || "",
+    priority: row.priority || "Orta",
+    dueDate: row.due_date || null,
+  };
+}
+
+function mapTeamMember(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email || "",
+    phone: row.phone || "",
+    department: row.department || "",
+    roleName: row.role_name || "Temsilci",
+    permissions: row.permissions || [],
+    active: row.active,
   };
 }
 
@@ -427,6 +444,12 @@ async function initDb() {
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS attachment_name TEXT");
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS attachment_data TEXT");
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS attachment_url TEXT");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assignee_id INTEGER");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assignee_name TEXT");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority TEXT NOT NULL DEFAULT 'Orta'");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_date DATE");
+  await pool.query("ALTER TABLE message_templates ADD COLUMN IF NOT EXISTS image_url TEXT");
+  await pool.query("CREATE TABLE IF NOT EXISTS team_members (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT, phone TEXT, department TEXT, role_name TEXT NOT NULL DEFAULT 'Temsilci', permissions TEXT[] NOT NULL DEFAULT '{}', active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMP NOT NULL DEFAULT NOW(), updated_at TIMESTAMP NOT NULL DEFAULT NOW())");
 }
 
 async function seedDefaultDataIfNeeded() {
@@ -463,6 +486,69 @@ async function seedDefaultDataIfNeeded() {
       `INSERT INTO brands(name, sector, min_budget, max_budget, min_sqm, max_sqm, target_locations, active, monthly_growth)
        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       brand,
+    );
+  }
+
+  const teamCount = await pool.query("SELECT COUNT(*)::int AS count FROM team_members");
+  if (teamCount.rows[0].count === 0) {
+    await pool.query(
+      `INSERT INTO team_members(name,email,phone,department,role_name,permissions,active)
+       VALUES
+       ('Selin Demir','selin@micore.com','+90 544 222 33 44','Franchise','Yönetici',ARRAY['investors','brands','locations','projects','contracts','tasks','reports'],true),
+       ('Mert Kaya','mert@micore.com','+90 541 310 22 11','Operasyon','Uzman',ARRAY['tasks','projects','locations'],true),
+       ('Ayşe Çetin','ayse@micore.com','+90 533 118 88 70','Satış','Temsilci',ARRAY['investors','tasks','reports'],true)`
+    );
+  }
+
+  const investorCount = await pool.query("SELECT COUNT(*)::int AS count FROM investors");
+  if (investorCount.rows[0].count === 0) {
+    await pool.query(
+      `INSERT INTO investors(name,budget,currency,city,sector,investment_type,pipeline_stage,phone,email,district,goal,contact_history,meeting_notes,follow_up_date,created_by)
+       VALUES
+       ('Selin Demir',2600000,'TRY','İstanbul','Coffee','Franchise','Marka Önerildi','+90 544 222 33 44','selin.demo@crm.com','Kadıköy','2 şube coffee yatırımı','24.04 arandı','AVM + cadde alternatifleri istiyor','2026-05-18',$1),
+       ('Yaman Grup',4100000,'TRY','Ankara','Fast Casual','Ortaklık','Teklif Verildi','+90 530 444 55 66','yaman@demo.com','Çankaya','Bölgesel büyüme','26.04 toplantı','Sözleşme taslağı paylaşıldı','2026-05-20',$1)`,
+      [existingUser.rows[0].id],
+    );
+  }
+
+  const locationCount = await pool.query("SELECT COUNT(*)::int AS count FROM locations");
+  if (locationCount.rows[0].count === 0) {
+    await pool.query(
+      `INSERT INTO locations(name,location_type,sqm,rent,currency,potential,recommended_brands,address,traffic,owner,owner_phone,notes)
+       VALUES
+       ('Bağdat Caddesi Premium','Cadde',130,380000,'TRY','Yüksek',ARRAY['Blak Coffee Co','Tavada Tavuk'],'Caddebostan / İstanbul','Yoğun','Yıldız Gayrimenkul','+90 555 330 11 22','Yüksek yaya trafiği'),
+       ('Panora AVM - A Blok','AVM',95,240000,'TRY','Orta',ARRAY['The Coffee Factory'],'Oran / Ankara','Orta','Panora Yönetim','+90 312 455 00 11','Food court yakını')`
+    );
+  }
+
+  const projectCount = await pool.query("SELECT COUNT(*)::int AS count FROM projects");
+  if (projectCount.rows[0].count === 0) {
+    await pool.query(
+      `INSERT INTO projects(name,project_type,owner_team,assignees,priority,progress,stage,due_date,description,checklist)
+       VALUES
+       ('Blak Coffee Co - İstanbul Büyüme','Franchise','Franchise Ekibi',ARRAY['Selin Demir','Mert Kaya'],'Yüksek',45,'Sunum & Müzakere','2026-05-30','İstanbul için 2 yeni noktada genişleme',ARRAY['Lokasyon shortlist','Sunum dosyası','Kira pazarlığı'])`
+    );
+  }
+
+  const taskCount = await pool.query("SELECT COUNT(*)::int AS count FROM tasks");
+  if (taskCount.rows[0].count === 0) {
+    await pool.query(
+      `INSERT INTO tasks(note,status,assignee_id,assignee_name,priority,due_date)
+       VALUES
+       ('Personel ilanını yayınla','Açık',1,'Selin Demir','Yüksek','2026-05-16'),
+       ('Ekipman siparişlerini ver','Devam Ediyor',2,'Mert Kaya','Orta','2026-05-17'),
+       ('Kira sözleşmesini imzalat','Açık',1,'Selin Demir','Yüksek','2026-05-19')`
+    );
+  }
+
+  const templateCount = await pool.query("SELECT COUNT(*)::int AS count FROM message_templates");
+  if (templateCount.rows[0].count === 0) {
+    await pool.query(
+      `INSERT INTO message_templates(channel,event_name,title,body,active,image_url)
+       VALUES
+       ('whatsapp','Yeni Lead','Merhaba Hoşgeldiniz','Sayın {{name}}, başvurunuz alınmıştır. En kısa sürede dönüş sağlayacağız.',true,null),
+       ('mail','Sözleşme Süreci','Sözleşme Süreci Hakkında','Merhaba {{name}}, sözleşmeniz onay beklemektedir.',true,null),
+       ('sms','Toplantı Hatırlatma','Toplantı Hatırlatma','{{name}}, yarın 14:00 toplantımız bulunmaktadır.',true,null)`
     );
   }
 }
@@ -673,8 +759,9 @@ app.post("/api/admin/db-fix", async (req, res) => {
       "CREATE TABLE IF NOT EXISTS brands (id SERIAL PRIMARY KEY, name TEXT, sector TEXT, min_budget BIGINT, max_budget BIGINT, min_sqm INTEGER, max_sqm INTEGER, target_locations TEXT, active BOOLEAN, monthly_growth INTEGER, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
       "CREATE TABLE IF NOT EXISTS locations (id SERIAL PRIMARY KEY, name TEXT, location_type TEXT, sqm INTEGER, rent BIGINT, potential TEXT, recommended_brands TEXT[], created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
       "CREATE TABLE IF NOT EXISTS projects (id SERIAL PRIMARY KEY, name TEXT, type TEXT, owner_team TEXT, priority TEXT, progress INTEGER, stage TEXT, due_date DATE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
-      "CREATE TABLE IF NOT EXISTS contracts (id SERIAL PRIMARY KEY, note TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
-      "CREATE TABLE IF NOT EXISTS tasks (id SERIAL PRIMARY KEY, note TEXT, status TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS contracts (id SERIAL PRIMARY KEY, note TEXT, contract_type TEXT, status TEXT, counterparty TEXT, start_date DATE, end_date DATE, amount BIGINT, currency TEXT, file_url TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS tasks (id SERIAL PRIMARY KEY, note TEXT, status TEXT, assignee_name TEXT, assignee_id INTEGER, priority TEXT, due_date DATE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+      "CREATE TABLE IF NOT EXISTS team_members (id SERIAL PRIMARY KEY, name TEXT, email TEXT, phone TEXT, department TEXT, role_name TEXT, permissions TEXT[], active BOOLEAN, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
       "CREATE TABLE IF NOT EXISTS pnl (id SERIAL PRIMARY KEY, month_name TEXT, year_value INTEGER, revenue BIGINT, expense BIGINT, profit BIGINT, note TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
       "CREATE TABLE IF NOT EXISTS message_templates (id SERIAL PRIMARY KEY, channel TEXT, event_name TEXT, title TEXT, body TEXT, active BOOLEAN, image_url TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
       "CREATE TABLE IF NOT EXISTS activity_logs (id SERIAL PRIMARY KEY, user_id INTEGER, user_name TEXT, module_name TEXT, action_type TEXT, summary TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
@@ -724,7 +811,17 @@ app.post("/api/admin/db-fix", async (req, res) => {
       
       "ALTER TABLE projects ADD COLUMN IF NOT EXISTS project_type TEXT",
       "ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS user_name TEXT",
-      "ALTER TABLE message_templates ADD COLUMN IF NOT EXISTS image_url TEXT"
+      "ALTER TABLE message_templates ADD COLUMN IF NOT EXISTS image_url TEXT",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS contract_type TEXT",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS status TEXT",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS counterparty TEXT",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS start_date DATE",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS end_date DATE",
+      "ALTER TABLE contracts ADD COLUMN IF NOT EXISTS file_url TEXT",
+      "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assignee_name TEXT",
+      "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assignee_id INTEGER",
+      "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS priority TEXT",
+      "ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_date DATE"
     ];
 
     for (const sql of alters) {
@@ -1424,16 +1521,53 @@ app.delete("/api/contracts/:id", authMiddleware, async (req, res) => {
   res.status(204).send();
 });
 
+app.get("/api/team-members", authMiddleware, async (req, res) => {
+  const rows = await pool.query("SELECT * FROM team_members ORDER BY id DESC");
+  res.json(rows.rows.map(mapTeamMember));
+});
+
+app.post("/api/team-members", authMiddleware, async (req, res) => {
+  const { name, email = null, phone = null, department = null, roleName = "Temsilci", permissions = [], active = true } = req.body || {};
+  if (!name) {
+    return res.status(400).json({ message: "İsim zorunludur." });
+  }
+  const inserted = await pool.query(
+    `INSERT INTO team_members(name,email,phone,department,role_name,permissions,active)
+     VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+    [name, email, phone, department, roleName, permissions, active],
+  );
+  res.status(201).json(mapTeamMember(inserted.rows[0]));
+});
+
+app.put("/api/team-members/:id", authMiddleware, async (req, res) => {
+  const { name, email = null, phone = null, department = null, roleName = "Temsilci", permissions = [], active = true } = req.body || {};
+  const updated = await pool.query(
+    `UPDATE team_members
+     SET name=$1,email=$2,phone=$3,department=$4,role_name=$5,permissions=$6,active=$7,updated_at=NOW()
+     WHERE id=$8 RETURNING *`,
+    [name, email, phone, department, roleName, permissions, active, req.params.id],
+  );
+  if (updated.rowCount === 0) {
+    return res.status(404).json({ message: "Ekip üyesi bulunamadı." });
+  }
+  res.json(mapTeamMember(updated.rows[0]));
+});
+
+app.delete("/api/team-members/:id", authMiddleware, async (req, res) => {
+  await pool.query("DELETE FROM team_members WHERE id=$1", [req.params.id]);
+  res.status(204).send();
+});
+
 app.get("/api/tasks", authMiddleware, async (req, res) => {
-  const result = await pool.query("SELECT id,note,status FROM tasks ORDER BY id DESC");
+  const result = await pool.query("SELECT id,note,status,assignee_id,assignee_name,priority,due_date FROM tasks ORDER BY id DESC");
   res.json(result.rows.map(mapTask));
 });
 
 app.post("/api/tasks", authMiddleware, async (req, res) => {
-  const { note, status = "Açık" } = req.body || {};
+  const { note, status = "Açık", assigneeId = null, assigneeName = null, priority = "Orta", dueDate = null } = req.body || {};
   const inserted = await pool.query(
-    "INSERT INTO tasks(note,status) VALUES($1,$2) RETURNING id,note,status",
-    [note, status],
+    "INSERT INTO tasks(note,status,assignee_id,assignee_name,priority,due_date) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,note,status,assignee_id,assignee_name,priority,due_date",
+    [note, status, assigneeId, assigneeName, priority, dueDate],
   );
   const item = mapTask(inserted.rows[0]);
   await logActivity({
@@ -1448,11 +1582,11 @@ app.post("/api/tasks", authMiddleware, async (req, res) => {
 });
 
 app.put("/api/tasks/:id", authMiddleware, async (req, res) => {
-  const { note, status } = req.body || {};
-  const before = await pool.query("SELECT id,note,status FROM tasks WHERE id=$1", [req.params.id]);
+  const { note, status, assigneeId = null, assigneeName = null, priority = "Orta", dueDate = null } = req.body || {};
+  const before = await pool.query("SELECT id,note,status,assignee_id,assignee_name,priority,due_date FROM tasks WHERE id=$1", [req.params.id]);
   const updated = await pool.query(
-    "UPDATE tasks SET note=$1,status=$2,updated_at=NOW() WHERE id=$3 RETURNING id,note,status",
-    [note, status, req.params.id],
+    "UPDATE tasks SET note=$1,status=$2,assignee_id=$3,assignee_name=$4,priority=$5,due_date=$6,updated_at=NOW() WHERE id=$7 RETURNING id,note,status,assignee_id,assignee_name,priority,due_date",
+    [note, status, assigneeId, assigneeName, priority, dueDate, req.params.id],
   );
   if (updated.rowCount === 0) {
     return res.status(404).json({ message: "Kayıt bulunamadı." });
@@ -1835,11 +1969,11 @@ app.get("/api/templates", authMiddleware, async (req, res) => {
 });
 
 app.post("/api/templates", authMiddleware, async (req, res) => {
-  const { channel, eventName, title, body, active } = req.body || {};
+  const { channel, eventName, title, body, active, imageUrl = null } = req.body || {};
   const inserted = await pool.query(
-    `INSERT INTO message_templates(channel,event_name,title,body,active)
-     VALUES($1,$2,$3,$4,$5) RETURNING *`,
-    [channel, eventName, title, body, active],
+    `INSERT INTO message_templates(channel,event_name,title,body,active,image_url)
+     VALUES($1,$2,$3,$4,$5,$6) RETURNING *`,
+    [channel, eventName, title, body, active, imageUrl],
   );
   await logActivity({
     userId: req.user.id,
@@ -1853,13 +1987,13 @@ app.post("/api/templates", authMiddleware, async (req, res) => {
 });
 
 app.put("/api/templates/:id", authMiddleware, async (req, res) => {
-  const { channel, eventName, title, body, active } = req.body || {};
+  const { channel, eventName, title, body, active, imageUrl = null } = req.body || {};
   const before = await pool.query("SELECT * FROM message_templates WHERE id=$1", [req.params.id]);
   const updated = await pool.query(
     `UPDATE message_templates
-     SET channel=$1,event_name=$2,title=$3,body=$4,active=$5,updated_at=NOW()
-     WHERE id=$6 RETURNING *`,
-    [channel, eventName, title, body, active, req.params.id],
+     SET channel=$1,event_name=$2,title=$3,body=$4,active=$5,image_url=$6,updated_at=NOW()
+     WHERE id=$7 RETURNING *`,
+    [channel, eventName, title, body, active, imageUrl, req.params.id],
   );
   if (updated.rowCount === 0) {
     return res.status(404).json({ message: "Şablon bulunamadı." });

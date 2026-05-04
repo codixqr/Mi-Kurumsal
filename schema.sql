@@ -173,9 +173,26 @@ CREATE TABLE IF NOT EXISTS tasks (
   id SERIAL PRIMARY KEY,
   note TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'Açık',
+  assignee_id INTEGER,
+  assignee_name TEXT,
+  priority TEXT NOT NULL DEFAULT 'Orta',
+  due_date DATE,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   deleted_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS team_members (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT,
+  phone TEXT,
+  department TEXT,
+  role_name TEXT NOT NULL DEFAULT 'Temsilci',
+  permissions TEXT[] NOT NULL DEFAULT '{}',
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS automation_logs (
@@ -207,6 +224,7 @@ CREATE TABLE IF NOT EXISTS message_templates (
   title TEXT NOT NULL,
   body TEXT NOT NULL,
   active BOOLEAN NOT NULL DEFAULT TRUE,
+  image_url TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );

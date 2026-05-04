@@ -7,6 +7,15 @@ import { usePathname } from 'next/navigation';
 export default function DashboardLayout({ children }) {
   const { user, logout, loading } = useAuth();
   const pathname = usePathname();
+  const loadSampleData = async () => {
+    try {
+      await fetch('/api/admin/seed', { method: 'GET' });
+      alert('Örnek veriler yüklendi. Sayfa yenilenecek.');
+      window.location.reload();
+    } catch (error) {
+      alert('Örnek veri yüklenemedi.');
+    }
+  };
 
   if (loading) return <div className="loading-screen">Yükleniyor...</div>;
   if (!user) return null;
@@ -32,7 +41,7 @@ export default function DashboardLayout({ children }) {
         <div className="brand">
           <div className="brand-mark logo-inside">
             <img
-              src="/logo/mi_core_logo.png"
+              src="/logo/micore_logo.png"
               alt="Mi Core Logo"
               className="brand-logo"
               onError={(e) => { e.target.style.display='none'; e.target.parentElement.textContent='Mi'; }}
@@ -53,10 +62,10 @@ export default function DashboardLayout({ children }) {
           <Link href="/tasks" className={`menu-link ${pathname === '/tasks' ? 'active' : ''}`}>Görevler</Link>
           <Link href="/reports" className={`menu-link ${pathname === '/reports' ? 'active' : ''}`}>Raporlar</Link>
           <Link href="/pnl" className={`menu-link ${pathname === '/pnl' ? 'active' : ''}`}>Kar / Zarar</Link>
-          <Link href="/timeline" className={`menu-link ${pathname === '/timeline' ? 'active' : ''}`}>Timeline</Link>
           <Link href="/templates" className={`menu-link ${pathname === '/templates' ? 'active' : ''}`}>Şablonlar</Link>
           <Link href="/matching" className={`menu-link ${pathname === '/matching' ? 'active' : ''}`}>Eşleştirme Motoru</Link>
           <Link href="/db-check" className={`menu-link ${pathname === '/db-check' ? 'active' : ''}`} style={{opacity: 0.5}}>DB Kontrol</Link>
+          <Link href="/timeline" className={`menu-link ${pathname === '/timeline' ? 'active' : ''}`}>Timeline</Link>
         </nav>
       </aside>
 
@@ -67,6 +76,7 @@ export default function DashboardLayout({ children }) {
           </div>
           <div className="header-actions">
             <button type="button" className="secondary-btn">Excel (Tümü)</button>
+            <button type="button" className="secondary-btn" onClick={loadSampleData}>Örnek Veri Yükle</button>
             <button type="button" className="primary-btn" onClick={() => window.location.href='/investors'}>+ Yeni Lead</button>
             <button onClick={logout} className="danger-btn">Çıkış</button>
           </div>

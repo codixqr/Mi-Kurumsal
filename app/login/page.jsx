@@ -38,7 +38,7 @@ export default function LoginPage() {
     }}>
       <div className="card login-card" style={{ width: '100%', maxWidth: '400px', padding: '30px' }}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <img src="/logo/mikurumsal_logo.png" alt="Logo" style={{ height: '50px', marginBottom: '15px' }} />
+          <img src="/logo/micore_logo.png" alt="Logo" style={{ height: '50px', marginBottom: '15px' }} />
           <h2>CRM Giriş</h2>
           <p>Yönetim paneline erişmek için giriş yapın</p>
         </div>

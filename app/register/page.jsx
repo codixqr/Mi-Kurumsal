@@ -26,7 +26,7 @@ export default function RegisterPage() {
       <article className="auth-card">
         <h1 className="auth-logo-title">
           <img
-            src="/logo/mikurumsal_logo.png"
+            src="/logo/micore_logo.png"
             alt="Mi Kurumsal Logo"
             className="auth-logo-inline"
           />
