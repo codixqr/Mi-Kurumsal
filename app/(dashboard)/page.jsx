@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [staleHot, setStaleHot] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [hotLocations, setHotLocations] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -37,6 +38,9 @@ export default function DashboardPage() {
         const b = await apiClient.get('/brands?pageSize=50&page=1');
         const brandList = Array.isArray(b) ? b : b.items || [];
         setBrands(brandList.filter((brand) => brand.active).slice(0, 5));
+        const l = await apiClient.get('/locations?page=1&pageSize=5&potential=Yüksek');
+        const lItems = Array.isArray(l) ? l : l.items || [];
+        setHotLocations(lItems);
       } catch (err) {
         console.error('Dashboard veri çekme hatası:', err);
       }
@@ -123,6 +127,18 @@ export default function DashboardPage() {
                 <strong>{brand.name}</strong> - {brand.sector}
               </li>
             ))}
+          </ul>
+        </article>
+
+        <article className="card dashboard-card">
+          <h3>Yüksek Potansiyel Lokasyonlar</h3>
+          <ul className="dashboard-list">
+            {hotLocations.map((loc) => (
+              <li key={loc.id}>
+                <strong>{loc.name}</strong> - {loc.city || '-'} ({loc.potential})
+              </li>
+            ))}
+            {hotLocations.length === 0 && <li>Öne çıkan lokasyon yok.</li>}
           </ul>
         </article>
       </section>

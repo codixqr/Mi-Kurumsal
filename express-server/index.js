@@ -364,6 +364,28 @@ function mapLocation(row) {
     traffic: row.traffic || "",
     owner: row.owner || "",
     ownerPhone: row.owner_phone || "",
+    city: row.city || "",
+    district: row.district || "",
+    region: row.region || "",
+    avenueName: row.avenue_name || "",
+    mapsLink: row.maps_link || "",
+    segment: row.segment || "",
+    storefrontLength: row.storefront_length != null ? Number(row.storefront_length) : null,
+    floorInfo: row.floor_info || "",
+    chimneyStatus: row.chimney_status || "",
+    infrastructureStatus: row.infrastructure_status || "",
+    revenueRentPct: row.revenue_rent_pct != null ? Number(row.revenue_rent_pct) : null,
+    dues: row.dues != null ? Number(row.dues) : null,
+    deposit: row.deposit != null ? Number(row.deposit) : null,
+    footfallScore: row.footfall_score != null ? Number(row.footfall_score) : null,
+    competitorBrands: row.competitor_brands || "",
+    targetCustomerProfile: row.target_customer_profile || "",
+    suitableSectors: row.suitable_sectors || "",
+    status: row.status || "Boş",
+    brandFitScore: row.brand_fit_score != null ? Number(row.brand_fit_score) : null,
+    streetClass: row.street_class || "",
+    avmSegment: row.avm_segment || "",
+    files: row.files || [],
     notes: row.notes || "",
     attachmentName: row.attachment_name || "",
     attachmentData: row.attachment_data || "",
@@ -386,6 +408,15 @@ function mapProject(row) {
     checklist: row.checklist || [],
     investorId: row.investor_id || null,
     brandId: row.brand_id || null,
+    locationId: row.location_id || null,
+    estimatedInvestment: row.estimated_investment != null ? Number(row.estimated_investment) : null,
+    estimatedRevenue: row.estimated_revenue != null ? Number(row.estimated_revenue) : null,
+    ownerPerson: row.owner_person || "",
+    startDate: row.start_date || null,
+    closeDate: row.close_date || null,
+    riskLevel: row.risk_level || "",
+    pipelineStage: row.pipeline_stage || row.stage || "",
+    files: row.files || [],
   };
 }
 
@@ -420,20 +451,102 @@ function mapTeamMember(row) {
 function mapContract(row) {
   return {
     id: row.id,
-    note: row.note,
+    name: row.name || row.note || `Sözleşme #${row.id}`,
+    note: row.note || "",
     type: row.contract_type || "",
-    status: row.status || "",
+    status: row.status || "Taslak",
     counterparty: row.counterparty || "",
-    startDate: row.start_date || null,
-    endDate: row.end_date || null,
+    startDate: row.start_date ? String(row.start_date).split("T")[0] : null,
+    endDate: row.end_date ? String(row.end_date).split("T")[0] : null,
+    signDate: row.sign_date ? String(row.sign_date).split("T")[0] : null,
+    renewalDate: row.renewal_date ? String(row.renewal_date).split("T")[0] : null,
     amount: row.amount ? Number(row.amount) : 0,
+    consultingFee: row.consulting_fee ? Number(row.consulting_fee) : 0,
+    franchiseCommission: row.franchise_commission ? Number(row.franchise_commission) : 0,
+    franchiseCommissionPct: row.franchise_commission_pct ? Number(row.franchise_commission_pct) : 0,
+    locationCommission: row.location_commission ? Number(row.location_commission) : 0,
+    extraIncome: row.extra_income || "",
     currency: row.currency || "TRY",
     fileName: row.file_name || "",
     fileData: row.file_data || "",
     fileUrl: row.file_url || "",
     fileMimeType: row.file_mime_type || "",
+    docsUrls: row.docs_urls || [],
     investorId: row.investor_id || null,
     brandId: row.brand_id || null,
+    projectId: row.project_id || null,
+    locationId: row.location_id || null,
+    consultantName: row.consultant_name || "",
+    legalPerson: row.legal_person || "",
+    financePerson: row.finance_person || "",
+    riskLevel: row.risk_level || "",
+    riskNote: row.risk_note || "",
+    notes: row.notes || "",
+    createdBy: row.created_by || null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    // joined fields
+    investorName: row.investor_name || "",
+    brandName: row.brand_name || "",
+    projectName: row.project_name || "",
+    locationName: row.location_name || "",
+  };
+}
+
+function mapFinanceRecord(row) {
+  return {
+    id: row.id,
+    contractId: row.contract_id || null,
+    projectId: row.project_id || null,
+    investorId: row.investor_id || null,
+    brandId: row.brand_id || null,
+    incomeType: row.income_type || "Danışmanlık",
+    amount: Number(row.amount || 0),
+    vatPct: Number(row.vat_pct || 0),
+    vatAmount: Number(row.vat_amount || 0),
+    netAmount: Number(row.net_amount || 0),
+    currency: row.currency || "TRY",
+    description: row.description || "",
+    paymentType: row.payment_type || "Peşin",
+    status: row.status || "Açık",
+    consultantCommissionPct: row.consultant_commission_pct != null ? Number(row.consultant_commission_pct) : null,
+    companySharePct: row.company_share_pct != null ? Number(row.company_share_pct) : null,
+    dueDate: row.due_date ? String(row.due_date).split("T")[0] : null,
+    paidDate: row.paid_date ? String(row.paid_date).split("T")[0] : null,
+    paymentMethod: row.payment_method || "",
+    createdAt: row.created_at,
+    // joined
+    contractName: row.contract_name || "",
+    investorName: row.investor_name || "",
+    brandName: row.brand_name || "",
+  };
+}
+
+function mapPaymentPlan(row) {
+  return {
+    id: row.id,
+    financeRecordId: row.finance_record_id,
+    taksitNo: Number(row.taksit_no || 1),
+    amount: Number(row.amount || 0),
+    dueDate: row.due_date ? String(row.due_date).split("T")[0] : null,
+    paidDate: row.paid_date ? String(row.paid_date).split("T")[0] : null,
+    status: row.status || "Bekliyor",
+    paymentMethod: row.payment_method || "",
+    note: row.note || "",
+  };
+}
+
+function mapExpense(row) {
+  return {
+    id: row.id,
+    contractId: row.contract_id || null,
+    projectId: row.project_id || null,
+    expenseType: row.expense_type || "Operasyon",
+    amount: Number(row.amount || 0),
+    currency: row.currency || "TRY",
+    expenseDate: row.expense_date ? String(row.expense_date).split("T")[0] : null,
+    description: row.description || "",
+    createdAt: row.created_at,
   };
 }
 
@@ -537,21 +650,123 @@ async function initDb() {
   await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS progress INTEGER NOT NULL DEFAULT 0");
   await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS description TEXT");
   await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS checklist TEXT[] NOT NULL DEFAULT '{}'");
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS estimated_investment BIGINT");
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS estimated_revenue BIGINT");
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS owner_person TEXT");
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS start_date DATE");
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS close_date DATE");
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS risk_level TEXT");
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS pipeline_stage TEXT");
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS files TEXT[] NOT NULL DEFAULT '{}'");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS contract_type TEXT");
-  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS status TEXT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'Taslak'");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS counterparty TEXT");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS start_date DATE");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS end_date DATE");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS sign_date DATE");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS renewal_date DATE");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS amount BIGINT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS consulting_fee BIGINT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS franchise_commission BIGINT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS franchise_commission_pct NUMERIC(6,2)");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS location_commission BIGINT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS extra_income TEXT");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS file_name TEXT");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS file_data TEXT");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS file_url TEXT");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS file_mime_type TEXT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS docs_urls TEXT[] NOT NULL DEFAULT '{}'");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS consultant_name TEXT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS legal_person TEXT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS finance_person TEXT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS risk_level TEXT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS risk_note TEXT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS notes TEXT");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS name TEXT");
+  await pool.query("UPDATE contracts SET name=COALESCE(note,'Sözleşme '||id::text) WHERE name IS NULL");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE SET NULL");
+  await pool.query(`CREATE TABLE IF NOT EXISTS finance_records (
+    id SERIAL PRIMARY KEY,
+    contract_id INTEGER REFERENCES contracts(id) ON DELETE SET NULL,
+    project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+    investor_id INTEGER REFERENCES investors(id) ON DELETE SET NULL,
+    brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL,
+    income_type TEXT NOT NULL DEFAULT 'Danışmanlık',
+    amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+    vat_pct NUMERIC(6,2) NOT NULL DEFAULT 0,
+    vat_amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+    net_amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+    currency TEXT NOT NULL DEFAULT 'TRY',
+    description TEXT,
+    payment_type TEXT NOT NULL DEFAULT 'Peşin',
+    status TEXT NOT NULL DEFAULT 'Açık',
+    consultant_commission_pct NUMERIC(6,2),
+    company_share_pct NUMERIC(6,2),
+    due_date DATE,
+    paid_date DATE,
+    payment_method TEXT,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMP
+  )`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS payment_plans (
+    id SERIAL PRIMARY KEY,
+    finance_record_id INTEGER NOT NULL REFERENCES finance_records(id) ON DELETE CASCADE,
+    taksit_no INTEGER NOT NULL DEFAULT 1,
+    amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+    due_date DATE NOT NULL,
+    paid_date DATE,
+    status TEXT NOT NULL DEFAULT 'Bekliyor',
+    payment_method TEXT,
+    note TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS finance_expenses (
+    id SERIAL PRIMARY KEY,
+    contract_id INTEGER REFERENCES contracts(id) ON DELETE SET NULL,
+    project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+    expense_type TEXT NOT NULL DEFAULT 'Operasyon',
+    amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+    currency TEXT NOT NULL DEFAULT 'TRY',
+    expense_date DATE NOT NULL,
+    description TEXT,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )`);
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS address TEXT");
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS traffic TEXT");
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS owner TEXT");
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS owner_phone TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS city TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS district TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS region TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS avenue_name TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS maps_link TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS segment TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS storefront_length NUMERIC(10,2)");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS floor_info TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS chimney_status TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS infrastructure_status TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS revenue_rent_pct NUMERIC(6,2)");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS dues BIGINT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS deposit BIGINT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS footfall_score INTEGER");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS competitor_brands TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS target_customer_profile TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS suitable_sectors TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'Boş'");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS brand_fit_score INTEGER");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS street_class TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS avm_segment TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS files TEXT[] NOT NULL DEFAULT '{}'");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE SET NULL");
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS notes TEXT");
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS attachment_name TEXT");
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS attachment_data TEXT");
@@ -1930,85 +2145,174 @@ app.post("/api/brands/:id/agreements", authMiddleware, async (req, res) => {
   res.status(201).json(inserted.rows[0]);
 });
 
+function locationRowFromBody(body, userId) {
+  const b = body || {};
+  return [
+    b.name,
+    b.type || b.locationType,
+    Number(b.sqm || 0),
+    Number(b.rent || 0),
+    b.currency || "TRY",
+    b.potential || "Orta",
+    Array.isArray(b.recommendedBrands) ? b.recommendedBrands : [],
+    b.address || null,
+    b.traffic || null,
+    b.owner || null,
+    b.ownerPhone || null,
+    b.city || null,
+    b.district || null,
+    b.region || null,
+    b.avenueName || null,
+    b.mapsLink || null,
+    b.segment || null,
+    b.storefrontLength == null || b.storefrontLength === "" ? null : Number(b.storefrontLength),
+    b.floorInfo || null,
+    b.chimneyStatus || null,
+    b.infrastructureStatus || null,
+    b.revenueRentPct == null || b.revenueRentPct === "" ? null : Number(b.revenueRentPct),
+    b.dues == null || b.dues === "" ? null : Number(b.dues),
+    b.deposit == null || b.deposit === "" ? null : Number(b.deposit),
+    b.footfallScore == null || b.footfallScore === "" ? null : Number(b.footfallScore),
+    b.competitorBrands || null,
+    b.targetCustomerProfile || null,
+    b.suitableSectors || null,
+    b.status || "Boş",
+    b.brandFitScore == null || b.brandFitScore === "" ? null : Number(b.brandFitScore),
+    b.streetClass || null,
+    b.avmSegment || null,
+    Array.isArray(b.files) ? b.files : [],
+    b.notes || null,
+    b.attachmentName || null,
+    b.attachmentData || null,
+    b.attachmentUrl || null,
+    userId || null,
+  ];
+}
+
+async function computeLocationKpis() {
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
+  const [total, active, empty, highPotential, avgRent, addedMonth] = await Promise.all([
+    pool.query("SELECT COUNT(*)::int AS c FROM locations"),
+    pool.query("SELECT COUNT(*)::int AS c FROM locations WHERE status IN ('Dolu','Görüşmede','Kiralandı')"),
+    pool.query("SELECT COUNT(*)::int AS c FROM locations WHERE status='Boş'"),
+    pool.query("SELECT COUNT(*)::int AS c FROM locations WHERE potential IN ('Yüksek','Premium')"),
+    pool.query("SELECT COALESCE(AVG(rent::numeric),0)::numeric AS a FROM locations"),
+    pool.query("SELECT COUNT(*)::int AS c FROM locations WHERE created_at::date >= $1::date", [monthStart]),
+  ]);
+  return {
+    total: total.rows[0].c,
+    active: active.rows[0].c,
+    empty: empty.rows[0].c,
+    highPotential: highPotential.rows[0].c,
+    avgRent: Number(avgRent.rows[0].a || 0),
+    newThisMonth: addedMonth.rows[0].c,
+  };
+}
+
 app.get("/api/locations", authMiddleware, async (req, res) => {
-  const result = await pool.query("SELECT * FROM locations ORDER BY id DESC");
-  res.json(result.rows.map(mapLocation));
+  const q = req.query || {};
+  const page = Math.max(1, Number(q.page) || 1);
+  const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 20));
+  const offset = (page - 1) * pageSize;
+  const sortMap = { name: "l.name", rent: "l.rent", sqm: "l.sqm", potential: "l.potential", created_at: "l.created_at" };
+  const sortCol = sortMap[q.sort] || "l.created_at";
+  const order = String(q.order || "desc").toLowerCase() === "asc" ? "ASC" : "DESC";
+  const conds = ["1=1"];
+  const params = [];
+  const add = (sql, val) => {
+    params.push(val);
+    conds.push(`${sql}$${params.length}`);
+  };
+  if (q.name) add("l.name ILIKE ", `%${q.name}%`);
+  if (q.city) add("COALESCE(l.city,'') ILIKE ", `%${q.city}%`);
+  if (q.district) add("COALESCE(l.district,'') ILIKE ", `%${q.district}%`);
+  if (q.region) add("COALESCE(l.region,'') ILIKE ", `%${q.region}%`);
+  if (q.type) add("l.location_type = ", q.type);
+  if (q.sqmMin) add("l.sqm >= ", Number(q.sqmMin));
+  if (q.sqmMax) add("l.sqm <= ", Number(q.sqmMax));
+  if (q.rentMin) add("l.rent >= ", Number(q.rentMin));
+  if (q.rentMax) add("l.rent <= ", Number(q.rentMax));
+  if (q.potential) add("l.potential = ", q.potential);
+  if (q.status) add("l.status = ", q.status);
+  if (q.brandFit) add("COALESCE(l.brand_fit_score,0) >= ", Number(q.brandFit));
+  if (q.footfall) add("COALESCE(l.footfall_score,0) >= ", Number(q.footfall));
+  if (q.segment) add("COALESCE(l.segment,'') = ", q.segment);
+  const whereSql = conds.join(" AND ");
+  const countR = await pool.query(`SELECT COUNT(*)::int AS c FROM locations l WHERE ${whereSql}`, params);
+  const total = countR.rows[0].c;
+  const result = await pool.query(
+    `SELECT l.* FROM locations l WHERE ${whereSql} ORDER BY ${sortCol} ${order} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, pageSize, offset],
+  );
+  const kpis = await computeLocationKpis();
+  res.json({ items: result.rows.map(mapLocation), total, page, pageSize, kpis });
+});
+
+app.post("/api/locations/bulk", authMiddleware, async (req, res) => {
+  const { ids = [], status = null, potential = null } = req.body || {};
+  const idList = Array.isArray(ids) ? ids.map((x) => Number(x)).filter((n) => Number.isFinite(n)) : [];
+  if (!idList.length) return res.status(400).json({ message: "ids zorunlu." });
+  if (status) await pool.query("UPDATE locations SET status=$1, updated_at=NOW() WHERE id = ANY($2::int[])", [status, idList]);
+  if (potential) await pool.query("UPDATE locations SET potential=$1, updated_at=NOW() WHERE id = ANY($2::int[])", [potential, idList]);
+  res.json({ ok: true, updated: idList.length });
+});
+
+app.get("/api/locations/:id/detail", authMiddleware, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) return res.status(400).json({ message: "Geçersiz id." });
+  const base = await pool.query("SELECT * FROM locations WHERE id=$1", [id]);
+  if (base.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
+  const location = mapLocation(base.rows[0]);
+  const [projects, investors] = await Promise.all([
+    pool.query("SELECT * FROM projects WHERE location_id=$1 ORDER BY id DESC", [id]),
+    pool.query(
+      `SELECT i.*, ibm.score FROM investor_brand_matches ibm
+       JOIN investors i ON i.id = ibm.investor_id
+       WHERE ibm.brand_id::text = ANY($1::text[]) ORDER BY ibm.score DESC NULLS LAST LIMIT 30`,
+      [location.recommendedBrands.map((x) => String(x))],
+    ).catch(() => ({ rows: [] })),
+  ]);
+  res.json({ location, projects: projects.rows.map(mapProject), investors: investors.rows.map(mapInvestor) });
 });
 
 app.post("/api/locations", authMiddleware, async (req, res) => {
-  const body = req.body || {};
+  const values = locationRowFromBody(req.body, req.user.id);
   const inserted = await pool.query(
-    `INSERT INTO locations(name,location_type,sqm,rent,currency,potential,recommended_brands,address,traffic,owner,owner_phone,notes,attachment_name,attachment_data,attachment_url)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
-    [
-      body.name,
-      body.type,
-      body.sqm,
-      body.rent,
-      body.currency || "TRY",
-      body.potential,
-      body.recommendedBrands,
-      body.address || null,
-      body.traffic || null,
-      body.owner || null,
-      body.ownerPhone || null,
-      body.notes || null,
-      body.attachmentName || null,
-      body.attachmentData || null,
-      body.attachmentUrl || null,
-    ],
+    `INSERT INTO locations(
+      name,location_type,sqm,rent,currency,potential,recommended_brands,address,traffic,owner,owner_phone,
+      city,district,region,avenue_name,maps_link,segment,storefront_length,floor_info,chimney_status,infrastructure_status,
+      revenue_rent_pct,dues,deposit,footfall_score,competitor_brands,target_customer_profile,suitable_sectors,status,brand_fit_score,street_class,avm_segment,files,notes,attachment_name,attachment_data,attachment_url,created_by
+    ) VALUES(
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38
+    ) RETURNING *`,
+    values,
   );
   const item = mapLocation(inserted.rows[0]);
-  await logActivity({
-    userId: req.user.id,
-    moduleName: "locations",
-    actionType: "create",
-    recordId: item.id,
-    summary: `${item.name} eklendi`,
-    afterData: item,
-  });
+  await logActivity({ userId: req.user.id, moduleName: "locations", actionType: "create", recordId: item.id, summary: `${item.name} eklendi`, afterData: item });
+  await pool.query(
+    `INSERT INTO tasks(note,status,priority,due_date) VALUES($1,'Açık','Orta', CURRENT_DATE + INTERVAL '2 day')`,
+    [`Analiz yap: ${item.name}`],
+  );
   res.status(201).json(item);
 });
 
 app.put("/api/locations/:id", authMiddleware, async (req, res) => {
-  const body = req.body || {};
   const before = await pool.query("SELECT * FROM locations WHERE id=$1", [req.params.id]);
+  const values = [...locationRowFromBody(req.body, req.user.id), req.params.id];
   const updated = await pool.query(
-    `UPDATE locations
-     SET name=$1,location_type=$2,sqm=$3,rent=$4,currency=$5,potential=$6,recommended_brands=$7,address=$8,traffic=$9,owner=$10,owner_phone=$11,notes=$12,attachment_name=$13,attachment_data=$14,attachment_url=$15,updated_at=NOW()
-     WHERE id=$16 RETURNING *`,
-    [
-      body.name,
-      body.type,
-      body.sqm,
-      body.rent,
-      body.currency || "TRY",
-      body.potential,
-      body.recommendedBrands,
-      body.address || null,
-      body.traffic || null,
-      body.owner || null,
-      body.ownerPhone || null,
-      body.notes || null,
-      body.attachmentName || null,
-      body.attachmentData || null,
-      body.attachmentUrl || null,
-      req.params.id,
-    ],
+    `UPDATE locations SET
+      name=$1,location_type=$2,sqm=$3,rent=$4,currency=$5,potential=$6,recommended_brands=$7,address=$8,traffic=$9,owner=$10,owner_phone=$11,
+      city=$12,district=$13,region=$14,avenue_name=$15,maps_link=$16,segment=$17,storefront_length=$18,floor_info=$19,chimney_status=$20,infrastructure_status=$21,
+      revenue_rent_pct=$22,dues=$23,deposit=$24,footfall_score=$25,competitor_brands=$26,target_customer_profile=$27,suitable_sectors=$28,status=$29,brand_fit_score=$30,street_class=$31,avm_segment=$32,files=$33,notes=$34,attachment_name=$35,attachment_data=$36,attachment_url=$37,created_by=$38,updated_at=NOW()
+      WHERE id=$39 RETURNING *`,
+    values,
   );
-  if (updated.rowCount === 0) {
-    return res.status(404).json({ message: "Kayıt bulunamadı." });
-  }
+  if (updated.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
   const item = mapLocation(updated.rows[0]);
-  await logActivity({
-    userId: req.user.id,
-    moduleName: "locations",
-    actionType: "update",
-    recordId: item.id,
-    summary: `${item.name} güncellendi`,
-    beforeData: before.rows[0] || null,
-    afterData: item,
-  });
+  if (item.status === "Kiralandı") {
+    await pool.query(`UPDATE projects SET stage='Kapanış', progress=100, updated_at=NOW() WHERE location_id=$1 AND stage <> 'Kapanış'`, [item.id]);
+  }
+  await logActivity({ userId: req.user.id, moduleName: "locations", actionType: "update", recordId: item.id, summary: `${item.name} güncellendi`, beforeData: before.rows[0] || null, afterData: item });
   res.json(item);
 });
 
@@ -2028,30 +2332,137 @@ app.delete("/api/locations/:id", authMiddleware, async (req, res) => {
   res.status(204).send();
 });
 
+function projectRowFromBody(body) {
+  const b = body || {};
+  return [
+    b.name,
+    b.type || b.projectType || "Franchise",
+    b.owner || b.ownerTeam || "Operasyon",
+    Array.isArray(b.assignees) ? b.assignees : [],
+    b.priority || "Orta",
+    Number(b.progress || 0),
+    b.stage || b.pipelineStage || "Lead",
+    b.dueDate || b.closeDate || null,
+    b.description || null,
+    Array.isArray(b.checklist) ? b.checklist : [],
+    b.investorId || b.investor_id || null,
+    b.brandId || b.brand_id || null,
+    b.locationId || b.location_id || null,
+    b.estimatedInvestment == null || b.estimatedInvestment === "" ? null : Number(b.estimatedInvestment),
+    b.estimatedRevenue == null || b.estimatedRevenue === "" ? null : Number(b.estimatedRevenue),
+    b.ownerPerson || null,
+    b.startDate || null,
+    b.closeDate || null,
+    b.riskLevel || null,
+    b.pipelineStage || b.stage || null,
+    Array.isArray(b.files) ? b.files : [],
+  ];
+}
+
+async function computeProjectKpis() {
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
+  const [total, active, closed, waiting, avgClose, monthOpen] = await Promise.all([
+    pool.query("SELECT COUNT(*)::int AS c FROM projects"),
+    pool.query("SELECT COUNT(*)::int AS c FROM projects WHERE stage NOT IN ('Kapanış')"),
+    pool.query("SELECT COUNT(*)::int AS c FROM projects WHERE stage='Kapanış'"),
+    pool.query("SELECT COUNT(*)::int AS c FROM projects WHERE stage IN ('Lead','Analiz')"),
+    pool.query("SELECT COALESCE(AVG(EXTRACT(DAY FROM (COALESCE(close_date,due_date) - created_at::date))),0)::numeric AS a FROM projects WHERE stage='Kapanış'"),
+    pool.query("SELECT COUNT(*)::int AS c FROM projects WHERE created_at::date >= $1::date", [monthStart]),
+  ]);
+  return {
+    total: total.rows[0].c,
+    active: active.rows[0].c,
+    closed: closed.rows[0].c,
+    waiting: waiting.rows[0].c,
+    avgCloseDays: Number(avgClose.rows[0].a || 0),
+    newThisMonth: monthOpen.rows[0].c,
+  };
+}
+
 app.get("/api/projects", authMiddleware, async (req, res) => {
-  const result = await pool.query("SELECT * FROM projects ORDER BY id DESC");
-  res.json(result.rows.map(mapProject));
+  const q = req.query || {};
+  const page = Math.max(1, Number(q.page) || 1);
+  const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 20));
+  const offset = (page - 1) * pageSize;
+  const conds = ["1=1"];
+  const params = [];
+  const add = (sql, val) => {
+    params.push(val);
+    conds.push(`${sql}$${params.length}`);
+  };
+  if (q.name) add("p.name ILIKE ", `%${q.name}%`);
+  if (q.type) add("p.project_type = ", q.type);
+  if (q.stage) add("p.stage = ", q.stage);
+  if (q.priority) add("p.priority = ", q.priority);
+  if (q.investorId) add("p.investor_id = ", Number(q.investorId));
+  if (q.brandId) add("p.brand_id = ", Number(q.brandId));
+  if (q.locationId) add("p.location_id = ", Number(q.locationId));
+  if (q.startFrom) add("COALESCE(p.start_date, p.created_at::date) >= ", q.startFrom);
+  if (q.closeTo) add("COALESCE(p.close_date, p.due_date) <= ", q.closeTo);
+  const whereSql = conds.join(" AND ");
+  const totalR = await pool.query(`SELECT COUNT(*)::int AS c FROM projects p WHERE ${whereSql}`, params);
+  const list = await pool.query(
+    `SELECT p.*, i.name AS investor_name, b.name AS brand_name, l.name AS location_name
+     FROM projects p
+     LEFT JOIN investors i ON i.id = p.investor_id
+     LEFT JOIN brands b ON b.id = p.brand_id
+     LEFT JOIN locations l ON l.id = p.location_id
+     WHERE ${whereSql}
+     ORDER BY p.created_at DESC
+     LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, pageSize, offset],
+  );
+  const items = list.rows.map((r) => {
+    const m = mapProject(r);
+    m.investorName = r.investor_name || "";
+    m.brandName = r.brand_name || "";
+    m.locationName = r.location_name || "";
+    return m;
+  });
+  const kpis = await computeProjectKpis();
+  res.json({ items, total: totalR.rows[0].c, page, pageSize, kpis });
+});
+
+app.get("/api/projects/kanban", authMiddleware, async (req, res) => {
+  const rows = await pool.query("SELECT * FROM projects ORDER BY created_at DESC");
+  const byStage = {};
+  rows.rows.forEach((r) => {
+    const key = r.stage || "Lead";
+    if (!byStage[key]) byStage[key] = [];
+    byStage[key].push(mapProject(r));
+  });
+  res.json(byStage);
+});
+
+app.post("/api/projects/bulk", authMiddleware, async (req, res) => {
+  const { ids = [], stage = null, priority = null } = req.body || {};
+  const idList = Array.isArray(ids) ? ids.map((x) => Number(x)).filter((n) => Number.isFinite(n)) : [];
+  if (!idList.length) return res.status(400).json({ message: "ids zorunlu." });
+  if (stage) await pool.query("UPDATE projects SET stage=$1, pipeline_stage=$1, updated_at=NOW() WHERE id = ANY($2::int[])", [stage, idList]);
+  if (priority) await pool.query("UPDATE projects SET priority=$1, updated_at=NOW() WHERE id = ANY($2::int[])", [priority, idList]);
+  res.json({ ok: true, updated: idList.length });
+});
+
+app.get("/api/projects/:id/detail", authMiddleware, async (req, res) => {
+  const id = Number(req.params.id);
+  const row = await pool.query("SELECT * FROM projects WHERE id=$1", [id]);
+  if (row.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
+  const project = mapProject(row.rows[0]);
+  const [tasks, contracts] = await Promise.all([
+    pool.query("SELECT * FROM tasks WHERE note ILIKE $1 ORDER BY id DESC LIMIT 100", [`%${project.name}%`]),
+    pool.query("SELECT * FROM contracts WHERE brand_id=$1 OR investor_id=$2 ORDER BY id DESC", [project.brandId || 0, project.investorId || 0]),
+  ]);
+  res.json({ project, tasks: tasks.rows.map(mapTask), contracts: contracts.rows.map(mapContract) });
 });
 
 app.post("/api/projects", authMiddleware, async (req, res) => {
-  const body = req.body || {};
   const inserted = await pool.query(
-    `INSERT INTO projects(name,project_type,owner_team,assignees,priority,progress,stage,due_date,description,checklist,investor_id,brand_id)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
-    [
-      body.name,
-      body.type,
-      body.owner,
-      body.assignees || [],
-      body.priority || "Orta",
-      Number(body.progress || 0),
-      body.stage,
-      body.dueDate,
-      body.description || null,
-      body.checklist || [],
-      body.investorId || body.investor_id || null,
-      body.brandId || body.brand_id || null,
-    ],
+    `INSERT INTO projects(
+      name,project_type,owner_team,assignees,priority,progress,stage,due_date,description,checklist,investor_id,brand_id,location_id,estimated_investment,estimated_revenue,owner_person,start_date,close_date,risk_level,pipeline_stage,files
+    ) VALUES(
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21
+    ) RETURNING *`,
+    projectRowFromBody(req.body),
   );
   const project = mapProject(inserted.rows[0]);
   if (project.investorId) {
@@ -2059,6 +2470,9 @@ app.post("/api/projects", authMiddleware, async (req, res) => {
   }
   if (project.brandId) {
     await pool.query(`UPDATE brands SET updated_at=NOW() WHERE id=$1`, [project.brandId]);
+  }
+  if (project.locationId) {
+    await pool.query(`UPDATE locations SET updated_at=NOW() WHERE id=$1`, [project.locationId]);
   }
   await logActivity({
     userId: req.user.id,
@@ -2069,36 +2483,34 @@ app.post("/api/projects", authMiddleware, async (req, res) => {
     afterData: project,
   });
   await triggerAutomation("Proje Açıldı", { summary: `${project.name} projesi açıldı`, project });
+  await pool.query(
+    `INSERT INTO tasks(note,status,priority,due_date) VALUES
+     ($1,'Açık','Orta',CURRENT_DATE + INTERVAL '2 day'),
+     ($2,'Açık','Orta',CURRENT_DATE + INTERVAL '5 day')`,
+    [`Proje başlangıç analizi: ${project.name}`, `Saha ve teklif hazırlığı: ${project.name}`],
+  );
   res.status(201).json(project);
 });
 
 app.put("/api/projects/:id", authMiddleware, async (req, res) => {
-  const body = req.body || {};
   const before = await pool.query("SELECT * FROM projects WHERE id=$1", [req.params.id]);
   const updated = await pool.query(
     `UPDATE projects
-     SET name=$1,project_type=$2,owner_team=$3,assignees=$4,priority=$5,progress=$6,stage=$7,due_date=$8,description=$9,checklist=$10,investor_id=$11,brand_id=$12,updated_at=NOW()
-     WHERE id=$13 RETURNING *`,
-    [
-      body.name,
-      body.type,
-      body.owner,
-      body.assignees || [],
-      body.priority || "Orta",
-      Number(body.progress || 0),
-      body.stage,
-      body.dueDate,
-      body.description || null,
-      body.checklist || [],
-      body.investorId ?? body.investor_id ?? before.rows[0]?.investor_id ?? null,
-      body.brandId ?? body.brand_id ?? before.rows[0]?.brand_id ?? null,
-      req.params.id,
-    ],
+     SET name=$1,project_type=$2,owner_team=$3,assignees=$4,priority=$5,progress=$6,stage=$7,due_date=$8,description=$9,checklist=$10,investor_id=$11,brand_id=$12,location_id=$13,estimated_investment=$14,estimated_revenue=$15,owner_person=$16,start_date=$17,close_date=$18,risk_level=$19,pipeline_stage=$20,files=$21,updated_at=NOW()
+     WHERE id=$22 RETURNING *`,
+    [...projectRowFromBody(req.body), req.params.id],
   );
   if (updated.rowCount === 0) {
     return res.status(404).json({ message: "Kayıt bulunamadı." });
   }
   const item = mapProject(updated.rows[0]);
+  if ((before.rows[0]?.stage || "") !== item.stage && item.stage === "Sözleşme") {
+    await pool.query(
+      `INSERT INTO contracts(note,contract_type,status,counterparty,brand_id,investor_id)
+       VALUES($1,'Otomatik', 'Taslak', $2, $3, $4)`,
+      [`Proje sözleşme başlangıcı: ${item.name}`, item.name, item.brandId || null, item.investorId || null],
+    );
+  }
   await logActivity({
     userId: req.user.id,
     moduleName: "projects",
@@ -2127,131 +2539,422 @@ app.delete("/api/projects/:id", authMiddleware, async (req, res) => {
   res.status(204).send();
 });
 
+// ─── CONTRACT KPI ────────────────────────────────────────────────────────────
+async function computeContractKpis() {
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
+  const thirtyDays = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0];
+  const [total, active, signedMonth, expiringSoon, terminated, totalValue] = await Promise.all([
+    pool.query("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL"),
+    pool.query("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL AND status='Aktif'"),
+    pool.query("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL AND sign_date >= $1::date", [monthStart]),
+    pool.query("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL AND status='Aktif' AND end_date BETWEEN $1::date AND $2::date", [today, thirtyDays]),
+    pool.query("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL AND status='Feshedildi'"),
+    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM contracts WHERE deleted_at IS NULL AND status IN ('Aktif','İmzalandı')"),
+  ]);
+  return {
+    total: total.rows[0].c,
+    active: active.rows[0].c,
+    signedThisMonth: signedMonth.rows[0].c,
+    expiringSoon: expiringSoon.rows[0].c,
+    terminated: terminated.rows[0].c,
+    totalValue: Number(totalValue.rows[0].s || 0),
+  };
+}
+
 app.get("/api/contracts", authMiddleware, async (req, res) => {
-  const result = await pool.query("SELECT * FROM contracts ORDER BY id DESC");
-  res.json(result.rows.map(mapContract));
+  const q = req.query || {};
+  const page = Math.max(1, Number(q.page) || 1);
+  const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 20));
+  const offset = (page - 1) * pageSize;
+  const conds = ["c.deleted_at IS NULL"];
+  const params = [];
+  const add = (sql, val) => { params.push(val); conds.push(`${sql}$${params.length}`); };
+  if (q.name) add("c.name ILIKE ", `%${q.name}%`);
+  if (q.type) add("c.contract_type = ", q.type);
+  if (q.status) add("c.status = ", q.status);
+  if (q.investorId) add("c.investor_id = ", Number(q.investorId));
+  if (q.brandId) add("c.brand_id = ", Number(q.brandId));
+  if (q.projectId) add("c.project_id = ", Number(q.projectId));
+  if (q.locationId) add("c.location_id = ", Number(q.locationId));
+  if (q.consultant) add("c.consultant_name ILIKE ", `%${q.consultant}%`);
+  if (q.startFrom) add("c.start_date >= ", q.startFrom);
+  if (q.startTo) add("c.start_date <= ", q.startTo);
+  if (q.endFrom) add("c.end_date >= ", q.endFrom);
+  if (q.endTo) add("c.end_date <= ", q.endTo);
+  if (q.amountMin) add("c.amount >= ", Number(q.amountMin));
+  if (q.amountMax) add("c.amount <= ", Number(q.amountMax));
+  const whereSql = conds.join(" AND ");
+  const totalR = await pool.query(`SELECT COUNT(*)::int AS c FROM contracts c WHERE ${whereSql}`, params);
+  const rows = await pool.query(
+    `SELECT c.*, i.name AS investor_name, b.name AS brand_name, p.name AS project_name, l.name AS location_name
+     FROM contracts c
+     LEFT JOIN investors i ON i.id = c.investor_id
+     LEFT JOIN brands b ON b.id = c.brand_id
+     LEFT JOIN projects p ON p.id = c.project_id
+     LEFT JOIN locations l ON l.id = c.location_id
+     WHERE ${whereSql}
+     ORDER BY c.created_at DESC
+     LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, pageSize, offset],
+  );
+  const kpis = await computeContractKpis();
+  // Check contracts expiring in 30 days
+  const today = new Date().toISOString().split("T")[0];
+  const soon = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+  const warnings = await pool.query(
+    `SELECT id, name, end_date FROM contracts WHERE deleted_at IS NULL AND status='Aktif' AND end_date BETWEEN $1::date AND $2::date ORDER BY end_date ASC LIMIT 10`,
+    [today, soon],
+  );
+  res.json({ items: rows.rows.map(mapContract), total: totalR.rows[0].c, page, pageSize, kpis, expiryWarnings: warnings.rows });
+});
+
+app.get("/api/contracts/:id/detail", authMiddleware, async (req, res) => {
+  const id = Number(req.params.id);
+  const row = await pool.query(
+    `SELECT c.*, i.name AS investor_name, b.name AS brand_name, p.name AS project_name, l.name AS location_name
+     FROM contracts c
+     LEFT JOIN investors i ON i.id = c.investor_id
+     LEFT JOIN brands b ON b.id = c.brand_id
+     LEFT JOIN projects p ON p.id = c.project_id
+     LEFT JOIN locations l ON l.id = c.location_id
+     WHERE c.id=$1`, [id],
+  );
+  if (row.rowCount === 0) return res.status(404).json({ message: "Bulunamadı." });
+  const contract = mapContract(row.rows[0]);
+  const [financeRecords, agreements] = await Promise.all([
+    pool.query("SELECT fr.*, c.name AS contract_name FROM finance_records fr LEFT JOIN contracts c ON c.id=fr.contract_id WHERE fr.contract_id=$1 ORDER BY fr.id DESC", [id]),
+    pool.query("SELECT * FROM brand_agreements WHERE brand_id=$1 ORDER BY version_no DESC", [row.rows[0].brand_id || 0]),
+  ]);
+  res.json({
+    contract,
+    financeRecords: financeRecords.rows.map(mapFinanceRecord),
+    agreements: agreements.rows,
+  });
 });
 
 app.post("/api/contracts", authMiddleware, async (req, res) => {
-  const {
-    note,
-    type = null,
-    status = null,
-    counterparty = null,
-    startDate = null,
-    endDate = null,
-    amount = null,
-    currency = "TRY",
-    fileName = null,
-    fileData = null,
-    fileUrl = null,
-    fileMimeType = null,
-    investorId = null,
-    brandId = null,
-  } = req.body || {};
+  const b = req.body || {};
   const inserted = await pool.query(
-    `INSERT INTO contracts(note,contract_type,status,counterparty,start_date,end_date,amount,currency,file_name,file_data,file_url,file_mime_type,investor_id,brand_id)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
-     RETURNING *`,
+    `INSERT INTO contracts(
+      name, note, contract_type, status, counterparty, start_date, end_date, sign_date, renewal_date,
+      amount, consulting_fee, franchise_commission, franchise_commission_pct, location_commission, extra_income,
+      currency, file_url, docs_urls,
+      investor_id, brand_id, project_id, location_id,
+      consultant_name, legal_person, finance_person, risk_level, risk_note, notes, created_by
+    ) VALUES(
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29
+    ) RETURNING *`,
     [
-      note,
-      type,
-      status,
-      counterparty,
-      startDate,
-      endDate,
-      amount,
-      currency,
-      fileName,
-      fileData,
-      fileUrl,
-      fileMimeType,
-      investorId || null,
-      brandId || null,
+      b.name || b.note || "Yeni sözleşme",
+      b.note || null,
+      b.type || b.contractType || null,
+      b.status || "Taslak",
+      b.counterparty || null,
+      b.startDate || null, b.endDate || null, b.signDate || null, b.renewalDate || null,
+      b.amount ? Number(b.amount) : null,
+      b.consultingFee ? Number(b.consultingFee) : null,
+      b.franchiseCommission ? Number(b.franchiseCommission) : null,
+      b.franchiseCommissionPct ? Number(b.franchiseCommissionPct) : null,
+      b.locationCommission ? Number(b.locationCommission) : null,
+      b.extraIncome || null,
+      b.currency || "TRY",
+      b.fileUrl || null,
+      Array.isArray(b.docsUrls) ? b.docsUrls : [],
+      b.investorId || b.investor_id || null,
+      b.brandId || b.brand_id || null,
+      b.projectId || b.project_id || null,
+      b.locationId || b.location_id || null,
+      b.consultantName || null, b.legalPerson || null, b.financePerson || null,
+      b.riskLevel || null, b.riskNote || null, b.notes || null,
+      req.user.id,
     ],
   );
   const item = mapContract(inserted.rows[0]);
-  await logActivity({
-    userId: req.user.id,
-    moduleName: "contracts",
-    actionType: "create",
-    recordId: item.id,
-    summary: "Sözleşme notu eklendi",
-    afterData: item,
-  });
-  await triggerAutomation("Sözleşme Kaydı", { summary: note, contract: item });
+  await logActivity({ userId: req.user.id, moduleName: "contracts", actionType: "create", recordId: item.id, summary: `${item.name} oluşturuldu`, afterData: item });
+  // Otomasyon: İmzalandı → finans kaydı oluştur
+  if (item.status === "İmzalandı" && item.amount) {
+    await pool.query(
+      `INSERT INTO finance_records(contract_id,investor_id,brand_id,income_type,amount,net_amount,currency,description,created_by)
+       VALUES($1,$2,$3,'Danışmanlık',$4,$4,$5,$6,$7)`,
+      [item.id, item.investorId, item.brandId, Number(item.amount), item.currency, `${item.name} – otomatik finans kaydı`, req.user.id],
+    );
+  }
   res.status(201).json(item);
 });
 
 app.put("/api/contracts/:id", authMiddleware, async (req, res) => {
-  const {
-    note,
-    type = null,
-    status = null,
-    counterparty = null,
-    startDate = null,
-    endDate = null,
-    amount = null,
-    currency = "TRY",
-    fileName = null,
-    fileData = null,
-    fileUrl = null,
-    fileMimeType = null,
-    investorId = null,
-    brandId = null,
-  } = req.body || {};
+  const b = req.body || {};
   const before = await pool.query("SELECT * FROM contracts WHERE id=$1", [req.params.id]);
   const updated = await pool.query(
-    `UPDATE contracts
-     SET note=$1,contract_type=$2,status=$3,counterparty=$4,start_date=$5,end_date=$6,amount=$7,currency=$8,file_name=$9,file_data=$10,file_url=$11,file_mime_type=$12,investor_id=$13,brand_id=$14,updated_at=NOW()
-     WHERE id=$15 RETURNING *`,
+    `UPDATE contracts SET
+      name=$1, note=$2, contract_type=$3, status=$4, counterparty=$5, start_date=$6, end_date=$7, sign_date=$8, renewal_date=$9,
+      amount=$10, consulting_fee=$11, franchise_commission=$12, franchise_commission_pct=$13, location_commission=$14, extra_income=$15,
+      currency=$16, file_url=$17, docs_urls=$18,
+      investor_id=$19, brand_id=$20, project_id=$21, location_id=$22,
+      consultant_name=$23, legal_person=$24, finance_person=$25, risk_level=$26, risk_note=$27, notes=$28, updated_at=NOW()
+     WHERE id=$29 RETURNING *`,
     [
-      note,
-      type,
-      status,
-      counterparty,
-      startDate,
-      endDate,
-      amount,
-      currency,
-      fileName,
-      fileData,
-      fileUrl,
-      fileMimeType,
-      investorId ?? before.rows[0]?.investor_id ?? null,
-      brandId ?? before.rows[0]?.brand_id ?? null,
+      b.name || before.rows[0]?.name,
+      b.note || null,
+      b.type || b.contractType || null,
+      b.status || "Taslak",
+      b.counterparty || null,
+      b.startDate || null, b.endDate || null, b.signDate || null, b.renewalDate || null,
+      b.amount ? Number(b.amount) : null,
+      b.consultingFee ? Number(b.consultingFee) : null,
+      b.franchiseCommission ? Number(b.franchiseCommission) : null,
+      b.franchiseCommissionPct ? Number(b.franchiseCommissionPct) : null,
+      b.locationCommission ? Number(b.locationCommission) : null,
+      b.extraIncome || null,
+      b.currency || "TRY",
+      b.fileUrl || null,
+      Array.isArray(b.docsUrls) ? b.docsUrls : [],
+      b.investorId ?? before.rows[0]?.investor_id ?? null,
+      b.brandId ?? before.rows[0]?.brand_id ?? null,
+      b.projectId ?? before.rows[0]?.project_id ?? null,
+      b.locationId ?? before.rows[0]?.location_id ?? null,
+      b.consultantName || null, b.legalPerson || null, b.financePerson || null,
+      b.riskLevel || null, b.riskNote || null, b.notes || null,
       req.params.id,
     ],
   );
-  if (updated.rowCount === 0) {
-    return res.status(404).json({ message: "Kayıt bulunamadı." });
-  }
+  if (updated.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
   const item = mapContract(updated.rows[0]);
-  await logActivity({
-    userId: req.user.id,
-    moduleName: "contracts",
-    actionType: "update",
-    recordId: item.id,
-    summary: "Sözleşme notu güncellendi",
-    beforeData: before.rows[0] || null,
-    afterData: item,
-  });
+  const prevStatus = before.rows[0]?.status || "";
+  // Otomasyon: Yeni İmzalandı → finans kaydı
+  if (prevStatus !== "İmzalandı" && item.status === "İmzalandı" && item.amount) {
+    const existing = await pool.query("SELECT id FROM finance_records WHERE contract_id=$1 LIMIT 1", [item.id]);
+    if (existing.rowCount === 0) {
+      await pool.query(
+        `INSERT INTO finance_records(contract_id,investor_id,brand_id,income_type,amount,net_amount,currency,description,created_by)
+         VALUES($1,$2,$3,'Danışmanlık',$4,$4,$5,$6,$7)`,
+        [item.id, item.investorId, item.brandId, Number(item.amount), item.currency, `${item.name} – otomatik finans kaydı`, req.user.id],
+      );
+    }
+  }
+  // Otomasyon: Feshedildi → finans iptal
+  if (item.status === "Feshedildi") {
+    await pool.query(`UPDATE finance_records SET status='İptal', updated_at=NOW() WHERE contract_id=$1 AND status='Açık'`, [item.id]);
+  }
+  await logActivity({ userId: req.user.id, moduleName: "contracts", actionType: "update", recordId: item.id, summary: `${item.name} güncellendi`, beforeData: before.rows[0] || null, afterData: item });
   res.json(item);
 });
 
 app.delete("/api/contracts/:id", authMiddleware, async (req, res) => {
-  const row = await pool.query("SELECT id,note FROM contracts WHERE id=$1", [req.params.id]);
-  await pool.query("DELETE FROM contracts WHERE id=$1", [req.params.id]);
+  const row = await pool.query("SELECT id,name FROM contracts WHERE id=$1", [req.params.id]);
+  await pool.query("UPDATE contracts SET deleted_at=NOW() WHERE id=$1", [req.params.id]);
   if (row.rowCount > 0) {
-    await logActivity({
-      userId: req.user.id,
-      moduleName: "contracts",
-      actionType: "delete",
-      recordId: Number(req.params.id),
-      summary: "Sözleşme notu silindi",
-      beforeData: row.rows[0],
-    });
+    await logActivity({ userId: req.user.id, moduleName: "contracts", actionType: "delete", recordId: Number(req.params.id), summary: `${row.rows[0].name || "Sözleşme"} silindi`, beforeData: row.rows[0] });
   }
+  res.status(204).send();
+});
+
+// ─── FINANCE RECORDS ─────────────────────────────────────────────────────────
+async function computeFinanceKpis() {
+  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0];
+  const [totalIncome, collected, pending, overdue, monthIncome, totalExpense] = await Promise.all([
+    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL"),
+    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL AND status='Tahsil edildi'"),
+    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL AND status='Açık'"),
+    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL AND status='Gecikti'"),
+    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL AND created_at::date >= $1::date", [monthStart]),
+    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_expenses WHERE expense_date >= $1::date", [monthStart]),
+  ]);
+  const net = Number(collected.rows[0].s || 0) - Number(totalExpense.rows[0].s || 0);
+  return {
+    totalIncome: Number(totalIncome.rows[0].s || 0),
+    collected: Number(collected.rows[0].s || 0),
+    pending: Number(pending.rows[0].s || 0),
+    overdue: Number(overdue.rows[0].s || 0),
+    monthIncome: Number(monthIncome.rows[0].s || 0),
+    netProfit: net,
+  };
+}
+
+app.get("/api/finance", authMiddleware, async (req, res) => {
+  const q = req.query || {};
+  const page = Math.max(1, Number(q.page) || 1);
+  const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 20));
+  const offset = (page - 1) * pageSize;
+  const conds = ["fr.deleted_at IS NULL"];
+  const params = [];
+  const add = (sql, val) => { params.push(val); conds.push(`${sql}$${params.length}`); };
+  if (q.contractId) add("fr.contract_id = ", Number(q.contractId));
+  if (q.investorId) add("fr.investor_id = ", Number(q.investorId));
+  if (q.brandId) add("fr.brand_id = ", Number(q.brandId));
+  if (q.projectId) add("fr.project_id = ", Number(q.projectId));
+  if (q.incomeType) add("fr.income_type = ", q.incomeType);
+  if (q.status) add("fr.status = ", q.status);
+  if (q.dateFrom) add("fr.created_at::date >= ", q.dateFrom);
+  if (q.dateTo) add("fr.created_at::date <= ", q.dateTo);
+  const where = conds.join(" AND ");
+  const totalR = await pool.query(`SELECT COUNT(*)::int AS c FROM finance_records fr WHERE ${where}`, params);
+  const rows = await pool.query(
+    `SELECT fr.*, c.name AS contract_name, i.name AS investor_name, b.name AS brand_name
+     FROM finance_records fr
+     LEFT JOIN contracts c ON c.id = fr.contract_id
+     LEFT JOIN investors i ON i.id = fr.investor_id
+     LEFT JOIN brands b ON b.id = fr.brand_id
+     WHERE ${where}
+     ORDER BY fr.created_at DESC
+     LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+    [...params, pageSize, offset],
+  );
+  const kpis = await computeFinanceKpis();
+  // Overdue warnings
+  const today = new Date().toISOString().split("T")[0];
+  const overdueWarn = await pool.query(
+    `SELECT id, contract_id, amount, due_date FROM finance_records WHERE deleted_at IS NULL AND status='Açık' AND due_date < $1::date ORDER BY due_date ASC LIMIT 10`,
+    [today],
+  );
+  res.json({ items: rows.rows.map(mapFinanceRecord), total: totalR.rows[0].c, page, pageSize, kpis, overdueWarnings: overdueWarn.rows });
+});
+
+app.get("/api/finance/:id", authMiddleware, async (req, res) => {
+  const id = Number(req.params.id);
+  const row = await pool.query(
+    `SELECT fr.*, c.name AS contract_name, i.name AS investor_name, b.name AS brand_name
+     FROM finance_records fr
+     LEFT JOIN contracts c ON c.id=fr.contract_id
+     LEFT JOIN investors i ON i.id=fr.investor_id
+     LEFT JOIN brands b ON b.id=fr.brand_id
+     WHERE fr.id=$1`, [id],
+  );
+  if (row.rowCount === 0) return res.status(404).json({ message: "Bulunamadı." });
+  const plans = await pool.query("SELECT * FROM payment_plans WHERE finance_record_id=$1 ORDER BY taksit_no ASC", [id]);
+  res.json({ record: mapFinanceRecord(row.rows[0]), paymentPlans: plans.rows.map(mapPaymentPlan) });
+});
+
+app.post("/api/finance", authMiddleware, async (req, res) => {
+  const b = req.body || {};
+  const amount = Number(b.amount || 0);
+  const vatPct = Number(b.vatPct || 0);
+  const vatAmount = Math.round(amount * vatPct / 100 * 100) / 100;
+  const netAmount = amount + vatAmount;
+  const inserted = await pool.query(
+    `INSERT INTO finance_records(contract_id,project_id,investor_id,brand_id,income_type,amount,vat_pct,vat_amount,net_amount,currency,description,payment_type,status,consultant_commission_pct,company_share_pct,due_date,payment_method,created_by)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
+    [
+      b.contractId || null, b.projectId || null, b.investorId || null, b.brandId || null,
+      b.incomeType || "Danışmanlık",
+      amount, vatPct, vatAmount, netAmount,
+      b.currency || "TRY",
+      b.description || null,
+      b.paymentType || "Peşin",
+      b.status || "Açık",
+      b.consultantCommissionPct != null ? Number(b.consultantCommissionPct) : null,
+      b.companySharePct != null ? Number(b.companySharePct) : null,
+      b.dueDate || null,
+      b.paymentMethod || null,
+      req.user.id,
+    ],
+  );
+  const item = mapFinanceRecord(inserted.rows[0]);
+  // Auto-create payment plan for taksitli
+  if (b.paymentType === "Taksitli" && Array.isArray(b.installments) && b.installments.length > 0) {
+    for (const inst of b.installments) {
+      await pool.query(
+        `INSERT INTO payment_plans(finance_record_id,taksit_no,amount,due_date,status) VALUES($1,$2,$3,$4,'Bekliyor')`,
+        [item.id, Number(inst.no || 1), Number(inst.amount || 0), inst.dueDate],
+      );
+    }
+  }
+  await logActivity({ userId: req.user.id, moduleName: "finance", actionType: "create", recordId: item.id, summary: `Finans kaydı oluşturuldu: ${item.incomeType}`, afterData: item });
+  res.status(201).json(item);
+});
+
+app.put("/api/finance/:id", authMiddleware, async (req, res) => {
+  const b = req.body || {};
+  const amount = Number(b.amount || 0);
+  const vatPct = Number(b.vatPct || 0);
+  const vatAmount = Math.round(amount * vatPct / 100 * 100) / 100;
+  const netAmount = amount + vatAmount;
+  const updated = await pool.query(
+    `UPDATE finance_records SET contract_id=$1,project_id=$2,investor_id=$3,brand_id=$4,income_type=$5,amount=$6,vat_pct=$7,vat_amount=$8,net_amount=$9,currency=$10,description=$11,payment_type=$12,status=$13,consultant_commission_pct=$14,company_share_pct=$15,due_date=$16,paid_date=$17,payment_method=$18,updated_at=NOW()
+     WHERE id=$19 RETURNING *`,
+    [
+      b.contractId || null, b.projectId || null, b.investorId || null, b.brandId || null,
+      b.incomeType || "Danışmanlık",
+      amount, vatPct, vatAmount, netAmount,
+      b.currency || "TRY", b.description || null, b.paymentType || "Peşin", b.status || "Açık",
+      b.consultantCommissionPct != null ? Number(b.consultantCommissionPct) : null,
+      b.companySharePct != null ? Number(b.companySharePct) : null,
+      b.dueDate || null, b.paidDate || null, b.paymentMethod || null,
+      req.params.id,
+    ],
+  );
+  if (updated.rowCount === 0) return res.status(404).json({ message: "Bulunamadı." });
+  res.json(mapFinanceRecord(updated.rows[0]));
+});
+
+app.delete("/api/finance/:id", authMiddleware, async (req, res) => {
+  await pool.query("UPDATE finance_records SET deleted_at=NOW() WHERE id=$1", [req.params.id]);
+  res.status(204).send();
+});
+
+// Ödeme al (taksit / peşin)
+app.post("/api/finance/:id/collect", authMiddleware, async (req, res) => {
+  const { amount = null, paymentMethod = "Banka Transferi", paidDate = null, installmentId = null } = req.body || {};
+  const today = paidDate || new Date().toISOString().split("T")[0];
+  if (installmentId) {
+    await pool.query(`UPDATE payment_plans SET status='Ödendi', paid_date=$1, payment_method=$2, updated_at=NOW() WHERE id=$3`, [today, paymentMethod, installmentId]);
+    // Check if all installments paid
+    const rec = await pool.query("SELECT finance_record_id FROM payment_plans WHERE id=$1", [installmentId]);
+    if (rec.rowCount > 0) {
+      const remaining = await pool.query(`SELECT COUNT(*)::int AS c FROM payment_plans WHERE finance_record_id=$1 AND status<>'Ödendi'`, [rec.rows[0].finance_record_id]);
+      if (remaining.rows[0].c === 0) {
+        await pool.query(`UPDATE finance_records SET status='Tahsil edildi', paid_date=$1, updated_at=NOW() WHERE id=$2`, [today, rec.rows[0].finance_record_id]);
+      }
+    }
+  } else {
+    await pool.query(`UPDATE finance_records SET status='Tahsil edildi', paid_date=$1, payment_method=$2, updated_at=NOW() WHERE id=$3`, [today, paymentMethod, req.params.id]);
+  }
+  res.json({ ok: true });
+});
+
+// Ödeme planı upsert
+app.post("/api/finance/:id/payment-plan", authMiddleware, async (req, res) => {
+  const { installments = [] } = req.body || {};
+  const finId = Number(req.params.id);
+  await pool.query("DELETE FROM payment_plans WHERE finance_record_id=$1", [finId]);
+  for (const inst of installments) {
+    await pool.query(
+      `INSERT INTO payment_plans(finance_record_id,taksit_no,amount,due_date,status,note) VALUES($1,$2,$3,$4,$5,$6)`,
+      [finId, Number(inst.no || 1), Number(inst.amount || 0), inst.dueDate, inst.status || "Bekliyor", inst.note || null],
+    );
+  }
+  const plans = await pool.query("SELECT * FROM payment_plans WHERE finance_record_id=$1 ORDER BY taksit_no", [finId]);
+  res.json(plans.rows.map(mapPaymentPlan));
+});
+
+// Gider API
+app.get("/api/finance/expenses", authMiddleware, async (req, res) => {
+  const q = req.query || {};
+  const conds = ["1=1"]; const params = [];
+  const add = (sql, val) => { params.push(val); conds.push(`${sql}$${params.length}`); };
+  if (q.projectId) add("e.project_id = ", Number(q.projectId));
+  if (q.contractId) add("e.contract_id = ", Number(q.contractId));
+  if (q.type) add("e.expense_type = ", q.type);
+  if (q.dateFrom) add("e.expense_date >= ", q.dateFrom);
+  if (q.dateTo) add("e.expense_date <= ", q.dateTo);
+  const rows = await pool.query(`SELECT e.*, p.name AS project_name FROM finance_expenses e LEFT JOIN projects p ON p.id=e.project_id WHERE ${conds.join(" AND ")} ORDER BY e.expense_date DESC`, params);
+  res.json(rows.rows.map(mapExpense));
+});
+
+app.post("/api/finance/expenses", authMiddleware, async (req, res) => {
+  const b = req.body || {};
+  const inserted = await pool.query(
+    `INSERT INTO finance_expenses(contract_id,project_id,expense_type,amount,currency,expense_date,description,created_by)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+    [b.contractId || null, b.projectId || null, b.expenseType || "Operasyon", Number(b.amount || 0), b.currency || "TRY", b.expenseDate || new Date().toISOString().split("T")[0], b.description || null, req.user.id],
+  );
+  res.status(201).json(mapExpense(inserted.rows[0]));
+});
+
+app.delete("/api/finance/expenses/:id", authMiddleware, async (req, res) => {
+  await pool.query("DELETE FROM finance_expenses WHERE id=$1", [req.params.id]);
   res.status(204).send();
 });
 
@@ -2473,12 +3176,16 @@ app.get("/api/export/:module", authMiddleware, async (req, res) => {
       sheet: "Markalar",
     },
     locations: {
-      sql: "SELECT id,name,location_type,sqm,rent,potential,recommended_brands,created_at FROM locations ORDER BY id DESC",
+      sql: `SELECT id,name,city,district,region,location_type,segment,sqm,rent,currency,potential,status,
+            footfall_score,street_class,avm_segment,recommended_brands,created_at
+            FROM locations ORDER BY id DESC`,
       file: "lokasyonlar.xlsx",
       sheet: "Lokasyonlar",
     },
     projects: {
-      sql: "SELECT id,name,project_type,owner_team,stage,due_date,created_at FROM projects ORDER BY id DESC",
+      sql: `SELECT id,name,project_type,owner_team,owner_person,stage,pipeline_stage,priority,progress,start_date,due_date,close_date,
+            investor_id,brand_id,location_id,estimated_investment,estimated_revenue,created_at
+            FROM projects ORDER BY id DESC`,
       file: "projeler.xlsx",
       sheet: "Projeler",
     },

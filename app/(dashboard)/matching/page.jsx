@@ -22,13 +22,13 @@ export default function MatchingPage() {
       const [i, b, l] = await Promise.all([
         apiClient.get('/investors?pageSize=500&page=1'),
         apiClient.get('/brands?pageSize=500&page=1'),
-        apiClient.get('/locations'),
+        apiClient.get('/locations?pageSize=500&page=1'),
       ]);
       const invList = Array.isArray(i) ? i : i.items || [];
       setInvestors(invList);
       const brandList = Array.isArray(b) ? b : b.items || [];
       setBrands(brandList);
-      setLocations(l);
+      setLocations(Array.isArray(l) ? l : l.items || []);
     } catch (err) {
       console.error(err);
     } finally {

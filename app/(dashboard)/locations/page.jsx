@@ -1,165 +1,229 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/apiClient';
 
-const CITIES = [
-  "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Amasya", "Ankara", "Antalya", "Artvin", "Aydın", "Balıkesir", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur", "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Edirne", "Elazığ", "Erzincan", "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari", "Hatay", "Isparta", "Mersin", "İstanbul", "İzmir", "Kars", "Kastamonu", "Kayseri", "Kırklareli", "Kırşehir", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Kahramanmaraş", "Mardin", "Muğla", "Muş", "Nevşehir", "Niğde", "Ordu", "Rize", "Sakarya", "Samsun", "Siirt", "Sinop", "Sivas", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Şanlıurfa", "Uşak", "Van", "Yozgat", "Zonguldak", "Aksaray", "Bayburt", "Karaman", "Kırıkkale", "Batman", "Şırnak", "Bartın", "Ardahan", "Iğdır", "Yalova", "Karabük", "Kilis", "Osmaniye", "Düzce"
-];
+const LOCATION_TYPES = ['AVM', 'Cadde', 'Plaza', 'Sanayi', 'Turistik'];
+const POTENTIALS = ['Düşük', 'Orta', 'Yüksek', 'Premium'];
+const STATUSES = ['Boş', 'Dolu', 'Görüşmede', 'Kiralandı'];
+const SEGMENTS = ['A+', 'A', 'B', 'C'];
 
-const LOCATION_TYPES = ["Cadde Mağazası", "AVM Mağazası", "Köşe Dükkan", "Plaza Altı", "Sahil Bandı", "Benzin İstasyonu", "Hastane Yakını", "Okul Bölgesi"];
-const POTENTIALS = ["Çok Yüksek", "Yüksek", "Orta", "Düşük", "Gelişmekte Olan"];
+const defaultFilters = () => ({
+  name: '', city: '', district: '', region: '', type: '', sqmMin: '', sqmMax: '', rentMin: '', rentMax: '', potential: '', status: '', brandFit: '', footfall: '', segment: '',
+});
+
+const defaultForm = () => ({
+  id: null, name: '', avenueName: '', city: '', district: '', address: '', mapsLink: '', type: 'Cadde', segment: 'A', sqm: '', storefrontLength: '', floorInfo: '', chimneyStatus: '', infrastructureStatus: '',
+  rent: '', revenueRentPct: '', dues: '', deposit: '', footfallScore: '', competitorBrands: '', targetCustomerProfile: '', suitableSectors: '', recommendedBrands: [], potential: 'Orta', status: 'Boş',
+  brandFitScore: '', traffic: '', streetClass: '', avmSegment: '', notes: '', files: [], currency: 'TRY',
+});
 
 export default function LocationsPage() {
-  const [locations, setLocations] = useState([]);
+  const [items, setItems] = useState([]);
+  const [kpis, setKpis] = useState(null);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(12);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState(defaultFilters);
+  const [filterDraft, setFilterDraft] = useState(defaultFilters);
   const [selectedIds, setSelectedIds] = useState([]);
-  const [form, setForm] = useState({
-    name: '', type: '', sqm: '', rent: '', currency: 'TRY',
-    potential: 'Orta', recommendedBrands: '', address: '',
-    traffic: 'Orta', owner: '', ownerPhone: '', notes: '',
-    city: '', district: ''
-  });
+  const [bulkStatus, setBulkStatus] = useState('');
+  const [bulkPotential, setBulkPotential] = useState('');
+  const [form, setForm] = useState(defaultForm());
+  const [formOpen, setFormOpen] = useState(false);
+  const [detail, setDetail] = useState(null);
+  const [detailTab, setDetailTab] = useState('genel');
+  const [listMode, setListMode] = useState('list');
 
-  const fetchData = async () => {
+  const buildQuery = useCallback(() => {
+    const p = new URLSearchParams();
+    p.set('page', String(page));
+    p.set('pageSize', String(pageSize));
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== '' && v !== null && v !== undefined) p.set(k, String(v));
+    });
+    return p.toString();
+  }, [filters, page, pageSize]);
+
+  const fetchList = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiClient.get('/locations');
-      setLocations(data);
-    } catch (err) {
-      console.error(err);
+      const data = await apiClient.get(`/locations?${buildQuery()}`);
+      setItems(data.items || []);
+      setTotal(data.total || 0);
+      setKpis(data.kpis || null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [buildQuery]);
+  useEffect(() => {
+    fetchList();
+  }, [fetchList]);
 
-  useEffect(() => { fetchData(); }, []);
-
-  const resetForm = () => {
-    setForm({ name: '', type: '', sqm: '', rent: '', currency: 'TRY', potential: 'Orta', recommendedBrands: '', address: '', traffic: 'Orta', owner: '', ownerPhone: '', notes: '', city: '', district: '' });
-  };
-
-  const handleSubmit = async (e) => {
+  const saveForm = async (e) => {
     e.preventDefault();
-    try {
-      const payload = {
-        ...form,
-        recommendedBrands: (form.recommendedBrands || '').split(',').map(x => x.trim()).filter(Boolean)
-      };
-      if (form.id) {
-        await apiClient.put(`/locations/${form.id}`, payload);
-      } else {
-        await apiClient.post('/locations', payload);
-      }
-      resetForm();
-      fetchData();
-    } catch (err) {
-      alert('Hata oluştu');
-    }
+    if (form.id) await apiClient.put(`/locations/${form.id}`, form);
+    else await apiClient.post('/locations', form);
+    setForm(defaultForm());
+    setFormOpen(false);
+    fetchList();
   };
-
-  const handleBulkDelete = async () => {
+  const openDetail = async (loc) => {
+    const d = await apiClient.get(`/locations/${loc.id}/detail`);
+    setDetail(d);
+    setDetailTab('genel');
+  };
+  const runBulk = async () => {
     if (!selectedIds.length) return;
-    if (confirm(`${selectedIds.length} lokasyonu silmek istediğinize emin misiniz?`)) {
-      try {
-        for (const id of selectedIds) {
-          await apiClient.delete(`/locations/${id}`);
-        }
-        setSelectedIds([]);
-        fetchData();
-      } catch (err) {
-        alert('Bazı kayıtlar silinemedi.');
-      }
+    await apiClient.post('/locations/bulk', { ids: selectedIds, status: bulkStatus || undefined, potential: bulkPotential || undefined });
+    setSelectedIds([]);
+    setBulkStatus('');
+    setBulkPotential('');
+    fetchList();
+  };
+  const exportExcel = async () => {
+    const token = localStorage.getItem('access_token');
+    const res = await fetch('/api/export/locations', { headers: { Authorization: `Bearer ${token}` } });
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'lokasyonlar.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const uploadFiles = async (fileList) => {
+    const token = localStorage.getItem('access_token');
+    const urls = [];
+    for (const file of fileList) {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('moduleName', 'locations');
+      const res = await fetch('/api/uploads', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
+      if (!res.ok) continue;
+      const j = await res.json();
+      if (j.file_url) urls.push(j.file_url);
     }
+    return urls;
   };
 
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   return (
-    <section className="card page-section active">
+    <div className="inv-page">
       <div className="module-head">
         <h2>Lokasyon Yönetimi</h2>
         <div className="header-actions">
-          {selectedIds.length > 0 && (
-            <button className="danger-btn" onClick={handleBulkDelete}>Seçilenleri Sil ({selectedIds.length})</button>
-          )}
-          <button className="export-btn" type="button">Excel Dışa Aktar</button>
+          <button className="secondary-btn" onClick={() => setListMode((m) => (m === 'list' ? 'map' : 'list'))}>Harita + Liste: {listMode === 'list' ? 'Liste' : 'Harita'}</button>
+          <button className="secondary-btn" onClick={exportExcel}>Excel dışa aktar</button>
+          <button className="primary-btn" onClick={() => { setForm(defaultForm()); setFormOpen(true); }}>+ Yeni lokasyon</button>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="entry-form">
-        <div className="field">
-          <label>Lokasyon Adı</label>
-          <div style={{display: 'flex', gap: '5px'}}>
-            <input value={form.name || ''} onChange={e => setForm({...form, name: e.target.value})} required style={{flex: 1}} />
-            {(form.id || form.name) && <button type="button" onClick={resetForm} style={{background: '#eee', color: '#333', padding: '0 10px'}}>✕</button>}
+      <section className="inv-kpi-grid">
+        <article className="inv-kpi-card"><div className="inv-kpi-label">Toplam</div><div className="inv-kpi-value">{kpis?.total ?? '—'}</div></article>
+        <article className="inv-kpi-card"><div className="inv-kpi-label">Aktif</div><div className="inv-kpi-value">{kpis?.active ?? '—'}</div></article>
+        <article className="inv-kpi-card"><div className="inv-kpi-label">Boş</div><div className="inv-kpi-value">{kpis?.empty ?? '—'}</div></article>
+        <article className="inv-kpi-card"><div className="inv-kpi-label">Yüksek potansiyel</div><div className="inv-kpi-value">{kpis?.highPotential ?? '—'}</div></article>
+        <article className="inv-kpi-card"><div className="inv-kpi-label">Ortalama kira</div><div className="inv-kpi-value">{Number(kpis?.avgRent || 0).toLocaleString('tr-TR')} ₺</div></article>
+        <article className="inv-kpi-card"><div className="inv-kpi-label">Bu ay eklenen</div><div className="inv-kpi-value">{kpis?.newThisMonth ?? '—'}</div></article>
+      </section>
+
+      <div className="inv-filters">
+        {Object.keys(filterDraft).map((k) => (
+          <div className="field" key={k} style={{ margin: 0 }}>
+            <label>{k}</label>
+            <input value={filterDraft[k]} onChange={(e) => setFilterDraft({ ...filterDraft, [k]: e.target.value })} />
           </div>
+        ))}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+          <button className="primary-btn" onClick={() => { setFilters({ ...filterDraft }); setPage(1); }}>Filtrele</button>
+          <button className="secondary-btn" onClick={() => { const d = defaultFilters(); setFilters(d); setFilterDraft(d); setPage(1); }}>Sıfırla</button>
         </div>
+      </div>
 
-        <div className="field">
-          <label>Şehir</label>
-          <input list="city-list" value={form.city || ''} onChange={e => setForm({...form, city: e.target.value})} placeholder="Seçin veya yazın..." />
-          <datalist id="city-list">
-            {CITIES.map(c => <option key={c} value={c} />)}
-          </datalist>
+      {selectedIds.length > 0 && (
+        <div className="inv-bulk-bar">
+          <span>{selectedIds.length} seçili</span>
+          <select value={bulkStatus} onChange={(e) => setBulkStatus(e.target.value)}><option value="">Durum</option>{STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select>
+          <select value={bulkPotential} onChange={(e) => setBulkPotential(e.target.value)}><option value="">Potansiyel</option>{POTENTIALS.map((s) => <option key={s} value={s}>{s}</option>)}</select>
+          <button className="primary-btn" onClick={runBulk}>Toplu güncelle</button>
         </div>
+      )}
 
-        <div className="field">
-          <label>İlçe</label>
-          <input value={form.district || ''} onChange={e => setForm({...form, district: e.target.value})} />
+      {formOpen && (
+        <div className="inv-drawer">
+          <h3>{form.id ? 'Lokasyon düzenle' : 'Yeni lokasyon'}</h3>
+          <form className="inv-form-grid" onSubmit={saveForm}>
+            <div className="field"><label>Lokasyon adı</label><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
+            <div className="field"><label>AVM/Cadde adı</label><input value={form.avenueName} onChange={(e) => setForm({ ...form, avenueName: e.target.value })} /></div>
+            <div className="field"><label>Şehir</label><input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
+            <div className="field"><label>İlçe</label><input value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} /></div>
+            <div className="field" style={{ gridColumn: '1 / -1' }}><label>Açık adres</label><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+            <div className="field"><label>Google Maps</label><input value={form.mapsLink} onChange={(e) => setForm({ ...form, mapsLink: e.target.value })} /></div>
+            <div className="field"><label>Tip</label><select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>{LOCATION_TYPES.map((s) => <option key={s}>{s}</option>)}</select></div>
+            <div className="field"><label>Segment</label><select value={form.segment} onChange={(e) => setForm({ ...form, segment: e.target.value })}>{SEGMENTS.map((s) => <option key={s}>{s}</option>)}</select></div>
+            <div className="field"><label>m²</label><input type="number" value={form.sqm} onChange={(e) => setForm({ ...form, sqm: e.target.value })} /></div>
+            <div className="field"><label>Kira</label><input type="number" value={form.rent} onChange={(e) => setForm({ ...form, rent: e.target.value })} /></div>
+            <div className="field"><label>Footfall (1-10)</label><input type="number" min={1} max={10} value={form.footfallScore} onChange={(e) => setForm({ ...form, footfallScore: e.target.value })} /></div>
+            <div className="field"><label>Potansiyel</label><select value={form.potential} onChange={(e) => setForm({ ...form, potential: e.target.value })}>{POTENTIALS.map((s) => <option key={s}>{s}</option>)}</select></div>
+            <div className="field"><label>Durum</label><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select></div>
+            <div className="field"><label>Uygun markalar</label><input value={(form.recommendedBrands || []).join(',')} onChange={(e) => setForm({ ...form, recommendedBrands: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} /></div>
+            <div className="field" style={{ gridColumn: '1 / -1' }}><label>Notlar</label><textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+            <div className="field" style={{ gridColumn: '1 / -1' }}>
+              <label>Görsel / video / ekspertiz</label>
+              <input type="file" multiple onChange={async (e) => { const urls = await uploadFiles(e.target.files); setForm((f) => ({ ...f, files: [...(f.files || []), ...urls] })); }} />
+            </div>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8 }}>
+              <button className="primary-btn" type="submit">Kaydet</button>
+              <button className="secondary-btn" type="button" onClick={() => { setFormOpen(false); setForm(defaultForm()); }}>Kapat</button>
+            </div>
+          </form>
         </div>
+      )}
 
-        <div className="field">
-          <label>Tip</label>
-          <select value={form.type || ''} onChange={e => setForm({...form, type: e.target.value})} required>
-            <option value="">Seçiniz</option>
-            {LOCATION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+      {listMode === 'map' && (
+        <div className="inv-alert">
+          <strong>Harita entegrasyonu:</strong> Bu kayıt için <a href={(detail?.location?.mapsLink || items[0]?.mapsLink || 'https://maps.google.com')} target="_blank" rel="noreferrer">Google Maps'te aç</a>. Pinleme ve yakındaki rakipler, maps linki üzerinden kullanılabilir.
         </div>
+      )}
 
-        <div className="field">
-          <label>Potansiyel</label>
-          <select value={form.potential || ''} onChange={e => setForm({...form, potential: e.target.value})}>
-            {POTENTIALS.map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
-        </div>
-
-        <div className="field"><label>m²</label><input type="number" value={form.sqm || ''} onChange={e => setForm({...form, sqm: e.target.value})} required /></div>
-        <div className="field"><label>Kira</label><input type="number" value={form.rent || ''} onChange={e => setForm({...form, rent: e.target.value})} required /></div>
-        
-        <div className="field field-wide">
-          <label>Görsel / Harita / Ekspertiz Yükle</label>
-          <input type="file" multiple onChange={() => alert('Dosya yükleme API entegrasyonu yapılıyor...')} />
-        </div>
-
-        <div className="field field-wide"><label>Açık Adres</label><input value={form.address || ''} onChange={e => setForm({...form, address: e.target.value})} /></div>
-        
-        <button type="submit" className="primary-btn">{form.id ? 'Güncelle' : 'Ekle'}</button>
-      </form>
-
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style={{width: '40px'}}><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? locations.map(l => l.id) : [])} /></th>
-              <th>Lokasyon</th><th>Şehir / İlçe</th><th>Tip</th><th>m² / Kira</th><th>Potansiyel</th><th>İşlem</th>
-            </tr>
-          </thead>
+      <div className="inv-table-wrap">
+        <table className="inv-table">
+          <thead><tr><th><input type="checkbox" checked={items.length > 0 && selectedIds.length === items.length} onChange={(e) => setSelectedIds(e.target.checked ? items.map((x) => x.id) : [])} /></th><th>Lokasyon</th><th>Şehir/İlçe</th><th>Tip</th><th>m²</th><th>Kira</th><th>Segment</th><th>Potansiyel</th><th>Durum</th><th>Uygun marka</th><th>İşlem</th></tr></thead>
           <tbody>
-            {locations.map(loc => (
-              <tr key={loc.id} className={selectedIds.includes(loc.id) ? 'selected-row' : ''}>
-                <td><input type="checkbox" checked={selectedIds.includes(loc.id)} onChange={() => setSelectedIds(prev => prev.includes(loc.id) ? prev.filter(i => i !== loc.id) : [...prev, loc.id])} /></td>
-                <td><strong>{loc.name}</strong></td>
-                <td>{loc.city} / {loc.district}</td>
-                <td>{loc.type}</td>
-                <td>{loc.sqm} m² / {loc.rent?.toLocaleString()} {loc.currency}</td>
-                <td>{loc.potential}</td>
-                <td>
-                  <button onClick={() => setForm({...loc, recommendedBrands: (loc.recommendedBrands || []).join(', ')})} className="edit-btn">Düzenle</button>
-                </td>
+            {loading && <tr><td colSpan={11}>Yükleniyor...</td></tr>}
+            {!loading && items.map((loc) => (
+              <tr key={loc.id}>
+                <td><input type="checkbox" checked={selectedIds.includes(loc.id)} onChange={() => setSelectedIds((p) => p.includes(loc.id) ? p.filter((x) => x !== loc.id) : [...p, loc.id])} /></td>
+                <td>{loc.name}</td><td>{loc.city || '-'} / {loc.district || '-'}</td><td>{loc.type}</td><td>{loc.sqm}</td><td>{Number(loc.rent || 0).toLocaleString('tr-TR')} {loc.currency}</td><td>{loc.segment || '-'}</td><td>{loc.potential}</td><td>{loc.status}</td><td>{(loc.recommendedBrands || []).length}</td>
+                <td><div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}><button className="edit-btn" onClick={() => { setForm({ ...defaultForm(), ...loc }); setFormOpen(true); }}>Düzenle</button><button className="secondary-btn" onClick={() => openDetail(loc)}>Detay</button><a className="secondary-btn" href={loc.mapsLink || 'https://maps.google.com'} target="_blank" rel="noreferrer">Harita</a><button className="secondary-btn" onClick={() => { window.location.href = '/matching'; }}>Marka</button><button className="secondary-btn" onClick={() => { window.location.href = '/investors'; }}>Yatırımcı</button><button className="secondary-btn" onClick={async () => { await apiClient.post('/projects', { name: `${loc.name} saha projesi`, type: 'Kiralama', owner: 'Saha', stage: 'Lead', dueDate: new Date(Date.now() + 864000000).toISOString().split('T')[0], locationId: loc.id, progress: 0, assignees: [], checklist: [] }); fetchList(); }}>Proje</button><button className="secondary-btn" onClick={() => { window.location.href = '/tasks'; }}>Görev</button><button className="danger-btn" onClick={async () => { if (!confirm('Silinsin mi?')) return; await apiClient.delete(`/locations/${loc.id}`); fetchList(); }}>Sil</button></div></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </section>
+      <div className="inv-pagination"><button className="secondary-btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Önceki</button><span>Sayfa {page}/{totalPages} ({total})</span><button className="secondary-btn" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Sonraki</button></div>
+
+      {detail?.location && (
+        <div className="inv-modal-overlay" onClick={() => setDetail(null)}>
+          <div className="inv-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="inv-modal-head"><h3>{detail.location.name}</h3><button className="secondary-btn" onClick={() => setDetail(null)}>Kapat</button></div>
+            <div className="inv-tabs">{[['genel', 'Genel bilgiler'], ['teknik', 'Teknik bilgiler'], ['finans', 'Finansal bilgiler'], ['gorsel', 'Görseller'], ['marka', 'Uygun markalar'], ['yatirimci', 'Eşleşen yatırımcılar'], ['proje', 'Aktif projeler'], ['gorusme', 'Görüşme geçmişi'], ['not', 'Notlar']].map(([id, l]) => <button key={id} className={`inv-tab ${detailTab === id ? 'active' : ''}`} onClick={() => setDetailTab(id)}>{l}</button>)}</div>
+            <div className="inv-modal-body">
+              {detailTab === 'genel' && <dl className="inv-dl"><dt>Adres</dt><dd>{detail.location.address || '-'}</dd><dt>Şehir</dt><dd>{detail.location.city || '-'}</dd><dt>Tip</dt><dd>{detail.location.type}</dd><dt>Durum</dt><dd>{detail.location.status}</dd></dl>}
+              {detailTab === 'teknik' && <dl className="inv-dl"><dt>m²</dt><dd>{detail.location.sqm}</dd><dt>Cephe</dt><dd>{detail.location.storefrontLength || '-'}</dd><dt>Kat</dt><dd>{detail.location.floorInfo || '-'}</dd><dt>Baca</dt><dd>{detail.location.chimneyStatus || '-'}</dd><dt>Altyapı</dt><dd>{detail.location.infrastructureStatus || '-'}</dd></dl>}
+              {detailTab === 'finans' && <dl className="inv-dl"><dt>Kira</dt><dd>{detail.location.rent}</dd><dt>Ciro kirası %</dt><dd>{detail.location.revenueRentPct || '-'}</dd><dt>Aidat</dt><dd>{detail.location.dues || '-'}</dd><dt>Depozito</dt><dd>{detail.location.deposit || '-'}</dd></dl>}
+              {detailTab === 'gorsel' && <ul>{(detail.location.files || []).map((f) => <li key={f}><a href={f} target="_blank" rel="noreferrer">{f}</a></li>)}</ul>}
+              {detailTab === 'marka' && <ul>{(detail.location.recommendedBrands || []).map((b) => <li key={b}>{b}</li>)}</ul>}
+              {detailTab === 'yatirimci' && <ul>{(detail.investors || []).map((i) => <li key={i.id}>{i.name}</li>)}</ul>}
+              {detailTab === 'proje' && <ul>{(detail.projects || []).map((p) => <li key={p.id}>{p.name} - {p.stage}</li>)}</ul>}
+              {detailTab === 'gorusme' && <p>Lokasyon görüşme geçmişi için Timeline modülü ile entegre edilebilir.</p>}
+              {detailTab === 'not' && <p>{detail.location.notes || 'Not yok.'}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

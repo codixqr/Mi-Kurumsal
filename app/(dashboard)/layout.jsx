@@ -22,18 +22,19 @@ export default function DashboardLayout({ children }) {
   if (!user) return null;
 
   const menuItems = [
-    { name: 'Dashboard', path: '/', id: 'dashboard' },
+    { name: 'Panel', path: '/', id: 'dashboard' },
     { name: 'Yatırımcı Yönetimi', path: '/investors', id: 'investors' },
     { name: 'Marka Portföy Yönetimi', path: '/brands', id: 'brands' },
-    { name: 'Lokasyonlar', path: '/locations', id: 'locations' },
-    { name: 'Projeler', path: '/projects', id: 'projects' },
-    { name: 'Sözleşme & Finans', path: '/contracts', id: 'contracts' },
+    { name: 'Lokasyon Yönetimi', path: '/locations', id: 'locations' },
+    { name: 'Proje & Süreç Takibi', path: '/projects', id: 'projects' },
+    { name: 'Sözleşme Yönetimi', path: '/contracts', id: 'contracts' },
+    { name: 'Finans Yönetimi', path: '/finance', id: 'finance' },
     { name: 'Görevler', path: '/tasks', id: 'tasks' },
     { name: 'Raporlar', path: '/reports', id: 'reports' },
     { name: 'Kar / Zarar', path: '/pnl', id: 'pnl' },
     { name: 'Şablonlar', path: '/templates', id: 'templates' },
     { name: 'Eşleştirme Motoru', path: '/matching', id: 'matching' },
-    { name: 'DB Kontrol', path: '/db-check', id: 'db-check' },
+    { name: 'Veri Tabanı', path: '/db-check', id: 'db-check' },
   ];
   return (
     <div className="app">
@@ -49,19 +50,20 @@ export default function DashboardLayout({ children }) {
           </div>
         </div>
         <nav className="menu">
-          <Link href="/" className={`menu-link ${pathname === '/' ? 'active' : ''}`}>Dashboard</Link>
+          <Link href="/" className={`menu-link ${pathname === '/' ? 'active' : ''}`}>Panel</Link>
           <Link href="/investors" className={`menu-link ${pathname === '/investors' ? 'active' : ''}`}>Yatırımcı Yönetimi</Link>
           <Link href="/brands" className={`menu-link ${pathname === '/brands' ? 'active' : ''}`}>Marka Portföy Yönetimi</Link>
-          <Link href="/locations" className={`menu-link ${pathname === '/locations' ? 'active' : ''}`}>Lokasyonlar</Link>
-          <Link href="/projects" className={`menu-link ${pathname === '/projects' ? 'active' : ''}`}>Projeler</Link>
-          <Link href="/contracts" className={`menu-link ${pathname === '/contracts' ? 'active' : ''}`}>Sözleşme & Finans</Link>
+          <Link href="/locations" className={`menu-link ${pathname === '/locations' ? 'active' : ''}`}>Lokasyon Yönetimi</Link>
+          <Link href="/projects" className={`menu-link ${pathname === '/projects' ? 'active' : ''}`}>Proje & Süreç Takibi</Link>
+          <Link href="/contracts" className={`menu-link ${pathname === '/contracts' ? 'active' : ''}`}>Sözleşme Yönetimi</Link>
+          <Link href="/finance" className={`menu-link ${pathname === '/finance' ? 'active' : ''}`}>Finans Yönetimi</Link>
           <Link href="/tasks" className={`menu-link ${pathname === '/tasks' ? 'active' : ''}`}>Görevler</Link>
           <Link href="/reports" className={`menu-link ${pathname === '/reports' ? 'active' : ''}`}>Raporlar</Link>
           <Link href="/pnl" className={`menu-link ${pathname === '/pnl' ? 'active' : ''}`}>Kar / Zarar</Link>
           <Link href="/templates" className={`menu-link ${pathname === '/templates' ? 'active' : ''}`}>Şablonlar</Link>
           <Link href="/matching" className={`menu-link ${pathname === '/matching' ? 'active' : ''}`}>Eşleştirme Motoru</Link>
           {user.role === 'admin' && <Link href="/settings" className={`menu-link ${pathname === '/settings' ? 'active' : ''}`}>Ayarlar</Link>}
-          {user.role === 'admin' && <Link href="/db-check" className={`menu-link ${pathname === '/db-check' ? 'active' : ''}`} style={{opacity: 0.5}}>DB Kontrol</Link>}
+          {user.role === 'admin' && <Link href="/db-check" className={`menu-link ${pathname === '/db-check' ? 'active' : ''}`} style={{opacity: 0.5}}>Veri Tabanı</Link>}
         </nav>
       </aside>
 
