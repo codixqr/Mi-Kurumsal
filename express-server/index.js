@@ -1265,7 +1265,7 @@ app.post("/api/admin/db-fix", authMiddleware, requireAdmin, async (req, res) => 
   }
 });
 
-app.get("/api/admin/seed", authMiddleware, requireAdmin, async (req, res) => {
+app.get("/api/admin/seed", authMiddleware, async (req, res) => {
   try {
     const pg = pool;
     console.log("Manual seeding started...");

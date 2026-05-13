@@ -463,6 +463,7 @@ export default function SozlesmePage() {
                     {item.fileUrl && <a className="secondary-btn" href={item.fileUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>PDF</a>}
                     <button className="secondary-btn" onClick={() => yenile(item)} style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Yenile</button>
                     <button className="secondary-btn" onClick={() => feshet(item)} style={{ fontSize: '0.75rem', padding: '4px 8px', background: '#fff1f2', color: '#b91c1c' }}>Feshet</button>
+                    <button className="secondary-btn" onClick={async () => { if (!confirm('Arşivlensin mi?')) return; await apiClient.put(`/contracts/${item.id}`, { ...item, status: 'Arşiv', type: item.type }); fetchList(); }} style={{ fontSize: '0.75rem', padding: '4px 8px', background: '#fef3c7', color: '#92400e' }}>Arşivle</button>
                     <button className="danger-btn" onClick={async () => { if (!confirm('Silinsin mi?')) return; await apiClient.delete(`/contracts/${item.id}`); fetchList(); }} style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Sil</button>
                   </div>
                 </td>

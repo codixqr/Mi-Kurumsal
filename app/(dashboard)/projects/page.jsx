@@ -153,11 +153,15 @@ export default function ProjectsPage() {
     <section className="card page-section active inv-page">
       <div className="module-head">
         <h2>Proje & Süreç Takibi</h2>
-        <div className="header-actions">
+        <div className="header-actions" style={{ flexWrap: 'wrap' }}>
           <button className="secondary-btn" type="button" onClick={() => setView((v) => (v === 'list' ? 'kanban' : 'list'))}>
-            {view === 'list' ? 'Kanban görünümü' : 'Liste görünümü'}
+            {view === 'list' ? 'Tahta görünümü' : 'Liste görünümü'}
           </button>
-          <button className="secondary-btn" type="button" onClick={exportExcel}>Excel Dışa Aktar</button>
+          <button className="secondary-btn" type="button" onClick={exportExcel}>Excel dışa aktar</button>
+          <button className="primary-btn" type="button" onClick={() => {
+            setForm({ id: null, name: '', type: 'Franchise', investorId: '', brandId: '', locationId: '', estimatedInvestment: '', estimatedRevenue: '', owner: '', ownerPerson: '', assignees: '', priority: 'Orta', stage: 'Lead', dueDate: '', startDate: '', closeDate: '', progress: '0', riskLevel: 'Orta', description: '', checklist: '', files: [] });
+            document.getElementById('project-form-section')?.scrollIntoView({ behavior: 'smooth' });
+          }}>+ Yeni proje</button>
         </div>
       </div>
       <section className="inv-kpi-grid">
@@ -170,40 +174,106 @@ export default function ProjectsPage() {
       </section>
 
       <div className="inv-filters">
-        {Object.entries(filters).map(([k, v]) => (
-          <div className="field" key={k} style={{ margin: 0 }}>
-            <label>{k}</label>
-            <input value={v} onChange={(e) => setFilters({ ...filters, [k]: e.target.value })} />
-          </div>
-        ))}
+        <div className="field" style={{ margin: 0 }}>
+          <label>Proje adı</label>
+          <input value={filters.name} onChange={(e) => setFilters({ ...filters, name: e.target.value })} placeholder="Ara…" />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Yatırımcı</label>
+          <select value={filters.investorId} onChange={(e) => setFilters({ ...filters, investorId: e.target.value })}>
+            <option value="">Tümü</option>
+            {lookups.investors.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Marka</label>
+          <select value={filters.brandId} onChange={(e) => setFilters({ ...filters, brandId: e.target.value })}>
+            <option value="">Tümü</option>
+            {lookups.brands.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Lokasyon</label>
+          <select value={filters.locationId} onChange={(e) => setFilters({ ...filters, locationId: e.target.value })}>
+            <option value="">Tümü</option>
+            {lookups.locations.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Proje tipi</label>
+          <input value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })} />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Aşama</label>
+          <select value={filters.stage} onChange={(e) => setFilters({ ...filters, stage: e.target.value })}>
+            <option value="">Tümü</option>
+            {PIPELINES.map((p) => <option key={p}>{p}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Öncelik</label>
+          <select value={filters.priority} onChange={(e) => setFilters({ ...filters, priority: e.target.value })}>
+            <option value="">Tümü</option>
+            {PRIORITIES.map((p) => <option key={p}>{p}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Başlangıç (dan)</label>
+          <input type="date" value={filters.startFrom} onChange={(e) => setFilters({ ...filters, startFrom: e.target.value })} />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Kapanış (a)</label>
+          <input type="date" value={filters.closeTo} onChange={(e) => setFilters({ ...filters, closeTo: e.target.value })} />
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+          <button className="primary-btn" onClick={() => { setPage(1); fetchData(); }}>Ara</button>
+          <button className="secondary-btn" onClick={() => { setFilters({ name: '', investorId: '', brandId: '', locationId: '', type: '', stage: '', priority: '', startFrom: '', closeTo: '' }); setPage(1); }}>Sıfırla</button>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="entry-form">
-        <div className="field"><label>Proje Adı</label><input value={form.name} onChange={e => setForm({...form, name: e.target.value})} required /></div>
-        <div className="field"><label>Proje Tipi</label><input value={form.type} onChange={e => setForm({...form, type: e.target.value})} placeholder="Franchise, Kiralama vb." required /></div>
-        <div className="field"><label>Yatırımcı</label><select value={form.investorId} onChange={(e) => setForm({ ...form, investorId: e.target.value })}><option value="">Seçiniz</option>{lookups.investors.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>
-        <div className="field"><label>Marka</label><select value={form.brandId} onChange={(e) => setForm({ ...form, brandId: e.target.value })}><option value="">Seçiniz</option>{lookups.brands.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>
-        <div className="field"><label>Lokasyon</label><select value={form.locationId} onChange={(e) => setForm({ ...form, locationId: e.target.value })}><option value="">Seçiniz</option>{lookups.locations.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>
-        <div className="field"><label>Tahmini yatırım</label><input type="number" value={form.estimatedInvestment} onChange={(e) => setForm({ ...form, estimatedInvestment: e.target.value })} /></div>
-        <div className="field"><label>Tahmini gelir</label><input type="number" value={form.estimatedRevenue} onChange={(e) => setForm({ ...form, estimatedRevenue: e.target.value })} /></div>
-        <div className="field"><label>Sorumlu Ekip</label><input value={form.owner} onChange={e => setForm({...form, owner: e.target.value})} placeholder="Operasyon, Satış vb." required /></div>
-        <div className="field"><label>Sorumlu kişi</label><input value={form.ownerPerson} onChange={(e) => setForm({ ...form, ownerPerson: e.target.value })} /></div>
-        <div className="field"><label>Sorumlu Kişiler</label><input value={form.assignees} onChange={e => setForm({...form, assignees: e.target.value})} placeholder="Ali, Veli (Virgülle)" /></div>
-        <div className="field">
-          <label>Öncelik</label>
-          <select value={form.priority} onChange={e => setForm({...form, priority: e.target.value})}>{PRIORITIES.map((x) => <option key={x}>{x}</option>)}</select>
+      <div id="project-form-section" className="inv-drawer" style={{ marginBottom: 16 }}>
+        <div className="inv-modal-head" style={{ borderRadius: '12px 12px 0 0', marginBottom: 0 }}>
+          <h3 style={{ margin: 0 }}>{form.id ? 'Projeyi düzenle' : 'Yeni proje oluştur'}</h3>
         </div>
-        <div className="field"><label>İlerleme (%)</label><input type="number" min="0" max="100" value={form.progress} onChange={e => setForm({...form, progress: e.target.value})} /></div>
-        <div className="field"><label>Aşama</label><select value={form.stage} onChange={e => setForm({...form, stage: e.target.value})}>{PIPELINES.map((x) => <option key={x}>{x}</option>)}</select></div>
-        <div className="field"><label>Başlangıç</label><input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} /></div>
-        <div className="field"><label>Son Tarih</label><input type="date" value={form.dueDate} onChange={e => setForm({...form, dueDate: e.target.value})} required /></div>
-        <div className="field"><label>Kapanış</label><input type="date" value={form.closeDate} onChange={(e) => setForm({ ...form, closeDate: e.target.value })} /></div>
-        <div className="field"><label>Risk seviyesi</label><input value={form.riskLevel} onChange={(e) => setForm({ ...form, riskLevel: e.target.value })} /></div>
-        <div className="field field-wide"><label>Detay Açıklama</label><textarea rows="2" value={form.description} onChange={e => setForm({...form, description: e.target.value})}></textarea></div>
-        <div className="field field-wide"><label>Checklist (Her satıra bir adım)</label><textarea rows="3" value={form.checklist} onChange={e => setForm({...form, checklist: e.target.value})} placeholder="Lokasyon onayı&#10;Mimari çizim&#10;Eleman alımı"></textarea></div>
-        <div className="field field-wide"><label>Dosya yükleme</label><input type="file" multiple onChange={async (e) => { const urls = await uploadFiles(e.target.files); setForm((f) => ({ ...f, files: [...(f.files || []), ...urls] })); }} /></div>
-        <button type="submit" className="primary-btn">{form.id ? 'Projeyi Güncelle' : 'Proje Ekle'}</button>
-      </form>
+        <form onSubmit={handleSubmit} className="inv-form-grid" style={{ padding: 16 }}>
+          <div className="field" style={{ margin: 0, gridColumn: 'span 2' }}><label>Proje adı *</label><input value={form.name} onChange={e => setForm({...form, name: e.target.value})} required /></div>
+          <div className="field" style={{ margin: 0 }}><label>Proje tipi</label><input value={form.type} onChange={e => setForm({...form, type: e.target.value})} placeholder="Franchise, Kiralama vb." required /></div>
+          <div className="field" style={{ margin: 0 }}><label>Aşama</label><select value={form.stage} onChange={e => setForm({...form, stage: e.target.value})}>{PIPELINES.map((x) => <option key={x}>{x}</option>)}</select></div>
+          <div className="field" style={{ margin: 0 }}><label>Yatırımcı</label><select value={form.investorId} onChange={(e) => setForm({ ...form, investorId: e.target.value })}><option value="">Seçiniz</option>{lookups.investors.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>
+          <div className="field" style={{ margin: 0 }}><label>Marka</label><select value={form.brandId} onChange={(e) => setForm({ ...form, brandId: e.target.value })}><option value="">Seçiniz</option>{lookups.brands.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>
+          <div className="field" style={{ margin: 0 }}><label>Lokasyon</label><select value={form.locationId} onChange={(e) => setForm({ ...form, locationId: e.target.value })}><option value="">Seçiniz</option>{lookups.locations.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></div>
+          <div className="field" style={{ margin: 0 }}><label>Öncelik</label><select value={form.priority} onChange={e => setForm({...form, priority: e.target.value})}>{PRIORITIES.map((x) => <option key={x}>{x}</option>)}</select></div>
+          <div className="field" style={{ margin: 0 }}><label>Risk seviyesi</label><select value={form.riskLevel} onChange={(e) => setForm({ ...form, riskLevel: e.target.value })}><option>Düşük</option><option>Orta</option><option>Yüksek</option><option>Kritik</option></select></div>
+          <div className="field" style={{ margin: 0 }}><label>Tahmini yatırım (₺)</label><input type="number" value={form.estimatedInvestment} onChange={(e) => setForm({ ...form, estimatedInvestment: e.target.value })} /></div>
+          <div className="field" style={{ margin: 0 }}><label>Tahmini gelir (₺)</label><input type="number" value={form.estimatedRevenue} onChange={(e) => setForm({ ...form, estimatedRevenue: e.target.value })} /></div>
+          <div className="field" style={{ margin: 0 }}><label>Sorumlu ekip</label><input value={form.owner} onChange={e => setForm({...form, owner: e.target.value})} placeholder="Operasyon, Satış vb." required /></div>
+          <div className="field" style={{ margin: 0 }}><label>Sorumlu kişi</label><input value={form.ownerPerson} onChange={(e) => setForm({ ...form, ownerPerson: e.target.value })} /></div>
+          <div className="field" style={{ margin: 0 }}><label>Atanan kişiler (virgülle)</label><input value={form.assignees} onChange={e => setForm({...form, assignees: e.target.value})} placeholder="Ali, Veli" /></div>
+          <div className="field" style={{ margin: 0 }}><label>İlerleme (%)</label><input type="number" min="0" max="100" value={form.progress} onChange={e => setForm({...form, progress: e.target.value})} /></div>
+          <div className="field" style={{ margin: 0 }}><label>Başlangıç tarihi</label><input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} /></div>
+          <div className="field" style={{ margin: 0 }}><label>Hedef tarih *</label><input type="date" value={form.dueDate} onChange={e => setForm({...form, dueDate: e.target.value})} required /></div>
+          <div className="field" style={{ margin: 0 }}><label>Kapanış tarihi</label><input type="date" value={form.closeDate} onChange={(e) => setForm({ ...form, closeDate: e.target.value })} /></div>
+          <div className="field" style={{ margin: 0, gridColumn: 'span 2' }}><label>Açıklama</label><textarea rows="2" value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
+          <div className="field" style={{ margin: 0, gridColumn: 'span 2' }}><label>Kontrol listesi (her satıra bir adım)</label><textarea rows="3" value={form.checklist} onChange={e => setForm({...form, checklist: e.target.value})} placeholder="Lokasyon onayı&#10;Mimari çizim&#10;Eleman alımı" /></div>
+          <div className="field" style={{ margin: 0, gridColumn: 'span 2' }}>
+            <label>Görsel / Belge yükle (PDF, resim)</label>
+            <input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={async (e) => { const urls = await uploadFiles(e.target.files); setForm((f) => ({ ...f, files: [...(f.files || []), ...urls] })); }} />
+            {(form.files || []).length > 0 && (
+              <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {form.files.map((u, i) => (
+                  <a key={u + i} href={u} target="_blank" rel="noreferrer" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '3px 10px' }}>
+                    {u.endsWith('.pdf') ? 'PDF' : 'Görsel'} {i + 1}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+          <div style={{ gridColumn: 'span 2', display: 'flex', gap: 8 }}>
+            <button type="submit" className="primary-btn">{form.id ? 'Güncelle' : 'Proje ekle'}</button>
+            {form.id && <button type="button" className="secondary-btn" onClick={() => setForm({ id: null, name: '', type: 'Franchise', investorId: '', brandId: '', locationId: '', estimatedInvestment: '', estimatedRevenue: '', owner: '', ownerPerson: '', assignees: '', priority: 'Orta', stage: 'Lead', dueDate: '', startDate: '', closeDate: '', progress: '0', riskLevel: 'Orta', description: '', checklist: '', files: [] })}>Yeni form</button>}
+          </div>
+        </form>
+      </div>
 
       {selectedIds.length > 0 && (
         <div className="inv-bulk-bar">
@@ -242,13 +312,13 @@ export default function ProjectsPage() {
                 <td>{p.priority}</td>
                 <td>
                   <button onClick={() => handleEdit(p)} className="edit-btn">Düzenle</button>
-                  <button onClick={() => openDetail(p)} className="secondary-btn">Detay</button>
-                  <button onClick={async () => { await apiClient.post('/tasks', { note: `Proje görevi: ${p.name}`, status: 'Açık', priority: p.priority || 'Orta', dueDate: p.dueDate || null }); alert('Görev eklendi'); }} className="secondary-btn">Görev ekle</button>
-                  <button onClick={async () => { await apiClient.post('/contracts', { note: `Sözleşme kaydı: ${p.name}`, type: 'Proje', status: 'Taslak', brandId: p.brandId || null, investorId: p.investorId || null }); alert('Sözleşme oluşturuldu'); }} className="secondary-btn">Sözleşme</button>
-                  <button onClick={async () => { await apiClient.post('/contracts', { note: `Finans kaydı: ${p.name}`, type: 'Finans', status: 'Açık', amount: p.estimatedInvestment || 0, brandId: p.brandId || null, investorId: p.investorId || null }); alert('Finans kaydı oluşturuldu'); }} className="secondary-btn">Finans</button>
-                  <button onClick={() => document.getElementById(`project-file-${p.id}`)?.click()} className="secondary-btn">Dosya yükle</button>
-                  <input id={`project-file-${p.id}`} type="file" style={{ display: 'none' }} onChange={async (e) => { const urls = await uploadFiles(e.target.files); const updated = [...(p.files || []), ...urls]; await apiClient.put(`/projects/${p.id}`, { ...p, files: updated, type: p.type, owner: p.owner, dueDate: p.dueDate }); fetchData(); }} />
-                  <button onClick={async () => { if(confirm('Sil?')) { await apiClient.delete(`/projects/${p.id}`); fetchData(); } }} className="danger-btn">Sil</button>
+                  <button onClick={() => openDetail(p)} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Detay</button>
+                  <button onClick={async () => { await apiClient.post('/tasks', { note: `Proje görevi: ${p.name}`, status: 'Açık', priority: p.priority || 'Orta', dueDate: p.dueDate || null }); alert('Görev eklendi'); }} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Görev ekle</button>
+                  <button onClick={async () => { await apiClient.post('/contracts', { name: `Sözleşme: ${p.name}`, note: '', type: 'Proje', status: 'Taslak', projectId: p.id, brandId: p.brandId || null, investorId: p.investorId || null }); alert('Sözleşme oluşturuldu'); }} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Sözleşme oluştur</button>
+                  <button onClick={() => document.getElementById(`project-file-${p.id}`)?.click()} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Dosya yükle</button>
+                  <input id={`project-file-${p.id}`} type="file" multiple accept="image/*,.pdf,.doc,.docx" style={{ display: 'none' }} onChange={async (e) => { const urls = await uploadFiles(e.target.files); const updated = [...(p.files || []), ...urls]; await apiClient.put(`/projects/${p.id}`, { ...p, files: updated, type: p.type, owner: p.owner, dueDate: p.dueDate }); fetchData(); }} />
+                  <button onClick={async () => { if (!confirm('Arşivlensin mi?')) return; await apiClient.put(`/projects/${p.id}`, { ...p, stage: 'Arşiv', type: p.type, owner: p.owner, dueDate: p.dueDate }); fetchData(); }} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px', background: '#fef3c7', color: '#92400e' }}>Arşivle</button>
+                  <button onClick={async () => { if(confirm('Sil?')) { await apiClient.delete(`/projects/${p.id}`); fetchData(); } }} className="danger-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Sil</button>
                 </td>
               </tr>
             ))}

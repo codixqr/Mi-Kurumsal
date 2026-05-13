@@ -39,14 +39,22 @@ export default function DashboardLayout({ children }) {
   return (
     <div className="app">
       <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark logo-inside">
+        <div className="sidebar-logo-area">
+          <div className="sidebar-logo-img-wrap">
             <img
               src="/logo/micore_logo.png"
-              alt="Mi Core Logo"
-              className="brand-logo"
-              onError={(e) => { e.target.style.display='none'; e.target.parentElement.textContent='Mi'; }}
+              alt="Mi Core"
+              className="sidebar-logo-img"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                const fb = e.target.parentElement;
+                fb.innerHTML = '<span class="sidebar-logo-fallback">Mi</span>';
+              }}
             />
+          </div>
+          <div className="sidebar-logo-text">
+            <span className="sidebar-logo-name">Mi Core</span>
+            <span className="sidebar-logo-sub">CRM Yönetim Sistemi</span>
           </div>
         </div>
         <nav className="menu">
@@ -71,10 +79,12 @@ export default function DashboardLayout({ children }) {
         <header className="header">
           <div>
             <h1>Mi Core Yönetim Paneli</h1>
+            <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
+              {menuItems.find((m) => m.path === pathname)?.name || 'Genel Bakış'}
+            </p>
           </div>
           <div className="header-actions">
-            <button type="button" className="secondary-btn">Excel (Tümü)</button>
-            {user.role === 'admin' && <button type="button" className="secondary-btn" onClick={loadSampleData}>Örnek Veri Yükle</button>}
+            <button type="button" className="secondary-btn" onClick={loadSampleData}>Örnek Veri Yükle</button>
             <button type="button" className="primary-btn" onClick={() => window.location.href='/investors'}>+ Yeni Lead</button>
             <button onClick={logout} className="danger-btn">Çıkış</button>
           </div>

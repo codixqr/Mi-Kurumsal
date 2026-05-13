@@ -130,14 +130,76 @@ export default function LocationsPage() {
       </section>
 
       <div className="inv-filters">
-        {Object.keys(filterDraft).map((k) => (
-          <div className="field" key={k} style={{ margin: 0 }}>
-            <label>{k}</label>
-            <input value={filterDraft[k]} onChange={(e) => setFilterDraft({ ...filterDraft, [k]: e.target.value })} />
-          </div>
-        ))}
+        <div className="field" style={{ margin: 0 }}>
+          <label>Lokasyon adı</label>
+          <input value={filterDraft.name} onChange={(e) => setFilterDraft({ ...filterDraft, name: e.target.value })} placeholder="Ara…" />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Şehir</label>
+          <input value={filterDraft.city} onChange={(e) => setFilterDraft({ ...filterDraft, city: e.target.value })} />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>İlçe</label>
+          <input value={filterDraft.district} onChange={(e) => setFilterDraft({ ...filterDraft, district: e.target.value })} />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Bölge</label>
+          <input value={filterDraft.region} onChange={(e) => setFilterDraft({ ...filterDraft, region: e.target.value })} />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Lokasyon tipi</label>
+          <select value={filterDraft.type} onChange={(e) => setFilterDraft({ ...filterDraft, type: e.target.value })}>
+            <option value="">Tümü</option>
+            {LOCATION_TYPES.map((t) => <option key={t}>{t}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Durum</label>
+          <select value={filterDraft.status} onChange={(e) => setFilterDraft({ ...filterDraft, status: e.target.value })}>
+            <option value="">Tümü</option>
+            {STATUSES.map((t) => <option key={t}>{t}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Potansiyel</label>
+          <select value={filterDraft.potential} onChange={(e) => setFilterDraft({ ...filterDraft, potential: e.target.value })}>
+            <option value="">Tümü</option>
+            {POTENTIALS.map((t) => <option key={t}>{t}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Segment</label>
+          <select value={filterDraft.segment} onChange={(e) => setFilterDraft({ ...filterDraft, segment: e.target.value })}>
+            <option value="">Tümü</option>
+            {SEGMENTS.map((t) => <option key={t}>{t}</option>)}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>m² (min)</label>
+          <input type="number" value={filterDraft.sqmMin} onChange={(e) => setFilterDraft({ ...filterDraft, sqmMin: e.target.value })} />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>m² (max)</label>
+          <input type="number" value={filterDraft.sqmMax} onChange={(e) => setFilterDraft({ ...filterDraft, sqmMax: e.target.value })} />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Kira (min)</label>
+          <input type="number" value={filterDraft.rentMin} onChange={(e) => setFilterDraft({ ...filterDraft, rentMin: e.target.value })} />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Kira (max)</label>
+          <input type="number" value={filterDraft.rentMax} onChange={(e) => setFilterDraft({ ...filterDraft, rentMax: e.target.value })} />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Marka uyumu (min)</label>
+          <input type="number" min={0} max={100} value={filterDraft.brandFit} onChange={(e) => setFilterDraft({ ...filterDraft, brandFit: e.target.value })} />
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label>Yoğunluk (min)</label>
+          <input type="number" min={1} max={10} value={filterDraft.footfall} onChange={(e) => setFilterDraft({ ...filterDraft, footfall: e.target.value })} />
+        </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-          <button className="primary-btn" onClick={() => { setFilters({ ...filterDraft }); setPage(1); }}>Filtrele</button>
+          <button className="primary-btn" onClick={() => { setFilters({ ...filterDraft }); setPage(1); }}>Ara</button>
           <button className="secondary-btn" onClick={() => { const d = defaultFilters(); setFilters(d); setFilterDraft(d); setPage(1); }}>Sıfırla</button>
         </div>
       </div>
@@ -171,8 +233,20 @@ export default function LocationsPage() {
             <div className="field"><label>Uygun markalar</label><input value={(form.recommendedBrands || []).join(',')} onChange={(e) => setForm({ ...form, recommendedBrands: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} /></div>
             <div className="field" style={{ gridColumn: '1 / -1' }}><label>Notlar</label><textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
             <div className="field" style={{ gridColumn: '1 / -1' }}>
-              <label>Görsel / video / ekspertiz</label>
-              <input type="file" multiple onChange={async (e) => { const urls = await uploadFiles(e.target.files); setForm((f) => ({ ...f, files: [...(f.files || []), ...urls] })); }} />
+              <label>Görsel / PDF / Ekspertiz belgesi yükle</label>
+              <input type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={async (e) => { const urls = await uploadFiles(e.target.files); setForm((f) => ({ ...f, files: [...(f.files || []), ...urls] })); }} />
+              {(form.files || []).length > 0 && (
+                <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {form.files.map((u, i) => (
+                    <span key={u + i} style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#f1f5f9', padding: '3px 8px', borderRadius: 6, fontSize: '0.78rem' }}>
+                      <a href={u} target="_blank" rel="noreferrer" style={{ color: '#166534' }}>
+                        {u.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? 'Görsel' : 'Belge'} {i + 1}
+                      </a>
+                      <button type="button" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#b91c1c', fontSize: '0.8rem', padding: 0 }} onClick={() => setForm((f) => ({ ...f, files: f.files.filter((_, idx) => idx !== i) }))}>×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8 }}>
               <button className="primary-btn" type="submit">Kaydet</button>
@@ -197,7 +271,17 @@ export default function LocationsPage() {
               <tr key={loc.id}>
                 <td><input type="checkbox" checked={selectedIds.includes(loc.id)} onChange={() => setSelectedIds((p) => p.includes(loc.id) ? p.filter((x) => x !== loc.id) : [...p, loc.id])} /></td>
                 <td>{loc.name}</td><td>{loc.city || '-'} / {loc.district || '-'}</td><td>{loc.type}</td><td>{loc.sqm}</td><td>{Number(loc.rent || 0).toLocaleString('tr-TR')} {loc.currency}</td><td>{loc.segment || '-'}</td><td>{loc.potential}</td><td>{loc.status}</td><td>{(loc.recommendedBrands || []).length}</td>
-                <td><div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}><button className="edit-btn" onClick={() => { setForm({ ...defaultForm(), ...loc }); setFormOpen(true); }}>Düzenle</button><button className="secondary-btn" onClick={() => openDetail(loc)}>Detay</button><a className="secondary-btn" href={loc.mapsLink || 'https://maps.google.com'} target="_blank" rel="noreferrer">Harita</a><button className="secondary-btn" onClick={() => { window.location.href = '/matching'; }}>Marka</button><button className="secondary-btn" onClick={() => { window.location.href = '/investors'; }}>Yatırımcı</button><button className="secondary-btn" onClick={async () => { await apiClient.post('/projects', { name: `${loc.name} saha projesi`, type: 'Kiralama', owner: 'Saha', stage: 'Lead', dueDate: new Date(Date.now() + 864000000).toISOString().split('T')[0], locationId: loc.id, progress: 0, assignees: [], checklist: [] }); fetchList(); }}>Proje</button><button className="secondary-btn" onClick={() => { window.location.href = '/tasks'; }}>Görev</button><button className="danger-btn" onClick={async () => { if (!confirm('Silinsin mi?')) return; await apiClient.delete(`/locations/${loc.id}`); fetchList(); }}>Sil</button></div></td>
+                <td>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    <button className="edit-btn" onClick={() => { setForm({ ...defaultForm(), ...loc, files: loc.files || [] }); setFormOpen(true); }}>Düzenle</button>
+                    <button className="secondary-btn" onClick={() => openDetail(loc)}>Detay</button>
+                    {loc.mapsLink && <a className="secondary-btn" href={loc.mapsLink} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Harita</a>}
+                    <button className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => { window.location.href = '/matching'; }}>Eşleştir</button>
+                    <button className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={async () => { await apiClient.post('/projects', { name: `${loc.name} projesi`, type: 'Kiralama', owner: 'Saha', stage: 'Lead', dueDate: new Date(Date.now() + 864000000).toISOString().split('T')[0], locationId: loc.id, progress: 0, assignees: [], checklist: [] }); fetchList(); }}>Proje oluştur</button>
+                    <button className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px', background: '#fef3c7', color: '#92400e' }} onClick={async () => { if (!confirm('Arşivlensin mi?')) return; await apiClient.put(`/locations/${loc.id}`, { ...loc, status: 'Arşiv' }); fetchList(); }}>Arşivle</button>
+                    <button className="danger-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={async () => { if (!confirm('Silinsin mi?')) return; await apiClient.delete(`/locations/${loc.id}`); fetchList(); }}>Sil</button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>

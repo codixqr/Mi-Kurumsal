@@ -986,6 +986,9 @@ export default function InvestorsPage() {
                           <button type="button" className="secondary-btn" style={{ fontSize: 11 }} onClick={() => createTask(inv)}>
                             Görev
                           </button>
+                          <button type="button" className="secondary-btn" style={{ fontSize: 11, background: '#fef3c7', color: '#92400e' }} onClick={async () => { if (!confirm('Arşivlensin mi?')) return; await apiClient.put(`/investors/${inv.id}`, { ...inv, pipeline: 'Arşiv' }); fetchList(); }}>
+                            Arşivle
+                          </button>
                           <button type="button" className="danger-btn" style={{ fontSize: 11 }} onClick={() => deleteRow(inv)}>
                             Sil
                           </button>
