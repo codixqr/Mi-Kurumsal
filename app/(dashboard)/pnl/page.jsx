@@ -10,6 +10,7 @@ const TABS = [
   { id: 'gelirler', label: 'Gelirler' },
   { id: 'giderler', label: 'Giderler' },
   { id: 'personel', label: 'Personel Giderleri' },
+  { id: 'sozlesme', label: 'Sözleşme & CRM Gelirleri' },
   { id: 'excel', label: 'Excel İçe Aktar' },
 ];
 
@@ -41,6 +42,9 @@ export default function PnlPage() {
   const [expenses, setExpenses] = useState([]);
   const [personnel, setPersonnel] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [financeRecords, setFinanceRecords] = useState([]);
+  const [financeKpis, setFinanceKpis] = useState(null);
+  const [financeLoading, setFinanceLoading] = useState(false);
 
   const [revForm, setRevForm] = useState(emptyRevForm());
   const [expForm, setExpForm] = useState(emptyExpForm());
@@ -91,6 +95,18 @@ export default function PnlPage() {
     setExpenses(data || []);
   }, [buildQuery]);
 
+  const loadFinanceRecords = useCallback(async () => {
+    setFinanceLoading(true);
+    try {
+      const [data, kpis] = await Promise.all([
+        apiClient.get('/finance?pageSize=100').catch(() => ({ items: [] })),
+        apiClient.get('/finance/kpis').catch(() => null),
+      ]);
+      setFinanceRecords(Array.isArray(data) ? data : data.items || []);
+      setFinanceKpis(kpis);
+    } finally { setFinanceLoading(false); }
+  }, []);
+
   const loadPersonnel = useCallback(async () => {
     const q = buildQuery();
     const data = await apiClient.get(`/pnl/personnel${q ? '?' + q : ''}`).catch(() => []);
@@ -103,7 +119,7 @@ export default function PnlPage() {
     setLoading(false);
   }, [loadSummary, loadRevenues, loadExpenses, loadPersonnel]);
 
-  useEffect(() => { loadAll(); }, [filterMonth, filterYear, filterBranch]);
+  useEffect(() => { loadAll(); loadFinanceRecords(); }, [filterMonth, filterYear, filterBranch]);
 
   // Revenue CRUD
   const saveRev = async (e) => {
@@ -705,6 +721,123 @@ export default function PnlPage() {
           <div style={{ marginTop: 8, color: '#ea580c', fontWeight: 700, fontSize: 15 }}>
             Toplam: {fmt(personnel.reduce((s, r) => s + Number(r.total_cost), 0))} TL
           </div>
+        </div>
+      )}
+
+      {/* ===== SÖZLEŞME & CRM GELİRLERİ TAB ===== */}
+      {activeTab === 'sozlesme' && (
+        <div>
+          <div style={{ marginBottom: 16 }}>
+            <h3 style={{ margin: '0 0 4px', color: '#1e293b' }}>Sözleşme Bazlı CRM Gelirleri</h3>
+            <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Danışmanlık, franchise ve kiralama sözleşmelerinden elde edilen gelirler. Veriler Sözleşme Yönetimi modülünden çekilir.</p>
+          </div>
+
+          {financeKpis && (
+            <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', marginBottom: 20 }}>
+              <div className="kpi-card">
+                <div className="kpi-value">{Number(financeKpis.totalIncome || 0).toLocaleString('tr-TR')} ₺</div>
+                <div className="kpi-label">Toplam Gelir</div>
+              </div>
+              <div className="kpi-card">
+                <div className="kpi-value" style={{ color: '#16a34a' }}>{Number(financeKpis.collected || 0).toLocaleString('tr-TR')} ₺</div>
+                <div className="kpi-label">Tahsil Edilen</div>
+              </div>
+              <div className="kpi-card">
+                <div className="kpi-value" style={{ color: '#d97706' }}>{Number(financeKpis.pending || 0).toLocaleString('tr-TR')} ₺</div>
+                <div className="kpi-label">Bekleyen</div>
+              </div>
+              <div className="kpi-card">
+                <div className="kpi-value" style={{ color: '#dc2626' }}>{Number(financeKpis.overdue || 0).toLocaleString('tr-TR')} ₺</div>
+                <div className="kpi-label">Gecikmiş</div>
+              </div>
+              <div className="kpi-card">
+                <div className="kpi-value">{financeKpis.totalRecords || 0}</div>
+                <div className="kpi-label">Kayıt Sayısı</div>
+              </div>
+            </div>
+          )}
+
+          {financeLoading ? (
+            <div style={{ textAlign: 'center', padding: 32, color: '#94a3b8' }}>Yükleniyor...</div>
+          ) : financeRecords.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8', background: '#f8fafc', borderRadius: 12, border: '1px dashed #e2e8f0' }}>
+              Henüz sözleşme geliri kaydı yok. Sözleşme oluşturduğunuzda buraya yansıyacak.
+            </div>
+          ) : (
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Gelir Türü</th>
+                    <th>Sözleşme / Bağlantı</th>
+                    <th>Tutar</th>
+                    <th>KDV</th>
+                    <th>Net Tutar</th>
+                    <th>Durum</th>
+                    <th>Ödeme Türü</th>
+                    <th>Vade Tarihi</th>
+                    <th>Tahsilat Tarihi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {financeRecords.map(r => (
+                    <tr key={r.id}>
+                      <td style={{ fontWeight: 600 }}>{r.incomeType || r.income_type || '-'}</td>
+                      <td>{r.contractName || r.contract_name || r.description || '-'}</td>
+                      <td>{Number(r.amount || 0).toLocaleString('tr-TR')} ₺</td>
+                      <td>{r.vatPct || r.vat_pct || 0}%</td>
+                      <td style={{ fontWeight: 700, color: '#16a34a' }}>{Number(r.netAmount || r.net_amount || r.amount || 0).toLocaleString('tr-TR')} ₺</td>
+                      <td>
+                        <span style={{
+                          background: r.status === 'Tahsil Edildi' ? '#dcfce7' : r.status === 'Gecikmiş' ? '#fee2e2' : '#fef9c3',
+                          color: r.status === 'Tahsil Edildi' ? '#16a34a' : r.status === 'Gecikmiş' ? '#dc2626' : '#d97706',
+                          borderRadius: 4, padding: '2px 8px', fontWeight: 600, fontSize: '0.82rem',
+                        }}>{r.status || 'Açık'}</span>
+                      </td>
+                      <td>{r.paymentType || r.payment_type || 'Peşin'}</td>
+                      <td>{r.dueDate || r.due_date ? new Date(r.dueDate || r.due_date).toLocaleDateString('tr-TR') : '-'}</td>
+                      <td>{r.paidDate || r.paid_date ? new Date(r.paidDate || r.paid_date).toLocaleDateString('tr-TR') : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{ background: '#f1f5f9', fontWeight: 700 }}>
+                    <td colSpan={2}>TOPLAM</td>
+                    <td>{financeRecords.reduce((s, r) => s + Number(r.amount || 0), 0).toLocaleString('tr-TR')} ₺</td>
+                    <td>-</td>
+                    <td>{financeRecords.reduce((s, r) => s + Number(r.netAmount || r.net_amount || r.amount || 0), 0).toLocaleString('tr-TR')} ₺</td>
+                    <td colSpan={4}></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+
+          {summary && (
+            <div style={{ marginTop: 24, padding: 20, background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+              <h4 style={{ margin: '0 0 12px', color: '#1e293b' }}>CRM Geliri vs Operasyonel Gelir Karşılaştırması</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                <div style={{ textAlign: 'center', padding: 16, background: 'white', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#2563eb' }}>
+                    {Number(financeRecords.reduce((s, r) => s + Number(r.netAmount || r.net_amount || r.amount || 0), 0)).toLocaleString('tr-TR')} ₺
+                  </div>
+                  <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: 4 }}>CRM / Sözleşme Geliri</div>
+                </div>
+                <div style={{ textAlign: 'center', padding: 16, background: 'white', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#16a34a' }}>
+                    {Number(summary.totalRevenue || 0).toLocaleString('tr-TR')} ₺
+                  </div>
+                  <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: 4 }}>Operasyonel Gelir (Şube)</div>
+                </div>
+                <div style={{ textAlign: 'center', padding: 16, background: 'white', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#7c3aed' }}>
+                    {(Number(financeRecords.reduce((s, r) => s + Number(r.netAmount || r.net_amount || r.amount || 0), 0)) + Number(summary.totalRevenue || 0)).toLocaleString('tr-TR')} ₺
+                  </div>
+                  <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: 4 }}>Toplam Konsolide Gelir</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

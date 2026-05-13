@@ -7,16 +7,6 @@ import { usePathname } from 'next/navigation';
 export default function DashboardLayout({ children }) {
   const { user, logout, loading } = useAuth();
   const pathname = usePathname();
-  const loadSampleData = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      await fetch('/api/admin/seed', { method: 'GET', headers: { Authorization: `Bearer ${token}` } });
-      alert('Örnek veriler yüklendi. Sayfa yenilenecek.');
-      window.location.reload();
-    } catch (error) {
-      alert('Örnek veri yüklenemedi.');
-    }
-  };
 
   if (loading) return <div className="loading-screen">Yükleniyor...</div>;
   if (!user) return null;
@@ -28,14 +18,16 @@ export default function DashboardLayout({ children }) {
     { name: 'Lokasyon Yönetimi', path: '/locations', id: 'locations' },
     { name: 'Proje & Süreç Takibi', path: '/projects', id: 'projects' },
     { name: 'Sözleşme Yönetimi', path: '/contracts', id: 'contracts' },
-    { name: 'Finans Yönetimi', path: '/finance', id: 'finance' },
-    { name: 'Görevler', path: '/tasks', id: 'tasks' },
+    { name: 'Görev Yönetimi', path: '/tasks', id: 'tasks' },
+    { name: 'Finans & Kar/Zarar', path: '/pnl', id: 'pnl' },
     { name: 'Raporlar', path: '/reports', id: 'reports' },
-    { name: 'Kar / Zarar', path: '/pnl', id: 'pnl' },
     { name: 'Şablonlar', path: '/templates', id: 'templates' },
-    { name: 'Eşleştirme Motoru', path: '/matching', id: 'matching' },
+    { name: 'Akıllı Eşleştirme', path: '/matching', id: 'matching' },
     { name: 'Veri Tabanı', path: '/db-check', id: 'db-check' },
   ];
+
+  const activeMenu = menuItems.find((m) => m.path === pathname || (m.path !== '/' && pathname.startsWith(m.path)));
+
   return (
     <div className="app">
       <aside className="sidebar">
@@ -59,19 +51,18 @@ export default function DashboardLayout({ children }) {
         </div>
         <nav className="menu">
           <Link href="/" className={`menu-link ${pathname === '/' ? 'active' : ''}`}>Panel</Link>
-          <Link href="/investors" className={`menu-link ${pathname === '/investors' ? 'active' : ''}`}>Yatırımcı Yönetimi</Link>
-          <Link href="/brands" className={`menu-link ${pathname === '/brands' ? 'active' : ''}`}>Marka Portföy Yönetimi</Link>
-          <Link href="/locations" className={`menu-link ${pathname === '/locations' ? 'active' : ''}`}>Lokasyon Yönetimi</Link>
-          <Link href="/projects" className={`menu-link ${pathname === '/projects' ? 'active' : ''}`}>Proje & Süreç Takibi</Link>
-          <Link href="/contracts" className={`menu-link ${pathname === '/contracts' ? 'active' : ''}`}>Sözleşme Yönetimi</Link>
-          <Link href="/finance" className={`menu-link ${pathname === '/finance' ? 'active' : ''}`}>Finans Yönetimi</Link>
-          <Link href="/tasks" className={`menu-link ${pathname === '/tasks' ? 'active' : ''}`}>Görevler</Link>
-          <Link href="/reports" className={`menu-link ${pathname === '/reports' ? 'active' : ''}`}>Raporlar</Link>
-          <Link href="/pnl" className={`menu-link ${pathname === '/pnl' ? 'active' : ''}`}>Kar / Zarar</Link>
-          <Link href="/templates" className={`menu-link ${pathname === '/templates' ? 'active' : ''}`}>Şablonlar</Link>
-          <Link href="/matching" className={`menu-link ${pathname === '/matching' ? 'active' : ''}`}>Eşleştirme Motoru</Link>
-          {user.role === 'admin' && <Link href="/settings" className={`menu-link ${pathname === '/settings' ? 'active' : ''}`}>Ayarlar</Link>}
-          {user.role === 'admin' && <Link href="/db-check" className={`menu-link ${pathname === '/db-check' ? 'active' : ''}`} style={{opacity: 0.5}}>Veri Tabanı</Link>}
+          <Link href="/investors" className={`menu-link ${pathname.startsWith('/investors') ? 'active' : ''}`}>Yatırımcı Yönetimi</Link>
+          <Link href="/brands" className={`menu-link ${pathname.startsWith('/brands') ? 'active' : ''}`}>Marka Portföy Yönetimi</Link>
+          <Link href="/locations" className={`menu-link ${pathname.startsWith('/locations') ? 'active' : ''}`}>Lokasyon Yönetimi</Link>
+          <Link href="/projects" className={`menu-link ${pathname.startsWith('/projects') ? 'active' : ''}`}>Proje & Süreç Takibi</Link>
+          <Link href="/contracts" className={`menu-link ${pathname.startsWith('/contracts') ? 'active' : ''}`}>Sözleşme Yönetimi</Link>
+          <Link href="/tasks" className={`menu-link ${pathname.startsWith('/tasks') ? 'active' : ''}`}>Görev Yönetimi</Link>
+          <Link href="/pnl" className={`menu-link ${pathname.startsWith('/pnl') ? 'active' : ''}`}>Finans & Kar/Zarar</Link>
+          <Link href="/reports" className={`menu-link ${pathname.startsWith('/reports') ? 'active' : ''}`}>Raporlar</Link>
+          <Link href="/templates" className={`menu-link ${pathname.startsWith('/templates') ? 'active' : ''}`}>Şablonlar</Link>
+          <Link href="/matching" className={`menu-link ${pathname.startsWith('/matching') ? 'active' : ''}`}>Akıllı Eşleştirme</Link>
+          {user.role === 'admin' && <Link href="/settings" className={`menu-link ${pathname.startsWith('/settings') ? 'active' : ''}`}>Ayarlar</Link>}
+          {user.role === 'admin' && <Link href="/db-check" className={`menu-link ${pathname.startsWith('/db-check') ? 'active' : ''}`} style={{opacity: 0.5}}>Veri Tabanı</Link>}
         </nav>
       </aside>
 
@@ -80,11 +71,10 @@ export default function DashboardLayout({ children }) {
           <div>
             <h1>Mi Core Yönetim Paneli</h1>
             <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
-              {menuItems.find((m) => m.path === pathname)?.name || 'Genel Bakış'}
+              {activeMenu?.name || 'Genel Bakış'}
             </p>
           </div>
           <div className="header-actions">
-            <button type="button" className="secondary-btn" onClick={loadSampleData}>Örnek Veri Yükle</button>
             <button type="button" className="primary-btn" onClick={() => window.location.href='/investors'}>+ Yeni Lead</button>
             <button onClick={logout} className="danger-btn">Çıkış</button>
           </div>

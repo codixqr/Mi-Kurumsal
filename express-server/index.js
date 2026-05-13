@@ -423,14 +423,30 @@ function mapProject(row) {
 function mapTask(row) {
   return {
     id: row.id,
-    note: row.note,
-    status: row.status,
+    title: row.title || row.note || "",
+    note: row.note || row.title || "",
+    description: row.description || "",
+    status: row.status || "Açık",
     assigneeId: row.assignee_id || null,
     assigneeName: row.assignee_name || "",
     priority: row.priority || "Orta",
-    dueDate: row.due_date || null,
+    dueDate: row.due_date ? String(row.due_date).split("T")[0] : null,
     investorId: row.investor_id || null,
     brandId: row.brand_id || null,
+    projectId: row.project_id || null,
+    locationId: row.location_id || null,
+    contractId: row.contract_id || null,
+    moduleType: row.module_type || "Genel",
+    tags: row.tags || [],
+    completedAt: row.completed_at || null,
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    // joined fields
+    investorName: row.investor_name || null,
+    brandName: row.brand_name || null,
+    projectName: row.project_name || null,
+    locationName: row.location_name || null,
+    contractName: row.contract_name || null,
   };
 }
 
@@ -803,6 +819,17 @@ async function initDb() {
   await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS investor_id INTEGER REFERENCES investors(id) ON DELETE SET NULL");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS investor_id INTEGER REFERENCES investors(id) ON DELETE SET NULL");
 
+  // Extended task columns for full task management
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS title TEXT");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS description TEXT");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS module_type TEXT NOT NULL DEFAULT 'Genel'");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS contract_id INTEGER REFERENCES contracts(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS tags TEXT[] NOT NULL DEFAULT '{}'");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP");
+  await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()");
+
   await pool.query(`CREATE TABLE IF NOT EXISTS investor_meetings (
     id SERIAL PRIMARY KEY,
     investor_id INTEGER NOT NULL REFERENCES investors(id) ON DELETE CASCADE,
@@ -833,34 +860,43 @@ async function seedDefaultDataIfNeeded() {
   const adminPassword = process.env.ADMIN_PASSWORD || "Admin123*";
   const adminName = process.env.ADMIN_NAME || "CRM Admin";
 
+  let adminId;
   const existingUser = await pool.query("SELECT id FROM users WHERE email = $1", [adminEmail]);
   if (existingUser.rowCount === 0) {
     const hash = await bcrypt.hash(adminPassword, 10);
-    await pool.query(
-      "INSERT INTO users(name, email, password_hash, role) VALUES($1, $2, $3, $4)",
+    const inserted = await pool.query(
+      "INSERT INTO users(name, email, password_hash, role) VALUES($1, $2, $3, $4) RETURNING id",
       [adminName, adminEmail, hash, "admin"],
     );
+    adminId = inserted.rows[0].id;
+  } else {
+    adminId = existingUser.rows[0].id;
   }
 
   const seedBrands = [
-    ["Tavada Tavuk", "Fast Casual", 1500000, 3500000, 90, 220, "AVM + Cadde", true, 11],
-    ["Bigye", "Fast Casual", 1300000, 2900000, 70, 180, "AVM", true, 9],
-    ["Kasap Döner", "Doner", 1200000, 2600000, 65, 150, "Cadde", true, 8],
-    ["Cajun Corner", "Fast Casual", 1400000, 3100000, 80, 170, "AVM + Cadde", true, 10],
-    ["Springfield ( Yeni Nesil Dürüm)", "Doner", 1250000, 2500000, 60, 130, "Cadde", true, 7],
-    ["Yelken Balıkçısı", "Seafood", 2000000, 5000000, 140, 350, "Sahil + Premium Cadde", true, 6],
-    ["Mogaf Döner", "Doner", 1100000, 2100000, 50, 120, "Cadde + Mahalle", true, 8],
-    ["Blak Coffee Co", "Coffee", 1700000, 3600000, 90, 180, "Cadde + AVM", true, 13],
-    ["The Coffee Factory", "Coffee", 1400000, 3300000, 80, 170, "AVM", true, 12],
-    ["Coffee in Munchies", "Coffee", 1300000, 2900000, 75, 160, "Cadde + AVM", true, 9],
+    ["Tavada Tavuk", "Fast Casual", 1500000, 3500000, 90, 220, "AVM + Cadde", true, 11, "Anlaşmalı"],
+    ["Bigye", "Fast Casual", 1300000, 2900000, 70, 180, "AVM", true, 9, "Görüşülüyor"],
+    ["Kasap Döner", "Doner", 1200000, 2600000, 65, 150, "Cadde", true, 8, "Anlaşmalı"],
+    ["Cajun Corner", "Fast Casual", 1400000, 3100000, 80, 170, "AVM + Cadde", true, 10, "Görüşülüyor"],
+    ["Springfield Yeni Nesil Dürüm", "Doner", 1250000, 2500000, 60, 130, "Cadde", true, 7, "Beklemede"],
+    ["Yelken Balıkçısı", "Seafood", 2000000, 5000000, 140, 350, "Sahil + Premium Cadde", true, 6, "Anlaşmalı"],
+    ["Mogaf Döner", "Doner", 1100000, 2100000, 50, 120, "Cadde + Mahalle", true, 8, "Görüşülüyor"],
+    ["Blak Coffee Co", "Coffee", 1700000, 3600000, 90, 180, "Cadde + AVM", true, 13, "Anlaşmalı"],
+    ["The Coffee Factory", "Coffee", 1400000, 3300000, 80, 170, "AVM", true, 12, "Anlaşmalı"],
+    ["Coffee in Munchies", "Coffee", 1300000, 2900000, 75, 160, "Cadde + AVM", true, 9, "Beklemede"],
+    ["Pizza Pino", "Fast Food", 900000, 2200000, 60, 140, "AVM + Cadde", true, 7, "Görüşülüyor"],
+    ["SushiMore", "Japon", 1800000, 4200000, 100, 250, "AVM + Premium Cadde", true, 5, "Görüşülüyor"],
+    ["Fit Salad Bar", "Sağlıklı Yaşam", 750000, 1800000, 40, 90, "AVM + Ofis Bölgesi", true, 10, "Beklemede"],
+    ["Pasta Punto", "Pastane", 1100000, 2400000, 70, 160, "Cadde + AVM", true, 8, "Anlaşmalı"],
+    ["Türk Kahvesi Evi", "Kahve", 600000, 1400000, 30, 70, "Her bölge", true, 12, "Görüşülüyor"],
   ];
 
   for (const brand of seedBrands) {
     const exists = await pool.query("SELECT id FROM brands WHERE LOWER(name)=LOWER($1)", [brand[0]]);
     if (exists.rowCount > 0) continue;
     await pool.query(
-      `INSERT INTO brands(name, sector, min_budget, max_budget, min_sqm, max_sqm, target_locations, active, monthly_growth)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      `INSERT INTO brands(name, sector, min_budget, max_budget, min_sqm, max_sqm, target_locations, active, monthly_growth, agreement_status)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
       brand,
     );
   }
@@ -872,28 +908,37 @@ async function seedDefaultDataIfNeeded() {
        VALUES
        ('Selin Demir','selin@micore.com','+90 544 222 33 44','Franchise','Yönetici',ARRAY['investors','brands','locations','projects','contracts','tasks','reports'],true),
        ('Mert Kaya','mert@micore.com','+90 541 310 22 11','Operasyon','Uzman',ARRAY['tasks','projects','locations'],true),
-       ('Ayşe Çetin','ayse@micore.com','+90 533 118 88 70','Satış','Temsilci',ARRAY['investors','tasks','reports'],true)`
+       ('Ayşe Çetin','ayse@micore.com','+90 533 118 88 70','Satış','Temsilci',ARRAY['investors','tasks','reports'],true),
+       ('Burak Yılmaz','burak@micore.com','+90 532 999 88 77','Hukuk','Avukat',ARRAY['contracts','reports'],true),
+       ('Esra Koc','esra@micore.com','+90 505 444 33 22','Finans','Muhasebeci',ARRAY['contracts','reports'],true)`
     );
   }
 
   const investorCount = await pool.query("SELECT COUNT(*)::int AS count FROM investors");
   if (investorCount.rows[0].count === 0) {
     await pool.query(
-      `INSERT INTO investors(name,budget,currency,city,sector,investment_type,pipeline_stage,phone,email,district,goal,contact_history,meeting_notes,follow_up_date,created_by)
+      `INSERT INTO investors(name,budget,currency,city,sector,investment_type,pipeline_stage,phone,email,district,goal,contact_history,meeting_notes,follow_up_date,priority,created_by)
        VALUES
-       ('Selin Demir',2600000,'TRY','İstanbul','Coffee','Franchise','Marka Önerildi','+90 544 222 33 44','selin.demo@crm.com','Kadıköy','2 şube coffee yatırımı','24.04 arandı','AVM + cadde alternatifleri istiyor','2026-05-18',$1),
-       ('Yaman Grup',4100000,'TRY','Ankara','Fast Casual','Ortaklık','Teklif Verildi','+90 530 444 55 66','yaman@demo.com','Çankaya','Bölgesel büyüme','26.04 toplantı','Sözleşme taslağı paylaşıldı','2026-05-20',$1)`,
-      [existingUser.rows[0].id],
+       ('Ahmet Kılıç',2600000,'TRY','İstanbul','Coffee','Franchise','Marka Önerildi','+90 544 222 33 44','ahmet.demo@crm.com','Kadıköy','2 şube coffee yatırımı','24.04 arandı','AVM + cadde alternatifleri istiyor','2026-05-18','Yüksek',$1),
+       ('Yaman Holding',4100000,'TRY','Ankara','Fast Casual','Ortaklık','Teklif Verildi','+90 530 444 55 66','yaman@demo.com','Çankaya','Bölgesel büyüme','26.04 toplantı','Sözleşme taslağı paylaşıldı','2026-05-20','Yüksek',$1),
+       ('Melek Arslan',1800000,'TRY','İzmir','Doner','Franchise','İletişim Kuruldu','+90 533 111 22 33','melek@demo.com','Bornova','Tek mağaza başlangıcı','22.04 mesaj','Lokasyon arayışında','2026-05-25','Orta',$1),
+       ('Can Teknoloji',6500000,'TRY','İstanbul','Kahve','Master Franchise','Sunum Yapıldı','+90 212 333 44 55','can@demo.com','Maslak','Çoklu şube planı','20.04 toplantı','Finansman sürecinde','2026-05-22','Çok Yüksek',$1),
+       ('Fatma Şahin',950000,'TRY','Bursa','Fast Food','Franchise','Yeni Lead','+90 544 777 88 99','fatma@demo.com','Nilüfer','İlk yatırım','25.04 form','Ürün araştırıyor','2026-06-01','Düşük',$1),
+       ('Ömer Yıldız',3200000,'TRY','Antalya','Sağlıklı Yaşam','Franchise','Görüşme Yapıldı','+90 532 555 66 77','omer@demo.com','Lara','2-3 şube hedefi','23.04 arama','AVM odaklı bakıyor','2026-05-28','Orta',$1)`,
+      [adminId],
     );
   }
 
   const locationCount = await pool.query("SELECT COUNT(*)::int AS count FROM locations");
   if (locationCount.rows[0].count === 0) {
     await pool.query(
-      `INSERT INTO locations(name,location_type,sqm,rent,currency,potential,recommended_brands,address,traffic,owner,owner_phone,notes)
+      `INSERT INTO locations(name,location_type,sqm,rent,currency,potential,recommended_brands,address,traffic,owner,owner_phone,city,district,status,notes)
        VALUES
-       ('Bağdat Caddesi Premium','Cadde',130,380000,'TRY','Yüksek',ARRAY['Blak Coffee Co','Tavada Tavuk'],'Caddebostan / İstanbul','Yoğun','Yıldız Gayrimenkul','+90 555 330 11 22','Yüksek yaya trafiği'),
-       ('Panora AVM - A Blok','AVM',95,240000,'TRY','Orta',ARRAY['The Coffee Factory'],'Oran / Ankara','Orta','Panora Yönetim','+90 312 455 00 11','Food court yakını')`
+       ('Bağdat Caddesi Premium','Cadde',130,380000,'TRY','Yüksek',ARRAY['Blak Coffee Co','Tavada Tavuk'],'Caddebostan','Yoğun','Yıldız Gayrimenkul','+90 555 330 11 22','İstanbul','Kadıköy','Boş','Yüksek yaya trafiği, park yeri mevcut'),
+       ('Panora AVM - A Blok','AVM',95,240000,'TRY','Orta',ARRAY['The Coffee Factory'],'Oran','Orta','Panora Yönetim','+90 312 455 00 11','Ankara','Çankaya','Müzakere','Food court yakını, sosyal alan'),
+       ('Nişantaşı Köşk Pasajı','Cadde',160,520000,'TRY','Çok Yüksek',ARRAY['SushiMore','Pasta Punto'],'Nişantaşı','Çok Yoğun','Özel Mülk','+90 533 200 30 40','İstanbul','Şişli','Boş','Premium bölge, A+ müşteri profili'),
+       ('Alsancak Turan','Cadde',110,280000,'TRY','Yüksek',ARRAY['Türk Kahvesi Evi','Kasap Döner'],'Alsancak','Yoğun','İzmir Gayrimenkul','+90 232 444 55 66','İzmir','Konak','Boş','Sahil yürüyüş güzergahı'),
+       ('Forum Bornova - ZF12','AVM',75,195000,'TRY','Orta',ARRAY['Fit Salad Bar','Pizza Pino'],'Bornova','Orta','AVM Yönetimi','+90 232 777 88 99','İzmir','Bornova','Müzakere','Gençlik AVM, üniversite yakını')`
     );
   }
 
@@ -902,18 +947,38 @@ async function seedDefaultDataIfNeeded() {
     await pool.query(
       `INSERT INTO projects(name,project_type,owner_team,assignees,priority,progress,stage,due_date,description,checklist)
        VALUES
-       ('Blak Coffee Co - İstanbul Büyüme','Franchise','Franchise Ekibi',ARRAY['Selin Demir','Mert Kaya'],'Yüksek',45,'Sunum & Müzakere','2026-05-30','İstanbul için 2 yeni noktada genişleme',ARRAY['Lokasyon shortlist','Sunum dosyası','Kira pazarlığı'])`
+       ('Blak Coffee Co - İstanbul Büyüme','Franchise','Franchise Ekibi',ARRAY['Selin Demir','Mert Kaya'],'Yüksek',45,'Sunum & Müzakere','2026-06-30','İstanbul için 2 yeni noktada genişleme',ARRAY['Lokasyon shortlist','Sunum dosyası','Kira pazarlığı','Sözleşme taslağı']),
+       ('Tavada Tavuk - Ankara Franchise','Franchise','Operasyon Ekibi',ARRAY['Mert Kaya'],'Yüksek',70,'Sözleşme Süreci','2026-06-15','Ankara merkezi için franchise açılışı',ARRAY['Lokasyon onay','Marka anlaşması','Açılış planı']),
+       ('Yaman Holding - Fast Casual','Ortaklık','Satış Ekibi',ARRAY['Selin Demir','Ayşe Çetin'],'Orta',25,'Teklif Hazırlanıyor','2026-07-31','Çoklu şube ortaklık görüşmesi',ARRAY['Finansal analiz','Sunum','İmza']),
+       ('SushiMore - Nişantaşı Açılışı','Franchise','Franchise Ekibi',ARRAY['Selin Demir'],'Çok Yüksek',80,'Hukuki Süreç','2026-05-31','Premium lokasyonda açılış',ARRAY['Kira sözleşmesi','Marka lisansı','İşletim belgesi'])`
     );
   }
 
   const taskCount = await pool.query("SELECT COUNT(*)::int AS count FROM tasks");
   if (taskCount.rows[0].count === 0) {
     await pool.query(
-      `INSERT INTO tasks(note,status,assignee_id,assignee_name,priority,due_date)
+      `INSERT INTO tasks(note,status,assignee_name,priority,due_date)
        VALUES
-       ('Personel ilanını yayınla','Açık',1,'Selin Demir','Yüksek','2026-05-16'),
-       ('Ekipman siparişlerini ver','Devam Ediyor',2,'Mert Kaya','Orta','2026-05-17'),
-       ('Kira sözleşmesini imzalat','Açık',1,'Selin Demir','Yüksek','2026-05-19')`
+       ('Blak Coffee Co lokasyon shortlist hazırla','Açık','Selin Demir','Yüksek','2026-05-20'),
+       ('Yaman Holding finansal analiz raporu','Devam Ediyor','Ayşe Çetin','Yüksek','2026-05-22'),
+       ('Panora AVM kira müzakeresi','Açık','Mert Kaya','Orta','2026-05-25'),
+       ('Sözleşme taslağı hazırlama - Tavada Tavuk','Tamamlandı','Burak Yılmaz','Yüksek','2026-05-15'),
+       ('Yeni lead formu güncelleme','Açık','Selin Demir','Düşük','2026-06-01'),
+       ('Mayıs ayı KPI raporu','Devam Ediyor','Esra Koc','Orta','2026-05-31'),
+       ('Nişantaşı lokasyon ekspertiz raporu','Açık','Mert Kaya','Yüksek','2026-05-24'),
+       ('SushiMore franchise sözleşmesi imzalatma','Açık','Burak Yılmaz','Çok Yüksek','2026-05-28')`
+    );
+  }
+
+  const contractCount = await pool.query("SELECT COUNT(*)::int AS count FROM contracts");
+  if (contractCount.rows[0].count === 0) {
+    await pool.query(
+      `INSERT INTO contracts(name,contract_type,status,counterparty,start_date,end_date,amount,currency,consulting_fee,notes,created_by)
+       VALUES
+       ('Blak Coffee Co Franchise Sözleşmesi','Franchise','Aktif','Blak Coffee Co Türkiye A.Ş.','2026-01-01','2028-12-31',350000,'TRY',85000,'İstanbul merkezi + Bağdat Caddesi noktası',$1),
+       ('Tavada Tavuk Danışmanlık','Danışmanlık','Aktif','Tavada Tavuk Ltd.','2026-02-01','2026-12-31',120000,'TRY',120000,'Ankara bölge genişleme danışmanlığı',$1),
+       ('SushiMore Ön Sözleşme','Ön Sözleşme','Müzakere','SushiMore Restoranlar','2026-04-01','2027-03-31',480000,'TRY',95000,'Nişantaşı premium lokasyon',$1)`,
+      [adminId],
     );
   }
 
@@ -1916,6 +1981,7 @@ app.delete("/api/investors/:id", authMiddleware, async (req, res) => {
 });
 
 app.get("/api/brands", authMiddleware, async (req, res) => {
+  try {
   const q = req.query || {};
   const page = Math.max(1, Number(q.page) || 1);
   const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 20));
@@ -1965,8 +2031,10 @@ app.get("/api/brands", authMiddleware, async (req, res) => {
     listParams,
   );
   const rows = result.rows.map(mapBrand);
-  const kpis = await computeBrandKpis();
+  let kpis = null;
+  try { kpis = await computeBrandKpis(); } catch (_) {}
   res.json({ items: rows, total, page, pageSize, kpis });
+  } catch (err) { next(err); }
 });
 
 app.post("/api/brands/bulk", authMiddleware, async (req, res) => {
@@ -3011,119 +3079,181 @@ app.delete("/api/team-members/:id", authMiddleware, requireAdmin, async (req, re
   res.status(204).send();
 });
 
-app.get("/api/tasks", authMiddleware, async (req, res) => {
-  let result;
-  if (req.user.role === "admin") {
-    result = await pool.query(
-      "SELECT id,note,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id FROM tasks ORDER BY id DESC",
-    );
-  } else {
-    const member = await pool.query("SELECT id FROM team_members WHERE user_id=$1 LIMIT 1", [req.user.id]);
-    if (member.rowCount === 0) {
-      return res.json([]);
-    }
-    result = await pool.query(
-      "SELECT id,note,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id FROM tasks WHERE assignee_id=$1 ORDER BY id DESC",
-      [member.rows[0].id],
-    );
-  }
-  res.json(result.rows.map(mapTask));
+const TASK_BASE_SELECT = `
+  SELECT t.*,
+    i.name AS investor_name,
+    b.name AS brand_name,
+    p.name AS project_name,
+    l.name AS location_name,
+    c.name AS contract_name
+  FROM tasks t
+  LEFT JOIN investors i ON i.id = t.investor_id
+  LEFT JOIN brands b ON b.id = t.brand_id
+  LEFT JOIN projects p ON p.id = t.project_id
+  LEFT JOIN locations l ON l.id = t.location_id
+  LEFT JOIN contracts c ON c.id = t.contract_id
+`;
+
+app.get("/api/tasks/kpis", authMiddleware, async (req, res) => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+    const [total, open, inProgress, done, overdue, thisWeek, critical] = await Promise.all([
+      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE deleted_at IS NULL"),
+      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE status='Açık' AND deleted_at IS NULL"),
+      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE status='Devam Ediyor' AND deleted_at IS NULL"),
+      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE status='Tamamlandı' AND deleted_at IS NULL"),
+      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE status != 'Tamamlandı' AND due_date < $1 AND deleted_at IS NULL", [today]),
+      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE status != 'Tamamlandı' AND due_date BETWEEN $1 AND $2 AND deleted_at IS NULL", [today, weekEnd]),
+      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE priority IN ('Yüksek','Çok Yüksek') AND status != 'Tamamlandı' AND deleted_at IS NULL"),
+    ]);
+    res.json({
+      total: total.rows[0].c, open: open.rows[0].c, inProgress: inProgress.rows[0].c,
+      done: done.rows[0].c, overdue: overdue.rows[0].c, thisWeek: thisWeek.rows[0].c, critical: critical.rows[0].c,
+    });
+  } catch (err) { next(err); }
 });
 
-app.post("/api/tasks", authMiddleware, requireAdmin, async (req, res) => {
-  const {
-    note,
-    status = "Açık",
-    assigneeId = null,
-    assigneeName = null,
-    priority = "Orta",
-    dueDate = null,
-    investorId = null,
-    brandId = null,
-  } = req.body || {};
-  const inserted = await pool.query(
-    "INSERT INTO tasks(note,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,note,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id",
-    [note, status, assigneeId, assigneeName, priority, dueDate, investorId || null, brandId || null],
-  );
-  const item = mapTask(inserted.rows[0]);
-  await logActivity({
-    userId: req.user.id,
-    moduleName: "tasks",
-    actionType: "create",
-    recordId: item.id,
-    summary: "Görev eklendi",
-    afterData: item,
-  });
-  if (assigneeId) {
-    const member = await pool.query("SELECT email,name FROM team_members WHERE id=$1", [assigneeId]);
-    if (member.rowCount > 0 && member.rows[0].email) {
-      try {
-        await sendMailToRecipient(
-          member.rows[0].email,
-          `Yeni Görev Ataması: ${note}`,
-          `Merhaba ${member.rows[0].name || assigneeName || ""},\n\nSize yeni bir görev atandı.\nGörev: ${note}\nÖncelik: ${priority}\nDurum: ${status}\nSon Tarih: ${dueDate || "-"}\n\nMi Core CRM`,
-        );
-      } catch (error) {
-        console.log("Task reminder email failed:", error.message);
+app.get("/api/tasks", authMiddleware, async (req, res) => {
+  try {
+    const q = req.query || {};
+    const page = Math.max(1, Number(q.page) || 1);
+    const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 50));
+    const offset = (page - 1) * pageSize;
+    const conds = ["t.deleted_at IS NULL"];
+    const params = [];
+    const add = (sql, val) => { params.push(val); conds.push(`${sql}$${params.length}`); };
+
+    if (req.user.role !== "admin" && req.user.role !== "manager") {
+      const member = await pool.query("SELECT id FROM team_members WHERE user_id=$1 LIMIT 1", [req.user.id]);
+      if (member.rowCount > 0) {
+        add("t.assignee_id = ", member.rows[0].id);
       }
     }
-  }
-  res.status(201).json(item);
+    if (q.q) {
+      params.push(`%${q.q}%`);
+      conds.push(`(t.title ILIKE $${params.length} OR t.note ILIKE $${params.length} OR t.description ILIKE $${params.length})`);
+    }
+    if (q.status) add("t.status = ", q.status);
+    if (q.priority) add("t.priority = ", q.priority);
+    if (q.moduleType) add("t.module_type = ", q.moduleType);
+    if (q.assigneeName) add("t.assignee_name ILIKE ", `%${q.assigneeName}%`);
+    if (q.dateFrom) add("t.due_date >= ", q.dateFrom);
+    if (q.dateTo) add("t.due_date <= ", q.dateTo);
+    if (q.overdue === "true") { const today = new Date().toISOString().split("T")[0]; add("t.due_date < ", today); conds.push("t.status != 'Tamamlandı'"); }
+    if (q.investorId) add("t.investor_id = ", Number(q.investorId));
+    if (q.projectId) add("t.project_id = ", Number(q.projectId));
+
+    const where = conds.join(" AND ");
+    const countR = await pool.query(`SELECT COUNT(*)::int AS c FROM tasks t WHERE ${where}`, params);
+    const listParams = [...params, pageSize, offset];
+    const sortCol = { due_date: "t.due_date", priority: "t.priority", status: "t.status", created_at: "t.created_at" }[q.sort] || "t.created_at";
+    const order = q.order === "asc" ? "ASC" : "DESC";
+    const result = await pool.query(
+      `${TASK_BASE_SELECT} WHERE ${where} ORDER BY ${sortCol} ${order} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+      listParams
+    );
+    res.json({ items: result.rows.map(mapTask), total: countR.rows[0].c, page, pageSize });
+  } catch (err) { next(err); }
 });
 
-app.put("/api/tasks/:id", authMiddleware, requireAdmin, async (req, res) => {
-  const {
-    note,
-    status,
-    assigneeId = null,
-    assigneeName = null,
-    priority = "Orta",
-    dueDate = null,
-    investorId = null,
-    brandId = null,
-  } = req.body || {};
-  const before = await pool.query(
-    "SELECT id,note,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id FROM tasks WHERE id=$1",
-    [req.params.id],
-  );
-  const updated = await pool.query(
-    "UPDATE tasks SET note=$1,status=$2,assignee_id=$3,assignee_name=$4,priority=$5,due_date=$6,investor_id=$7,brand_id=$8,updated_at=NOW() WHERE id=$9 RETURNING id,note,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id",
-    [note, status, assigneeId, assigneeName, priority, dueDate, investorId || null, brandId || null, req.params.id],
-  );
-  if (updated.rowCount === 0) {
-    return res.status(404).json({ message: "Kayıt bulunamadı." });
-  }
-  const item = mapTask(updated.rows[0]);
-  await logActivity({
-    userId: req.user.id,
-    moduleName: "tasks",
-    actionType: "update",
-    recordId: item.id,
-    summary: "Görev güncellendi",
-    beforeData: before.rows[0] || null,
-    afterData: item,
-  });
-  res.json(item);
+app.post("/api/tasks", authMiddleware, async (req, res) => {
+  try {
+    const {
+      title, note, description = "", status = "Açık", assigneeId = null, assigneeName = null,
+      priority = "Orta", dueDate = null, investorId = null, brandId = null,
+      projectId = null, locationId = null, contractId = null, moduleType = "Genel", tags = [],
+    } = req.body || {};
+    const taskTitle = title || note || "";
+    const inserted = await pool.query(
+      `INSERT INTO tasks(title,note,description,status,assignee_id,assignee_name,priority,due_date,investor_id,brand_id,project_id,location_id,contract_id,module_type,tags)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
+      [taskTitle, taskTitle, description, status, assigneeId, assigneeName, priority, dueDate || null,
+       investorId || null, brandId || null, projectId || null, locationId || null, contractId || null, moduleType, tags],
+    );
+    const item = mapTask(inserted.rows[0]);
+    await logActivity({ userId: req.user.id, moduleName: "tasks", actionType: "create", recordId: item.id, summary: `Görev oluşturuldu: ${taskTitle}`, afterData: item });
+    if (assigneeId) {
+      const member = await pool.query("SELECT email,name FROM team_members WHERE id=$1", [assigneeId]);
+      if (member.rowCount > 0 && member.rows[0].email) {
+        try { await sendMailToRecipient(member.rows[0].email, `Yeni Görev: ${taskTitle}`, `Size yeni bir görev atandı.\nGörev: ${taskTitle}\nÖncelik: ${priority}\nSon Tarih: ${dueDate || "-"}`); } catch (_) {}
+      }
+    }
+    res.status(201).json(item);
+  } catch (err) { next(err); }
 });
 
-app.delete("/api/tasks/:id", authMiddleware, requireAdmin, async (req, res) => {
-  const row = await pool.query("SELECT id,note,status FROM tasks WHERE id=$1", [req.params.id]);
-  await pool.query("DELETE FROM tasks WHERE id=$1", [req.params.id]);
-  if (row.rowCount > 0) {
-    await logActivity({
-      userId: req.user.id,
-      moduleName: "tasks",
-      actionType: "delete",
-      recordId: Number(req.params.id),
-      summary: "Görev silindi",
-      beforeData: row.rows[0],
-    });
-  }
-  res.status(204).send();
+app.put("/api/tasks/:id", authMiddleware, async (req, res) => {
+  try {
+    const {
+      title, note, description, status, assigneeId = null, assigneeName = null,
+      priority = "Orta", dueDate = null, investorId = null, brandId = null,
+      projectId = null, locationId = null, contractId = null, moduleType, tags,
+    } = req.body || {};
+    const taskTitle = title || note || "";
+    const completedAt = status === "Tamamlandı" ? "NOW()" : "NULL";
+    const updated = await pool.query(
+      `UPDATE tasks SET title=$1,note=$1,description=$2,status=$3,assignee_id=$4,assignee_name=$5,priority=$6,due_date=$7,
+       investor_id=$8,brand_id=$9,project_id=$10,location_id=$11,contract_id=$12,module_type=$13,tags=$14,
+       updated_at=NOW(),completed_at=${completedAt === "NOW()" ? "NOW()" : "NULL"}
+       WHERE id=$15 RETURNING *`,
+      [taskTitle, description || null, status, assigneeId, assigneeName, priority, dueDate || null,
+       investorId || null, brandId || null, projectId || null, locationId || null, contractId || null,
+       moduleType || "Genel", tags || [], req.params.id],
+    );
+    if (updated.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
+    const item = mapTask(updated.rows[0]);
+    await logActivity({ userId: req.user.id, moduleName: "tasks", actionType: "update", recordId: item.id, summary: `Görev güncellendi: ${taskTitle}`, afterData: item });
+    res.json(item);
+  } catch (err) { next(err); }
+});
+
+app.delete("/api/tasks/:id", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== "admin" && req.user.role !== "manager") {
+      return res.status(403).json({ message: "Yetkisiz." });
+    }
+    const row = await pool.query("SELECT id,title,note FROM tasks WHERE id=$1", [req.params.id]);
+    await pool.query("UPDATE tasks SET deleted_at=NOW() WHERE id=$1", [req.params.id]);
+    if (row.rowCount > 0) {
+      await logActivity({ userId: req.user.id, moduleName: "tasks", actionType: "delete", recordId: Number(req.params.id), summary: `Görev silindi: ${row.rows[0].title || row.rows[0].note}`, beforeData: row.rows[0] });
+    }
+    res.status(204).send();
+  } catch (err) { next(err); }
 });
 
 app.post("/api/matching", authMiddleware, async (req, res) => {
   // Existing matching code...
+});
+
+app.post("/api/investor-brand-matches", authMiddleware, async (req, res) => {
+  try {
+    const { investorId, brandId, score, notes } = req.body || {};
+    if (!investorId || !brandId) return res.status(400).json({ message: "investorId ve brandId zorunlu." });
+    const result = await pool.query(
+      `INSERT INTO investor_brand_matches(investor_id, brand_id, score, notes, created_by)
+       VALUES($1, $2, $3, $4, $5)
+       ON CONFLICT(investor_id, brand_id) DO UPDATE SET score=EXCLUDED.score, notes=EXCLUDED.notes
+       RETURNING *`,
+      [Number(investorId), Number(brandId), Number(score || 0), notes || null, req.user.id],
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) { next(err); }
+});
+
+app.get("/api/investor-brand-matches", authMiddleware, async (req, res) => {
+  try {
+    const { investorId } = req.query || {};
+    const cond = investorId ? "WHERE ibm.investor_id=$1" : "";
+    const params = investorId ? [Number(investorId)] : [];
+    const result = await pool.query(
+      `SELECT ibm.*, i.name AS investor_name, b.name AS brand_name FROM investor_brand_matches ibm
+       JOIN investors i ON i.id = ibm.investor_id JOIN brands b ON b.id = ibm.brand_id
+       ${cond} ORDER BY ibm.score DESC NULLS LAST LIMIT 100`,
+      params,
+    );
+    res.json(result.rows);
+  } catch (err) { next(err); }
 });
 
 app.post("/api/matching/suggest", authMiddleware, async (req, res) => {
