@@ -873,124 +873,373 @@ async function seedDefaultDataIfNeeded() {
     adminId = existingUser.rows[0].id;
   }
 
-  const seedBrands = [
-    ["Tavada Tavuk", "Fast Casual", 1500000, 3500000, 90, 220, "AVM + Cadde", true, 11, "Anlaşmalı"],
-    ["Bigye", "Fast Casual", 1300000, 2900000, 70, 180, "AVM", true, 9, "Görüşülüyor"],
-    ["Kasap Döner", "Doner", 1200000, 2600000, 65, 150, "Cadde", true, 8, "Anlaşmalı"],
-    ["Cajun Corner", "Fast Casual", 1400000, 3100000, 80, 170, "AVM + Cadde", true, 10, "Görüşülüyor"],
-    ["Springfield Yeni Nesil Dürüm", "Doner", 1250000, 2500000, 60, 130, "Cadde", true, 7, "Beklemede"],
-    ["Yelken Balıkçısı", "Seafood", 2000000, 5000000, 140, 350, "Sahil + Premium Cadde", true, 6, "Anlaşmalı"],
-    ["Mogaf Döner", "Doner", 1100000, 2100000, 50, 120, "Cadde + Mahalle", true, 8, "Görüşülüyor"],
-    ["Blak Coffee Co", "Coffee", 1700000, 3600000, 90, 180, "Cadde + AVM", true, 13, "Anlaşmalı"],
-    ["The Coffee Factory", "Coffee", 1400000, 3300000, 80, 170, "AVM", true, 12, "Anlaşmalı"],
-    ["Coffee in Munchies", "Coffee", 1300000, 2900000, 75, 160, "Cadde + AVM", true, 9, "Beklemede"],
-    ["Pizza Pino", "Fast Food", 900000, 2200000, 60, 140, "AVM + Cadde", true, 7, "Görüşülüyor"],
-    ["SushiMore", "Japon", 1800000, 4200000, 100, 250, "AVM + Premium Cadde", true, 5, "Görüşülüyor"],
-    ["Fit Salad Bar", "Sağlıklı Yaşam", 750000, 1800000, 40, 90, "AVM + Ofis Bölgesi", true, 10, "Beklemede"],
-    ["Pasta Punto", "Pastane", 1100000, 2400000, 70, 160, "Cadde + AVM", true, 8, "Anlaşmalı"],
-    ["Türk Kahvesi Evi", "Kahve", 600000, 1400000, 30, 70, "Her bölge", true, 12, "Görüşülüyor"],
-  ];
-
-  for (const brand of seedBrands) {
-    const exists = await pool.query("SELECT id FROM brands WHERE LOWER(name)=LOWER($1)", [brand[0]]);
-    if (exists.rowCount > 0) continue;
-    await pool.query(
-      `INSERT INTO brands(name, sector, min_budget, max_budget, min_sqm, max_sqm, target_locations, active, monthly_growth, agreement_status)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      brand,
-    );
-  }
-
+  // ── TEAM MEMBERS ──────────────────────────────────────────────
   const teamCount = await pool.query("SELECT COUNT(*)::int AS count FROM team_members");
   if (teamCount.rows[0].count === 0) {
-    await pool.query(
-      `INSERT INTO team_members(name,email,phone,department,role_name,permissions,active)
-       VALUES
-       ('Selin Demir','selin@micore.com','+90 544 222 33 44','Franchise','Yönetici',ARRAY['investors','brands','locations','projects','contracts','tasks','reports'],true),
-       ('Mert Kaya','mert@micore.com','+90 541 310 22 11','Operasyon','Uzman',ARRAY['tasks','projects','locations'],true),
-       ('Ayşe Çetin','ayse@micore.com','+90 533 118 88 70','Satış','Temsilci',ARRAY['investors','tasks','reports'],true),
-       ('Burak Yılmaz','burak@micore.com','+90 532 999 88 77','Hukuk','Avukat',ARRAY['contracts','reports'],true),
-       ('Esra Koc','esra@micore.com','+90 505 444 33 22','Finans','Muhasebeci',ARRAY['contracts','reports'],true)`
-    );
+    await pool.query(`
+      INSERT INTO team_members(name,email,phone,department,role_name,permissions,active) VALUES
+      ('Selin Demir','selin@micore.com','+90 544 222 33 44','Franchise','Yönetici',ARRAY['investors','brands','locations','projects','contracts','tasks','reports'],true),
+      ('Mert Kaya','mert@micore.com','+90 541 310 22 11','Operasyon','Uzman',ARRAY['tasks','projects','locations'],true),
+      ('Ayşe Çetin','ayse@micore.com','+90 533 118 88 70','Satış','Temsilci',ARRAY['investors','tasks','reports'],true),
+      ('Burak Yılmaz','burak@micore.com','+90 532 999 88 77','Hukuk','Avukat',ARRAY['contracts','reports'],true),
+      ('Esra Koç','esra@micore.com','+90 505 444 33 22','Finans','Muhasebeci',ARRAY['contracts','reports'],true),
+      ('Kemal Erdoğan','kemal@micore.com','+90 530 888 77 66','Pazarlama','Uzman',ARRAY['investors','brands','reports'],true)
+    `);
   }
 
+  // ── BRANDS ──────────────────────────────────────────────────────
+  const brandCount = await pool.query("SELECT COUNT(*)::int AS count FROM brands");
+  const brandIds = {};
+  if (brandCount.rows[0].count === 0) {
+    const brandRows = [
+      { name:"Blak Coffee Co", sector:"Coffee", minB:1700000, maxB:3600000, minS:90, maxS:180, target:"Cadde + AVM", agr:"Anlaşmalı", fee:250000, royalty:6.5, months:36, contact:"Hasan Bey", phone:"+90 212 100 20 30", email:"hasan@blakcoffee.com", scoreOp:85, scoreFit:90, scoreLoc:80, scoreInv:88 },
+      { name:"Tavada Tavuk", sector:"Fast Casual", minB:1500000, maxB:3500000, minS:90, maxS:220, target:"AVM + Cadde", agr:"Anlaşmalı", fee:200000, royalty:5.0, months:48, contact:"Ali Kaya", phone:"+90 212 200 30 40", email:"ali@tavadatavuk.com", scoreOp:80, scoreFit:85, scoreLoc:75, scoreInv:82 },
+      { name:"SushiMore", sector:"Japon", minB:1800000, maxB:4200000, minS:100, maxS:250, target:"AVM + Premium Cadde", agr:"Görüşülüyor", fee:300000, royalty:7.0, months:36, contact:"Selin Hanım", phone:"+90 212 300 40 50", email:"selin@sushimore.com", scoreOp:75, scoreFit:80, scoreLoc:90, scoreInv:78 },
+      { name:"Kasap Döner", sector:"Doner", minB:1200000, maxB:2600000, minS:65, maxS:150, target:"Cadde", agr:"Anlaşmalı", fee:150000, royalty:4.5, months:24, contact:"Mehmet Usta", phone:"+90 532 400 50 60", email:"info@kasapdoner.com", scoreOp:82, scoreFit:78, scoreLoc:70, scoreInv:80 },
+      { name:"The Coffee Factory", sector:"Coffee", minB:1400000, maxB:3300000, minS:80, maxS:170, target:"AVM", agr:"Anlaşmalı", fee:220000, royalty:6.0, months:36, contact:"Zeynep Hanım", phone:"+90 212 500 60 70", email:"zeynep@coffeefactory.com", scoreOp:78, scoreFit:82, scoreLoc:85, scoreInv:79 },
+      { name:"Yelken Balıkçısı", sector:"Seafood", minB:2000000, maxB:5000000, minS:140, maxS:350, target:"Sahil + Premium Cadde", agr:"Anlaşmalı", fee:400000, royalty:8.0, months:60, contact:"Yılmaz Bey", phone:"+90 242 600 70 80", email:"yilmaz@yelken.com", scoreOp:72, scoreFit:75, scoreLoc:88, scoreInv:74 },
+      { name:"Bigye", sector:"Fast Casual", minB:1300000, maxB:2900000, minS:70, maxS:180, target:"AVM", agr:"Görüşülüyor", fee:180000, royalty:5.5, months:36, contact:"Can Bey", phone:"+90 212 700 80 90", email:"can@bigye.com", scoreOp:70, scoreFit:72, scoreLoc:68, scoreInv:73 },
+      { name:"Mogaf Döner", sector:"Doner", minB:1100000, maxB:2100000, minS:50, maxS:120, target:"Cadde + Mahalle", agr:"Görüşülüyor", fee:130000, royalty:4.0, months:24, contact:"Cengiz Bey", phone:"+90 544 800 90 00", email:"cengiz@mogaf.com", scoreOp:68, scoreFit:70, scoreLoc:65, scoreInv:70 },
+      { name:"Cajun Corner", sector:"Fast Casual", minB:1400000, maxB:3100000, minS:80, maxS:170, target:"AVM + Cadde", agr:"Görüşülüyor", fee:190000, royalty:5.5, months:36, contact:"Leyla Hanım", phone:"+90 532 900 10 20", email:"leyla@cajun.com", scoreOp:73, scoreFit:75, scoreLoc:72, scoreInv:76 },
+      { name:"Pasta Punto", sector:"Pastane", minB:1100000, maxB:2400000, minS:70, maxS:160, target:"Cadde + AVM", agr:"Anlaşmalı", fee:160000, royalty:5.0, months:36, contact:"Fatma Hanım", phone:"+90 212 010 20 30", email:"fatma@pastapunto.com", scoreOp:76, scoreFit:74, scoreLoc:78, scoreInv:77 },
+      { name:"Pizza Pino", sector:"Fast Food", minB:900000, maxB:2200000, minS:60, maxS:140, target:"AVM + Cadde", agr:"Görüşülüyor", fee:120000, royalty:4.5, months:24, contact:"Orhan Bey", phone:"+90 212 020 30 40", email:"orhan@pizzapino.com", scoreOp:65, scoreFit:68, scoreLoc:62, scoreInv:66 },
+      { name:"Fit Salad Bar", sector:"Sağlıklı Yaşam", minB:750000, maxB:1800000, minS:40, maxS:90, target:"AVM + Ofis Bölgesi", agr:"Beklemede", fee:90000, royalty:4.0, months:24, contact:"Ezgi Hanım", phone:"+90 533 030 40 50", email:"ezgi@fitsalad.com", scoreOp:72, scoreFit:70, scoreLoc:75, scoreInv:71 },
+      { name:"Coffee in Munchies", sector:"Coffee", minB:1300000, maxB:2900000, minS:75, maxS:160, target:"Cadde + AVM", agr:"Beklemede", fee:200000, royalty:6.0, months:36, contact:"Berk Bey", phone:"+90 541 040 50 60", email:"berk@munchies.com", scoreOp:74, scoreFit:76, scoreLoc:80, scoreInv:75 },
+      { name:"Türk Kahvesi Evi", sector:"Kahve", minB:600000, maxB:1400000, minS:30, maxS:70, target:"Her bölge", agr:"Görüşülüyor", fee:70000, royalty:3.5, months:24, contact:"Nesrin Hanım", phone:"+90 505 050 60 70", email:"nesrin@turkkahvesi.com", scoreOp:80, scoreFit:82, scoreLoc:85, scoreInv:83 },
+      { name:"Springfield Yeni Nesil Dürüm", sector:"Doner", minB:1250000, maxB:2500000, minS:60, maxS:130, target:"Cadde", agr:"Beklemede", fee:140000, royalty:4.5, months:36, contact:"Tarık Bey", phone:"+90 532 060 70 80", email:"tarik@springfield.com", scoreOp:69, scoreFit:71, scoreLoc:67, scoreInv:70 },
+    ];
+    for (const b of brandRows) {
+      const r = await pool.query(`
+        INSERT INTO brands(name,sector,min_budget,max_budget,min_sqm,max_sqm,target_locations,active,monthly_growth,
+          agreement_status,franchise_fee,royalty_rate,contract_term_months,contact_person,contact_phone,email,
+          gives_franchise,has_royalty,score_operation,score_franchise_fit,score_location_flex,score_investor_interest)
+        VALUES($1,$2,$3,$4,$5,$6,$7,true,10,$8,$9,$10,$11,$12,$13,$14,true,true,$15,$16,$17,$18)
+        ON CONFLICT DO NOTHING RETURNING id`,
+        [b.name,b.sector,b.minB,b.maxB,b.minS,b.maxS,b.target,b.agr,b.fee,b.royalty,b.months,b.contact,b.phone,b.email,b.scoreOp,b.scoreFit,b.scoreLoc,b.scoreInv]
+      );
+      if (r.rows[0]) brandIds[b.name] = r.rows[0].id;
+    }
+  } else {
+    const existing = await pool.query("SELECT id, name FROM brands LIMIT 20");
+    existing.rows.forEach(r => { brandIds[r.name] = r.id; });
+  }
+
+  // ── INVESTORS ──────────────────────────────────────────────────
   const investorCount = await pool.query("SELECT COUNT(*)::int AS count FROM investors");
+  const investorIds = {};
   if (investorCount.rows[0].count === 0) {
-    await pool.query(
-      `INSERT INTO investors(name,budget,currency,city,sector,investment_type,pipeline_stage,phone,email,district,goal,contact_history,meeting_notes,follow_up_date,priority,created_by)
-       VALUES
-       ('Ahmet Kılıç',2600000,'TRY','İstanbul','Coffee','Franchise','Marka Önerildi','+90 544 222 33 44','ahmet.demo@crm.com','Kadıköy','2 şube coffee yatırımı','24.04 arandı','AVM + cadde alternatifleri istiyor','2026-05-18','Yüksek',$1),
-       ('Yaman Holding',4100000,'TRY','Ankara','Fast Casual','Ortaklık','Teklif Verildi','+90 530 444 55 66','yaman@demo.com','Çankaya','Bölgesel büyüme','26.04 toplantı','Sözleşme taslağı paylaşıldı','2026-05-20','Yüksek',$1),
-       ('Melek Arslan',1800000,'TRY','İzmir','Doner','Franchise','İletişim Kuruldu','+90 533 111 22 33','melek@demo.com','Bornova','Tek mağaza başlangıcı','22.04 mesaj','Lokasyon arayışında','2026-05-25','Orta',$1),
-       ('Can Teknoloji',6500000,'TRY','İstanbul','Kahve','Master Franchise','Sunum Yapıldı','+90 212 333 44 55','can@demo.com','Maslak','Çoklu şube planı','20.04 toplantı','Finansman sürecinde','2026-05-22','Çok Yüksek',$1),
-       ('Fatma Şahin',950000,'TRY','Bursa','Fast Food','Franchise','Yeni Lead','+90 544 777 88 99','fatma@demo.com','Nilüfer','İlk yatırım','25.04 form','Ürün araştırıyor','2026-06-01','Düşük',$1),
-       ('Ömer Yıldız',3200000,'TRY','Antalya','Sağlıklı Yaşam','Franchise','Görüşme Yapıldı','+90 532 555 66 77','omer@demo.com','Lara','2-3 şube hedefi','23.04 arama','AVM odaklı bakıyor','2026-05-28','Orta',$1)`,
-      [adminId],
-    );
+    const invRows = [
+      { name:"Ahmet Kılıç", budget:2600000, city:"İstanbul", sector:"Coffee", type:"Franchise", stage:"Marka Önerildi", phone:"+90 544 222 33 44", email:"ahmet@crm.com", district:"Kadıköy", goal:"2 şube coffee yatırımı", hist:"24.04 arandı, bilgi paketi gönderildi", notes:"AVM + cadde alternatifleri istiyor, mobilya konusunda tedarikçi arıyor", followup:"2026-05-20", prio:"Yüksek", targetType:"Cadde", inv_type:"Bireysel" },
+      { name:"Yaman Holding", budget:4100000, city:"Ankara", sector:"Fast Casual", type:"Ortaklık", stage:"Teklif Verildi", phone:"+90 530 444 55 66", email:"yaman@demo.com", district:"Çankaya", goal:"Bölgesel büyüme, 5+ şube", hist:"26.04 toplantı, 02.05 teklif sunuldu", notes:"Sözleşme taslağı paylaşıldı. Hukuk departmanları inceliyor.", followup:"2026-05-20", prio:"Yüksek", targetType:"AVM", inv_type:"Kurumsal" },
+      { name:"Melek Arslan", budget:1800000, city:"İzmir", sector:"Doner", type:"Franchise", stage:"İletişim Kuruldu", phone:"+90 533 111 22 33", email:"melek@demo.com", district:"Bornova", goal:"Tek mağaza başlangıcı", hist:"22.04 mesaj, 27.04 arama", notes:"Lokasyon arayışında, Forum Bornova ilgileniyor", followup:"2026-05-25", prio:"Orta", targetType:"AVM", inv_type:"Bireysel" },
+      { name:"Can Teknoloji A.Ş.", budget:6500000, city:"İstanbul", sector:"Kahve", type:"Master Franchise", stage:"Sunum Yapıldı", phone:"+90 212 333 44 55", email:"can@demo.com", district:"Maslak", goal:"Çoklu şube planı, 10+ nokta", hist:"20.04 toplantı, 28.04 sunum yapıldı", notes:"Finansman sürecinde. Banka kredi onayı bekleniyor.", followup:"2026-05-22", prio:"Çok Yüksek", targetType:"Cadde + AVM", inv_type:"Kurumsal" },
+      { name:"Fatma Şahin", budget:950000, city:"Bursa", sector:"Fast Food", type:"Franchise", stage:"Yeni Lead", phone:"+90 544 777 88 99", email:"fatma@demo.com", district:"Nilüfer", goal:"İlk yatırım deneyimi", hist:"25.04 web formu doldurdu", notes:"Ürün araştırıyor, kıyaslama yapıyor. Takip edilmeli.", followup:"2026-06-01", prio:"Düşük", targetType:"AVM", inv_type:"Bireysel" },
+      { name:"Ömer Yıldız", budget:3200000, city:"Antalya", sector:"Sağlıklı Yaşam", type:"Franchise", stage:"Görüşme Yapıldı", phone:"+90 532 555 66 77", email:"omer@demo.com", district:"Lara", goal:"2-3 şube hedefi, turistik bölge", hist:"23.04 arama, 29.04 ofis ziyareti", notes:"AVM odaklı bakıyor, turistik bölge tercihi var", followup:"2026-05-28", prio:"Orta", targetType:"AVM", inv_type:"Bireysel" },
+      { name:"Grup Doruk Yatırım", budget:8200000, city:"İstanbul", sector:"Fast Casual", type:"Master Franchise", stage:"Sözleşme Süreci", phone:"+90 212 666 77 88", email:"info@doruk.com", district:"Levent", goal:"Master franchise bölge hakları", hist:"15.04 ilk temas, 22.04 NDA imzalandı, 05.05 müzakere", notes:"Çok profesyonel firma. Hızlı karar veriyor. Kritik süreç.", followup:"2026-05-18", prio:"Çok Yüksek", targetType:"Her bölge", inv_type:"Kurumsal" },
+      { name:"Deniz Acar", budget:2100000, city:"Ankara", sector:"Coffee", type:"Franchise", stage:"Marka Önerildi", phone:"+90 533 777 88 99", email:"deniz@demo.com", district:"Kızılay", goal:"Coffee konsept franchise", hist:"01.05 telefon görüşmesi", notes:"Blak Coffee Co önerisi iyi karşılandı", followup:"2026-05-30", prio:"Orta", targetType:"Cadde", inv_type:"Bireysel" },
+      { name:"Kardeşler Gıda Ltd.", budget:1500000, city:"İzmir", sector:"Pastane", type:"Franchise", stage:"İletişim Kuruldu", phone:"+90 232 888 99 00", email:"info@kardesler.com", district:"Alsancak", goal:"Pastane franchise, aile şirketi", hist:"03.05 mesaj", notes:"Aile şirketi, deneyimli gıda sektörü geçmişi var", followup:"2026-06-05", prio:"Orta", targetType:"Cadde", inv_type:"Kurumsal" },
+      { name:"Hüseyin Toprak", budget:4800000, city:"İstanbul", sector:"Seafood", type:"Ortaklık", stage:"Görüşme Yapıldı", phone:"+90 530 999 00 11", email:"huseyin@demo.com", district:"Bebek", goal:"Premium segment balık restoranı", hist:"28.04 kahve toplantısı", notes:"Yelken Balıkçısı ile görüştürüldü, ilgi yüksek", followup:"2026-05-22", prio:"Yüksek", targetType:"Sahil", inv_type:"Bireysel" },
+    ];
+    for (const inv of invRows) {
+      const r = await pool.query(`
+        INSERT INTO investors(name,budget,currency,city,sector,investment_type,pipeline_stage,phone,email,district,goal,
+          contact_history,meeting_notes,follow_up_date,priority,target_location_type,investor_type,created_by)
+        VALUES($1,$2,'TRY',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id`,
+        [inv.name,inv.budget,inv.city,inv.sector,inv.type,inv.stage,inv.phone,inv.email,inv.district,
+         inv.goal,inv.hist,inv.notes,inv.followup,inv.prio,inv.targetType,inv.inv_type,adminId]
+      );
+      investorIds[inv.name] = r.rows[0].id;
+    }
+  } else {
+    const existing = await pool.query("SELECT id, name FROM investors LIMIT 20");
+    existing.rows.forEach(r => { investorIds[r.name] = r.id; });
   }
 
+  // ── LOCATIONS ──────────────────────────────────────────────────
   const locationCount = await pool.query("SELECT COUNT(*)::int AS count FROM locations");
+  const locationIds = {};
   if (locationCount.rows[0].count === 0) {
-    await pool.query(
-      `INSERT INTO locations(name,location_type,sqm,rent,currency,potential,recommended_brands,address,traffic,owner,owner_phone,city,district,status,notes)
-       VALUES
-       ('Bağdat Caddesi Premium','Cadde',130,380000,'TRY','Yüksek',ARRAY['Blak Coffee Co','Tavada Tavuk'],'Caddebostan','Yoğun','Yıldız Gayrimenkul','+90 555 330 11 22','İstanbul','Kadıköy','Boş','Yüksek yaya trafiği, park yeri mevcut'),
-       ('Panora AVM - A Blok','AVM',95,240000,'TRY','Orta',ARRAY['The Coffee Factory'],'Oran','Orta','Panora Yönetim','+90 312 455 00 11','Ankara','Çankaya','Müzakere','Food court yakını, sosyal alan'),
-       ('Nişantaşı Köşk Pasajı','Cadde',160,520000,'TRY','Çok Yüksek',ARRAY['SushiMore','Pasta Punto'],'Nişantaşı','Çok Yoğun','Özel Mülk','+90 533 200 30 40','İstanbul','Şişli','Boş','Premium bölge, A+ müşteri profili'),
-       ('Alsancak Turan','Cadde',110,280000,'TRY','Yüksek',ARRAY['Türk Kahvesi Evi','Kasap Döner'],'Alsancak','Yoğun','İzmir Gayrimenkul','+90 232 444 55 66','İzmir','Konak','Boş','Sahil yürüyüş güzergahı'),
-       ('Forum Bornova - ZF12','AVM',75,195000,'TRY','Orta',ARRAY['Fit Salad Bar','Pizza Pino'],'Bornova','Orta','AVM Yönetimi','+90 232 777 88 99','İzmir','Bornova','Müzakere','Gençlik AVM, üniversite yakını')`
-    );
+    const locRows = [
+      { name:"Bağdat Caddesi Premium", type:"Cadde", sqm:130, rent:380000, pot:"Yüksek", brands:["Blak Coffee Co","Tavada Tavuk"], addr:"Caddebostan Mah. Bağdat Cad. No:142", traffic:"Çok Yoğun", owner:"Yıldız Gayrimenkul", ownerPhone:"+90 555 330 11 22", city:"İstanbul", dist:"Kadıköy", status:"Boş", notes:"Günlük 12.000+ yaya trafiği. Metro çıkışı 200m. Şampiyon café lokasyonu.", segment:"A+", deposit:1140000, dues:25000 },
+      { name:"Panora AVM - A Blok F05", type:"AVM", sqm:95, rent:240000, pot:"Orta", brands:["The Coffee Factory","Bigye"], addr:"Oran Mah. Silikon Cad. No:5", traffic:"Orta-Yüksek", owner:"Panora AVM Yönetim", ownerPhone:"+90 312 455 00 11", city:"Ankara", dist:"Çankaya", status:"Müzakere", notes:"Food court yakını, 3. katta. Aile hedef kitlesi.", segment:"B+", deposit:720000, dues:18000 },
+      { name:"Nişantaşı Köşk Pasajı", type:"Cadde", sqm:160, rent:520000, pot:"Çok Yüksek", brands:["SushiMore","Pasta Punto"], addr:"Teşvikiye Mah. Abdi İpekçi Cad. No:22", traffic:"Çok Yoğun", owner:"Özel Mülkiyet - Köşk Ailesi", ownerPhone:"+90 533 200 30 40", city:"İstanbul", dist:"Şişli", status:"Boş", notes:"A+ lokasyon. Yabancı turist yoğun. Premium müşteri profili.", segment:"A+", deposit:1560000, dues:35000 },
+      { name:"Alsancak Turan Caddesi", type:"Cadde", sqm:110, rent:280000, pot:"Yüksek", brands:["Türk Kahvesi Evi","Kasap Döner"], addr:"Alsancak Mah. 1482 Sok. No:8", traffic:"Yoğun", owner:"İzmir Gayrimenkul A.Ş.", ownerPhone:"+90 232 444 55 66", city:"İzmir", dist:"Konak", status:"Boş", notes:"İzmir'in ana yaya aksı. Sahil yürüyüş güzergahı.", segment:"A", deposit:840000, dues:20000 },
+      { name:"Forum Bornova - ZF12", type:"AVM", sqm:75, rent:195000, pot:"Orta", brands:["Fit Salad Bar","Pizza Pino"], addr:"Bornova Mah. Ankara Cad. No:1", traffic:"Orta", owner:"Forum AVM Yönetim", ownerPhone:"+90 232 777 88 99", city:"İzmir", dist:"Bornova", status:"Müzakere", notes:"Gençlik AVM. Ege Üniversitesi yakını. Hedef kitle 18-35 yaş.", segment:"B", deposit:585000, dues:12000 },
+      { name:"Lara Sahil Kavşağı", type:"Cadde", sqm:140, rent:320000, pot:"Yüksek", brands:["Fit Salad Bar","Blak Coffee Co"], addr:"Lara Mah. Lara Cad. No:200", traffic:"Yoğun", owner:"Antalya Emlak Ltd.", ownerPhone:"+90 242 111 22 33", city:"Antalya", dist:"Muratpaşa", status:"Boş", notes:"Turistik bölge. Yaz sezonu kapasitesi çok yüksek. Yıl boyu açık.", segment:"A", deposit:960000, dues:22000 },
+      { name:"Maslak İş Merkezi Zemin", type:"Plaza", sqm:85, rent:290000, pot:"Orta", brands:["The Coffee Factory","Coffee in Munchies"], addr:"Maslak Mah. AOS 55. Sok. No:3", traffic:"Orta", owner:"GYO Ofis Yönetim", ownerPhone:"+90 212 444 55 66", city:"İstanbul", dist:"Sarıyer", status:"Boş", notes:"Kurumsal bölge. 25.000+ günlük ofis çalışanı. Sabah/öğle pik trafik.", segment:"B+", deposit:870000, dues:15000 },
+      { name:"Bursa Zafer Plaza - Giriş", type:"AVM", sqm:68, rent:160000, pot:"Orta", brands:["Pizza Pino","Türk Kahvesi Evi"], addr:"Osmangazi Mah. Zafer Cad. No:1", traffic:"Orta", owner:"Zafer Plaza AVM", ownerPhone:"+90 224 333 44 55", city:"Bursa", dist:"Osmangazi", status:"Boş", notes:"Bursa merkezi AVM. Kuzey giriş kapısı, yüksek görünürlük.", segment:"B", deposit:480000, dues:10000 },
+    ];
+    for (const l of locRows) {
+      const r = await pool.query(`
+        INSERT INTO locations(name,location_type,sqm,rent,currency,potential,recommended_brands,address,traffic,owner,owner_phone,city,district,status,notes,segment,deposit,dues)
+        VALUES($1,$2,$3,$4,'TRY',$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17) RETURNING id`,
+        [l.name,l.type,l.sqm,l.rent,l.pot,l.brands,l.addr,l.traffic,l.owner,l.ownerPhone,l.city,l.dist,l.status,l.notes,l.segment,l.deposit,l.dues]
+      );
+      locationIds[l.name] = r.rows[0].id;
+    }
+  } else {
+    const existing = await pool.query("SELECT id, name FROM locations LIMIT 20");
+    existing.rows.forEach(r => { locationIds[r.name] = r.id; });
   }
 
+  // ── PROJECTS (cross-linked) ────────────────────────────────────
   const projectCount = await pool.query("SELECT COUNT(*)::int AS count FROM projects");
+  const projectIds = {};
   if (projectCount.rows[0].count === 0) {
-    await pool.query(
-      `INSERT INTO projects(name,project_type,owner_team,assignees,priority,progress,stage,due_date,description,checklist)
-       VALUES
-       ('Blak Coffee Co - İstanbul Büyüme','Franchise','Franchise Ekibi',ARRAY['Selin Demir','Mert Kaya'],'Yüksek',45,'Sunum & Müzakere','2026-06-30','İstanbul için 2 yeni noktada genişleme',ARRAY['Lokasyon shortlist','Sunum dosyası','Kira pazarlığı','Sözleşme taslağı']),
-       ('Tavada Tavuk - Ankara Franchise','Franchise','Operasyon Ekibi',ARRAY['Mert Kaya'],'Yüksek',70,'Sözleşme Süreci','2026-06-15','Ankara merkezi için franchise açılışı',ARRAY['Lokasyon onay','Marka anlaşması','Açılış planı']),
-       ('Yaman Holding - Fast Casual','Ortaklık','Satış Ekibi',ARRAY['Selin Demir','Ayşe Çetin'],'Orta',25,'Teklif Hazırlanıyor','2026-07-31','Çoklu şube ortaklık görüşmesi',ARRAY['Finansal analiz','Sunum','İmza']),
-       ('SushiMore - Nişantaşı Açılışı','Franchise','Franchise Ekibi',ARRAY['Selin Demir'],'Çok Yüksek',80,'Hukuki Süreç','2026-05-31','Premium lokasyonda açılış',ARRAY['Kira sözleşmesi','Marka lisansı','İşletim belgesi'])`
-    );
+    const projRows = [
+      { name:"Blak Coffee Co - Bağdat Cad. Açılışı", type:"Franchise", team:"Franchise Ekibi", assignees:["Selin Demir","Mert Kaya"], prio:"Yüksek", prog:55, stage:"Sunum & Müzakere", due:"2026-06-30", desc:"Bağdat Caddesi premium lokasyonda Blak Coffee Co açılışı. Yatırımcı Ahmet Kılıç.", checklist:["Lokasyon ekspertiz","Marka sunum toplantısı","Kira müzakeresi","Sözleşme taslağı","Açılış planı"], investorName:"Ahmet Kılıç", brandName:"Blak Coffee Co", locationName:"Bağdat Caddesi Premium" },
+      { name:"Tavada Tavuk - Panora AVM Franchise", type:"Franchise", team:"Operasyon Ekibi", assignees:["Mert Kaya","Ayşe Çetin"], prio:"Yüksek", prog:70, stage:"Sözleşme Süreci", due:"2026-06-15", desc:"Panora AVM A Blok'ta Tavada Tavuk franchise açılışı.", checklist:["Lokasyon onay","Marka anlaşması","Kiracı teslim tutanağı","Ruhsat başvurusu","Açılış planı"], investorName:"Yaman Holding", brandName:"Tavada Tavuk", locationName:"Panora AVM - A Blok F05" },
+      { name:"SushiMore - Nişantaşı Açılışı", type:"Franchise", team:"Franchise Ekibi", assignees:["Selin Demir","Burak Yılmaz"], prio:"Çok Yüksek", prog:80, stage:"Hukuki Süreç", due:"2026-05-31", desc:"Nişantaşı premium lokasyonda SushiMore açılışı. Hukuki süreç devam ediyor.", checklist:["Kira sözleşmesi imzası","Marka lisans anlaşması","İşletme belgesi","Personel eğitimi","Açılış daveti"], investorName:"Hüseyin Toprak", brandName:"SushiMore", locationName:"Nişantaşı Köşk Pasajı" },
+      { name:"Yaman Holding - Fast Casual Ortaklık", type:"Ortaklık", team:"Satış Ekibi", assignees:["Selin Demir","Ayşe Çetin"], prio:"Orta", prog:30, stage:"Teklif Hazırlanıyor", due:"2026-07-31", desc:"Yaman Holding ile çoklu şube ortaklık görüşmesi.", checklist:["Finansal analiz raporu","Ortaklık teklifi sunumu","Hukuki inceleme","İmza"], investorName:"Yaman Holding", brandName:"Bigye", locationName:null },
+      { name:"Grup Doruk - Master Franchise Anlaşması", type:"Master Franchise", team:"Üst Yönetim", assignees:["Selin Demir","Burak Yılmaz","Esra Koç"], prio:"Çok Yüksek", prog:90, stage:"Sözleşme Süreci", due:"2026-05-20", desc:"Grup Doruk ile The Coffee Factory master franchise görüşmesi. Kritik aşama.", checklist:["NDA imzalandı","Due diligence tamamlandı","Sözleşme müzakeresi","İmza töreni"], investorName:"Grup Doruk Yatırım", brandName:"The Coffee Factory", locationName:null },
+      { name:"Melek Arslan - Kasap Döner İzmir", type:"Franchise", team:"Satış Ekibi", assignees:["Ayşe Çetin"], prio:"Orta", prog:20, stage:"Lokasyon Araştırma", due:"2026-08-15", desc:"Melek Arslan için İzmir Alsancak bölgesinde Kasap Döner lokasyonu.", checklist:["Lokasyon shortlist","Kira teklifleri","Marka görüşmesi"], investorName:"Melek Arslan", brandName:"Kasap Döner", locationName:"Alsancak Turan Caddesi" },
+      { name:"Can Teknoloji - Kahve Zinciri Projesi", type:"Master Franchise", team:"Franchise Ekibi", assignees:["Selin Demir","Kemal Erdoğan"], prio:"Yüksek", prog:40, stage:"Sunum & Müzakere", due:"2026-07-15", desc:"Can Teknoloji A.Ş. için 10 şube kahve zinciri projesi.", checklist:["Finansal model","Marka sunum","Pilot şube lokasyonu","Franchise sözleşmesi"], investorName:"Can Teknoloji A.Ş.", brandName:"Blak Coffee Co", locationName:"Maslak İş Merkezi Zemin" },
+    ];
+    for (const p of projRows) {
+      const invId = investorIds[p.investorName] || null;
+      const brandId = p.brandName ? brandIds[p.brandName] || null : null;
+      const locId = p.locationName ? locationIds[p.locationName] || null : null;
+      const r = await pool.query(`
+        INSERT INTO projects(name,project_type,owner_team,assignees,priority,progress,stage,due_date,description,checklist,investor_id,brand_id,location_id)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+        [p.name,p.type,p.team,p.assignees,p.prio,p.prog,p.stage,p.due,p.desc,p.checklist,invId,brandId,locId]
+      );
+      projectIds[p.name] = r.rows[0].id;
+    }
+  } else {
+    const existing = await pool.query("SELECT id, name FROM projects LIMIT 20");
+    existing.rows.forEach(r => { projectIds[r.name] = r.id; });
   }
 
+  // ── CONTRACTS (cross-linked) ────────────────────────────────────
+  const contractCount = await pool.query("SELECT COUNT(*)::int AS count FROM contracts");
+  const contractIds = {};
+  if (contractCount.rows[0].count === 0) {
+    const cRows = [
+      { name:"Blak Coffee Co Franchise Sözleşmesi", type:"Franchise", status:"Aktif", counterparty:"Blak Coffee Co Türkiye A.Ş.", start:"2026-01-15", end:"2029-01-14", sign:"2026-01-10", amount:350000, fee:85000, feeComm:65000, feeCommPct:8.5, currency:"TRY", risk:"Düşük", notes:"İstanbul Bağdat Caddesi noktası. 3 yıl + uzatma opsiyonu.", investorName:"Ahmet Kılıç", brandName:"Blak Coffee Co", projectName:"Blak Coffee Co - Bağdat Cad. Açılışı" },
+      { name:"Tavada Tavuk Danışmanlık Sözleşmesi", type:"Danışmanlık", status:"Aktif", counterparty:"Tavada Tavuk Ltd. Şti.", start:"2026-02-01", end:"2026-12-31", sign:"2026-01-28", amount:120000, fee:120000, feeComm:null, feeCommPct:null, currency:"TRY", risk:"Düşük", notes:"Ankara bölge genişleme danışmanlığı. Aylık 10.000 TL.", investorName:"Yaman Holding", brandName:"Tavada Tavuk", projectName:"Tavada Tavuk - Panora AVM Franchise" },
+      { name:"SushiMore Ön Anlaşma", type:"Ön Sözleşme", status:"Müzakere", counterparty:"SushiMore Restoranlar A.Ş.", start:"2026-04-01", end:"2027-03-31", sign:null, amount:480000, fee:95000, feeComm:120000, feeCommPct:12.0, currency:"TRY", risk:"Orta", notes:"Nişantaşı premium lokasyon. Final müzakere aşamasında.", investorName:"Hüseyin Toprak", brandName:"SushiMore", projectName:"SushiMore - Nişantaşı Açılışı" },
+      { name:"Grup Doruk Master Franchise Protokolü", type:"Master Franchise", status:"Aktif", counterparty:"Grup Doruk Yatırım A.Ş.", start:"2026-03-01", end:"2031-02-28", sign:"2026-02-25", amount:1800000, fee:300000, feeComm:250000, feeCommPct:15.0, currency:"TRY", risk:"Düşük", notes:"The Coffee Factory 5 yıllık master franchise. Kritik gelir kaynağı.", investorName:"Grup Doruk Yatırım", brandName:"The Coffee Factory", projectName:"Grup Doruk - Master Franchise Anlaşması" },
+      { name:"Can Teknoloji Danışmanlık Protokolü", type:"Danışmanlık", status:"Onay Bekliyor", counterparty:"Can Teknoloji A.Ş.", start:"2026-05-01", end:"2027-04-30", sign:null, amount:240000, fee:240000, feeComm:null, feeCommPct:null, currency:"TRY", risk:"Orta", notes:"10 şube için operasyonel danışmanlık. Aylık 20.000 TL.", investorName:"Can Teknoloji A.Ş.", brandName:"Blak Coffee Co", projectName:"Can Teknoloji - Kahve Zinciri Projesi" },
+    ];
+    for (const c of cRows) {
+      const invId = investorIds[c.investorName] || null;
+      const brandId = c.brandName ? brandIds[c.brandName] || null : null;
+      const projId = c.projectName ? projectIds[c.projectName] || null : null;
+      const r = await pool.query(`
+        INSERT INTO contracts(name,contract_type,status,counterparty,start_date,end_date,sign_date,amount,consulting_fee,
+          franchise_commission,franchise_commission_pct,currency,risk_level,notes,investor_id,brand_id,project_id,created_by)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING id`,
+        [c.name,c.type,c.status,c.counterparty,c.start,c.end,c.sign||null,c.amount,c.fee,
+         c.feeComm||null,c.feeCommPct||null,c.currency,c.risk,c.notes,invId,brandId,projId,adminId]
+      );
+      contractIds[c.name] = r.rows[0].id;
+    }
+  } else {
+    const existing = await pool.query("SELECT id, name FROM contracts LIMIT 20");
+    existing.rows.forEach(r => { contractIds[r.name] = r.id; });
+  }
+
+  // ── TASKS (cross-linked) ───────────────────────────────────────
   const taskCount = await pool.query("SELECT COUNT(*)::int AS count FROM tasks");
   if (taskCount.rows[0].count === 0) {
-    await pool.query(
-      `INSERT INTO tasks(note,status,assignee_name,priority,due_date)
-       VALUES
-       ('Blak Coffee Co lokasyon shortlist hazırla','Açık','Selin Demir','Yüksek','2026-05-20'),
-       ('Yaman Holding finansal analiz raporu','Devam Ediyor','Ayşe Çetin','Yüksek','2026-05-22'),
-       ('Panora AVM kira müzakeresi','Açık','Mert Kaya','Orta','2026-05-25'),
-       ('Sözleşme taslağı hazırlama - Tavada Tavuk','Tamamlandı','Burak Yılmaz','Yüksek','2026-05-15'),
-       ('Yeni lead formu güncelleme','Açık','Selin Demir','Düşük','2026-06-01'),
-       ('Mayıs ayı KPI raporu','Devam Ediyor','Esra Koc','Orta','2026-05-31'),
-       ('Nişantaşı lokasyon ekspertiz raporu','Açık','Mert Kaya','Yüksek','2026-05-24'),
-       ('SushiMore franchise sözleşmesi imzalatma','Açık','Burak Yılmaz','Çok Yüksek','2026-05-28')`
-    );
+    const tasks = [
+      { title:"Blak Coffee Co - Bağdat Cad. kira müzakeresi", desc:"Kiraya veren Yıldız Gayrimenkul ile kira rakamı müzakere edilecek. Hedef: 350.000 TL altı.", status:"Devam Ediyor", prio:"Çok Yüksek", assignee:"Mert Kaya", due:"2026-05-18", mod:"Proje", projName:"Blak Coffee Co - Bağdat Cad. Açılışı" },
+      { title:"SushiMore franchise sözleşmesi imzalatma", desc:"Hukuk departmanı nihai sözleşmeyi hazırladı. İmza töreni organize edilecek.", status:"Açık", prio:"Çok Yüksek", assignee:"Burak Yılmaz", due:"2026-05-28", mod:"Sözleşme", contractName:"SushiMore Ön Anlaşma" },
+      { title:"Yaman Holding finansal analiz raporu hazırla", desc:"Çoklu şube ortaklık teklifine esas finansal model ve projeksiyon raporu.", status:"Devam Ediyor", prio:"Yüksek", assignee:"Ayşe Çetin", due:"2026-05-22", mod:"Proje", projName:"Yaman Holding - Fast Casual Ortaklık" },
+      { title:"Panora AVM - Tavada Tavuk ruhsat başvurusu", desc:"Çankaya Belediyesi işyeri açma ruhsatı için evrak tamamlanacak.", status:"Açık", prio:"Yüksek", assignee:"Mert Kaya", due:"2026-05-25", mod:"Lokasyon", locationName:"Panora AVM - A Blok F05" },
+      { title:"Grup Doruk master franchise sözleşme incelemesi", desc:"Hukuk departmanı 90 sayfalık master franchise sözleşmesini inceleyecek.", status:"Tamamlandı", prio:"Yüksek", assignee:"Burak Yılmaz", due:"2026-05-15", mod:"Sözleşme", contractName:"Grup Doruk Master Franchise Protokolü" },
+      { title:"Mayıs KPI ve pipeline raporu", desc:"Aylık yönetim raporu: yatırımcı, marka, proje ve finans özeti.", status:"Devam Ediyor", prio:"Orta", assignee:"Esra Koç", due:"2026-05-31", mod:"Genel" },
+      { title:"Nişantaşı lokasyon ekspertiz raporu", desc:"Köşk Pasajı için bağımsız ekspertiz firmasına rapor yaptırılacak.", status:"Açık", prio:"Yüksek", assignee:"Mert Kaya", due:"2026-05-24", mod:"Lokasyon", locationName:"Nişantaşı Köşk Pasajı" },
+      { title:"Ahmet Kılıç - Blak Coffee Co sunum toplantısı hazırlığı", desc:"Yatırımcıya özel finansal projeksiyon ve marka tanıtım sunumu hazırlanacak.", status:"Tamamlandı", prio:"Yüksek", assignee:"Selin Demir", due:"2026-05-10", mod:"Yatırımcı", investorName:"Ahmet Kılıç" },
+      { title:"Can Teknoloji sözleşme taslağı gönder", desc:"10 şube danışmanlık protokolü taslağını inceleme için müşteriye ilet.", status:"Açık", prio:"Orta", assignee:"Burak Yılmaz", due:"2026-05-30", mod:"Yatırımcı", investorName:"Can Teknoloji A.Ş." },
+      { title:"Blak Coffee Co Web sitesi ve sosyal medya profil güncelleme", desc:"Yeni şube açılışı öncesi marka materyalleri güncellenmeli.", status:"Açık", prio:"Düşük", assignee:"Kemal Erdoğan", due:"2026-06-01", mod:"Marka", brandName:"Blak Coffee Co" },
+      { title:"Melek Arslan - Kasap Döner lokasyon shortlist", desc:"İzmir Alsancak bölgesi için 3-5 lokasyon shortlist hazırla.", status:"Açık", prio:"Orta", assignee:"Selin Demir", due:"2026-06-05", mod:"Proje", projName:"Melek Arslan - Kasap Döner İzmir" },
+      { title:"Forum Bornova AVM kira müzakeresi", desc:"AVM yönetimi ile kira ve stopaj şartları müzakere edilecek.", status:"Açık", prio:"Orta", assignee:"Mert Kaya", due:"2026-05-29", mod:"Lokasyon", locationName:"Forum Bornova - ZF12" },
+      { title:"Grup Doruk - imza töreni organizasyonu", desc:"Noterde master franchise sözleşmesi imzalanacak. Protokol tarihi belirlenecek.", status:"Açık", prio:"Çok Yüksek", assignee:"Selin Demir", due:"2026-05-20", mod:"Sözleşme", contractName:"Grup Doruk Master Franchise Protokolü" },
+      { title:"Haziran ayı tahsilat planı", desc:"Açık finans kayıtları için tahsilat takvimine bakılacak.", status:"Açık", prio:"Orta", assignee:"Esra Koç", due:"2026-06-01", mod:"Genel" },
+      { title:"SushiMore personel eğitim programı koordinasyonu", desc:"Açılış öncesi mutfak ve servis personeli eğitimi planlanacak.", status:"Açık", prio:"Orta", assignee:"Mert Kaya", due:"2026-06-10", mod:"Proje", projName:"SushiMore - Nişantaşı Açılışı" },
+    ];
+    for (const t of tasks) {
+      const invId = t.investorName ? investorIds[t.investorName] || null : null;
+      const brandId = t.brandName ? brandIds[t.brandName] || null : null;
+      const projId = t.projName ? projectIds[t.projName] || null : null;
+      const locId = t.locationName ? locationIds[t.locationName] || null : null;
+      const contId = t.contractName ? contractIds[t.contractName] || null : null;
+      await pool.query(`
+        INSERT INTO tasks(title,note,description,status,priority,assignee_name,due_date,module_type,investor_id,brand_id,project_id,location_id,contract_id)
+        VALUES($1,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        [t.title,t.desc,t.status,t.prio,t.assignee,t.due,t.mod,invId,brandId,projId,locId,contId]
+      );
+    }
   }
 
-  const contractCount = await pool.query("SELECT COUNT(*)::int AS count FROM contracts");
-  if (contractCount.rows[0].count === 0) {
-    await pool.query(
-      `INSERT INTO contracts(name,contract_type,status,counterparty,start_date,end_date,amount,currency,consulting_fee,notes,created_by)
-       VALUES
-       ('Blak Coffee Co Franchise Sözleşmesi','Franchise','Aktif','Blak Coffee Co Türkiye A.Ş.','2026-01-01','2028-12-31',350000,'TRY',85000,'İstanbul merkezi + Bağdat Caddesi noktası',$1),
-       ('Tavada Tavuk Danışmanlık','Danışmanlık','Aktif','Tavada Tavuk Ltd.','2026-02-01','2026-12-31',120000,'TRY',120000,'Ankara bölge genişleme danışmanlığı',$1),
-       ('SushiMore Ön Sözleşme','Ön Sözleşme','Müzakere','SushiMore Restoranlar','2026-04-01','2027-03-31',480000,'TRY',95000,'Nişantaşı premium lokasyon',$1)`,
-      [adminId],
-    );
+  // ── FINANCE RECORDS (linked to contracts) ──────────────────────
+  const financeCount = await pool.query("SELECT COUNT(*)::int AS count FROM finance_records");
+  if (financeCount.rows[0].count === 0) {
+    const finRows = [
+      { contName:"Blak Coffee Co Franchise Sözleşmesi", incType:"Franchise Ücreti", amount:350000, vat:20, payType:"Taksitli", status:"Kısmi Ödeme", due:"2026-02-01", paid:"2026-02-03", method:"Havale", desc:"Franchise giriş bedeli - 1. taksit" },
+      { contName:"Blak Coffee Co Franchise Sözleşmesi", incType:"Danışmanlık", amount:85000, vat:20, payType:"Peşin", status:"Tahsil Edildi", due:"2026-01-15", paid:"2026-01-16", method:"EFT", desc:"Açılış danışmanlık ücreti" },
+      { contName:"Tavada Tavuk Danışmanlık Sözleşmesi", incType:"Danışmanlık", amount:30000, vat:20, payType:"Aylık", status:"Tahsil Edildi", due:"2026-02-01", paid:"2026-02-02", method:"Havale", desc:"Şubat danışmanlık ödemesi" },
+      { contName:"Tavada Tavuk Danışmanlık Sözleşmesi", incType:"Danışmanlık", amount:30000, vat:20, payType:"Aylık", status:"Tahsil Edildi", due:"2026-03-01", paid:"2026-03-03", method:"Havale", desc:"Mart danışmanlık ödemesi" },
+      { contName:"Tavada Tavuk Danışmanlık Sözleşmesi", incType:"Danışmanlık", amount:30000, vat:20, payType:"Aylık", status:"Tahsil Edildi", due:"2026-04-01", paid:"2026-04-02", method:"Havale", desc:"Nisan danışmanlık ödemesi" },
+      { contName:"Tavada Tavuk Danışmanlık Sözleşmesi", incType:"Danışmanlık", amount:30000, vat:20, payType:"Aylık", status:"Açık", due:"2026-05-01", paid:null, method:null, desc:"Mayıs danışmanlık ödemesi" },
+      { contName:"Grup Doruk Master Franchise Protokolü", incType:"Master Franchise Ücreti", amount:1800000, vat:20, payType:"Taksitli", status:"Kısmi Ödeme", due:"2026-03-15", paid:"2026-03-20", method:"Banka Transferi", desc:"Master franchise giriş bedeli - 1. taksit %50" },
+      { contName:"Grup Doruk Master Franchise Protokolü", incType:"Danışmanlık", amount:300000, vat:20, payType:"Peşin", status:"Tahsil Edildi", due:"2026-03-01", paid:"2026-03-05", method:"EFT", desc:"Kurulum danışmanlık ücreti" },
+      { contName:"SushiMore Ön Anlaşma", incType:"Ön Anlaşma Bedeli", amount:50000, vat:20, payType:"Peşin", status:"Tahsil Edildi", due:"2026-04-10", paid:"2026-04-11", method:"Havale", desc:"Ön anlaşma kaparo bedeli" },
+      { contName:"SushiMore Ön Anlaşma", incType:"Franchise Ücreti", amount:430000, vat:20, payType:"Taksitli", status:"Açık", due:"2026-06-01", paid:null, method:null, desc:"Franchise giriş bedeli - sözleşme imzası sonrası" },
+    ];
+    for (const f of finRows) {
+      const contId = contractIds[f.contName] || null;
+      const net = f.amount + (f.amount * f.vat / 100);
+      await pool.query(`
+        INSERT INTO finance_records(contract_id,income_type,amount,vat_pct,vat_amount,net_amount,currency,payment_type,status,due_date,paid_date,payment_method,description,created_by)
+        VALUES($1,$2,$3,$4,$5,$6,'TRY',$7,$8,$9,$10,$11,$12,$13)`,
+        [contId,f.incType,f.amount,f.vat,f.amount*f.vat/100,net,f.payType,f.status,f.due,f.paid||null,f.method||null,f.desc,adminId]
+      );
+    }
   }
 
+  // ── PNL REVENUES (monthly branch data) ─────────────────────────
+  const pnlRevCount = await pool.query("SELECT COUNT(*)::int AS count FROM pnl_revenues");
+  if (pnlRevCount.rows[0].count === 0) {
+    const months = [
+      { name:"OCAK", year:2026, amount:485000 }, { name:"ŞUBAT", year:2026, amount:520000 },
+      { name:"MART", year:2026, amount:612000 }, { name:"NİSAN", year:2026, amount:578000 },
+      { name:"MAYIS", year:2026, amount:645000 },
+    ];
+    for (const m of months) {
+      await pool.query(`
+        INSERT INTO pnl_revenues(entry_date,branch,revenue_type,description,amount,source,month_name,year_value,created_by)
+        VALUES ($1,'Genel','Satış','Aylık toplam ciro',$2,'Manuel',$3,$4,$5),
+               ($1,'Genel','Paket Servis','Paket servis gelirleri',$6,'Manuel',$3,$4,$5)`,
+        [`${m.year}-${months.indexOf(m)+1 < 10 ? '0'+(months.indexOf(m)+1) : months.indexOf(m)+1}-01`,
+         m.amount, Math.round(m.amount*0.18), m.name, m.year, adminId]
+      );
+    }
+  }
+
+  // ── PNL EXPENSES (monthly) ────────────────────────────────────
+  const pnlExpCount = await pool.query("SELECT COUNT(*)::int AS count FROM pnl_expenses");
+  if (pnlExpCount.rows[0].count === 0) {
+    const expMonths = [
+      { name:"OCAK", year:2026, gida:145000, personel:95000, kira:78000, elektrik:18000, diger:22000 },
+      { name:"ŞUBAT", year:2026, gida:152000, personel:95000, kira:78000, elektrik:16000, diger:19000 },
+      { name:"MART", year:2026, gida:178000, personel:105000, kira:78000, elektrik:17000, diger:24000 },
+      { name:"NİSAN", year:2026, gida:168000, personel:105000, kira:78000, elektrik:15000, diger:21000 },
+      { name:"MAYIS", year:2026, gida:185000, personel:112000, kira:78000, elektrik:19000, diger:26000 },
+    ];
+    for (const m of expMonths) {
+      const idx = expMonths.indexOf(m) + 1;
+      const dateStr = `${m.year}-${idx < 10 ? '0'+idx : idx}-01`;
+      const cats = [['Gıda',m.gida],['Personel',m.personel],['Kira',m.kira],['Elektrik',m.elektrik],['Diğer',m.diger]];
+      for (const [cat, amt] of cats) {
+        await pool.query(`
+          INSERT INTO pnl_expenses(entry_date,branch,category,description,amount,source,month_name,year_value,created_by)
+          VALUES($1,'Genel',$2,$3,$4,'Manuel',$5,$6,$7)`,
+          [dateStr, cat, `${m.name} ${cat.toLowerCase()} giderleri`, amt, m.name, m.year, adminId]
+        );
+      }
+    }
+  }
+
+  // ── PNL PERSONNEL ──────────────────────────────────────────────
+  const pnlPerCount = await pool.query("SELECT COUNT(*)::int AS count FROM pnl_personnel");
+  if (pnlPerCount.rows[0].count === 0) {
+    const personnel = [
+      { name:"Selin Demir", pos:"Franchise Yöneticisi", salary:28000, bonus:5000, ded:0 },
+      { name:"Mert Kaya", pos:"Operasyon Uzmanı", salary:22000, bonus:3000, ded:0 },
+      { name:"Ayşe Çetin", pos:"Satış Temsilcisi", salary:18000, bonus:4500, ded:0 },
+      { name:"Burak Yılmaz", pos:"Hukuk Danışmanı", salary:32000, bonus:0, ded:0 },
+      { name:"Esra Koç", pos:"Muhasebeci", salary:24000, bonus:2000, ded:0 },
+      { name:"Kemal Erdoğan", pos:"Pazarlama Uzmanı", salary:20000, bonus:2500, ded:0 },
+    ];
+    const months = [
+      {name:"OCAK",year:2026,idx:1},{name:"ŞUBAT",year:2026,idx:2},{name:"MART",year:2026,idx:3},
+      {name:"NİSAN",year:2026,idx:4},{name:"MAYIS",year:2026,idx:5},
+    ];
+    for (const m of months) {
+      const dateStr = `${m.year}-${m.idx < 10 ? '0'+m.idx : m.idx}-01`;
+      for (const p of personnel) {
+        await pool.query(`
+          INSERT INTO pnl_personnel(entry_date,branch,person_name,position,salary,bonus,deduction,total_cost,source,month_name,year_value,created_by)
+          VALUES($1,'Genel',$2,$3,$4,$5,$6,$7,'Manuel',$8,$9,$10)`,
+          [dateStr,p.name,p.pos,p.salary,m.name==='OCAK'&&p.name==='Selin Demir'?p.bonus:m.idx===3?p.bonus:0,
+           p.ded, p.salary+p.bonus, m.name, m.year, adminId]
+        );
+      }
+    }
+  }
+
+  // ── INVESTOR MEETINGS ──────────────────────────────────────────
+  const meetingCount = await pool.query("SELECT COUNT(*)::int AS count FROM investor_meetings");
+  if (meetingCount.rows[0].count === 0) {
+    const meetings = [
+      { invName:"Ahmet Kılıç", type:"Telefon", date:"2026-04-24", by:"Selin Demir", notes:"İlk temas. Coffee franchise arıyor. Bağdat Caddesi ilgisini çekti.", action:"Sunum göndermek", reminder:"2026-04-28" },
+      { invName:"Ahmet Kılıç", type:"Yüz Yüze", date:"2026-05-02", by:"Selin Demir", notes:"Blak Coffee Co sunumu yapıldı. Lokasyon gezisi yapıldı. Çok ilgili.", action:"Teklif hazırlamak", reminder:"2026-05-08" },
+      { invName:"Yaman Holding", type:"Ofis Toplantısı", date:"2026-04-26", by:"Selin Demir", notes:"CFO ve CEO ile görüşüldü. Çoklu şube modeli tartışıldı.", action:"Finansal model göndermek", reminder:"2026-05-02" },
+      { invName:"Yaman Holding", type:"Video Görüşme", date:"2026-05-05", by:"Ayşe Çetin", notes:"Sözleşme taslağı üzerinden geçildi. 3 madde değiştirildi.", action:"Hukuk incelemesi", reminder:"2026-05-12" },
+      { invName:"Can Teknoloji A.Ş.", type:"Ofis Toplantısı", date:"2026-04-20", by:"Selin Demir", notes:"10 şube planı paylaşıldı. Finansman için banka görüşmesi var.", action:"Master franchise şartlarını hazırlamak", reminder:"2026-04-27" },
+      { invName:"Can Teknoloji A.Ş.", type:"Sunum", date:"2026-04-28", by:"Selin Demir", notes:"Kapsamlı sunum yapıldı. Finansal projeksiyon beğenildi.", action:"Sözleşme taslağı göndermek", reminder:"2026-05-05" },
+      { invName:"Hüseyin Toprak", type:"Kahve Toplantısı", date:"2026-04-28", by:"Selin Demir", notes:"Bebek lokasyonu için SushiMore önerildi. Çok hevesli.", action:"Nişantaşı lokasyon turu organize et", reminder:"2026-05-03" },
+      { invName:"Melek Arslan", type:"Telefon", date:"2026-04-22", by:"Ayşe Çetin", notes:"İzmir'de tek mağaza arıyor. Kasap Döner ile tanıştırmak istedik.", action:"Marka tanıtım göndermek", reminder:"2026-04-26" },
+      { invName:"Ömer Yıldız", type:"Ofis Ziyareti", date:"2026-04-29", by:"Selin Demir", notes:"Antalya Lara bölgesi için AVM lokasyonu tercih ediyor.", action:"Forum lokasyon alternatifleri hazırlamak", reminder:"2026-05-06" },
+      { invName:"Grup Doruk Yatırım", type:"NDA İmzası", date:"2026-04-22", by:"Burak Yılmaz", notes:"Gizlilik sözleşmesi imzalandı. Due diligence başlıyor.", action:"Due diligence belgelerini göndermek", reminder:"2026-04-25" },
+      { invName:"Grup Doruk Yatırım", type:"Ofis Toplantısı", date:"2026-05-05", by:"Selin Demir", notes:"Master franchise müzakereleri devam ediyor. Bölge hakları tartışıldı.", action:"Hukuk incelemesi tamamlamak", reminder:"2026-05-10" },
+    ];
+    for (const m of meetings) {
+      const invId = investorIds[m.invName] || null;
+      if (!invId) continue;
+      await pool.query(`
+        INSERT INTO investor_meetings(investor_id,meeting_type,meeting_date,met_by,notes,next_action,reminder_date,created_by)
+        VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [invId, m.type, m.date, m.by, m.notes, m.action, m.reminder, adminId]
+      );
+    }
+  }
+
+  // ── INVESTOR BRAND MATCHES ─────────────────────────────────────
+  const matchCount = await pool.query("SELECT COUNT(*)::int AS count FROM investor_brand_matches");
+  if (matchCount.rows[0].count === 0) {
+    const matchPairs = [
+      { inv:"Ahmet Kılıç", brand:"Blak Coffee Co", score:92, notes:"Mükemmel uyum: bütçe, sektör, lokasyon tercihi" },
+      { inv:"Ahmet Kılıç", brand:"The Coffee Factory", score:78, notes:"İyi uyum: sektör ve bütçe uyuyor" },
+      { inv:"Yaman Holding", brand:"Tavada Tavuk", score:88, notes:"Güçlü uyum: kurumsal yatırım + fast casual" },
+      { inv:"Yaman Holding", brand:"Bigye", score:72, notes:"Orta-iyi uyum: bütçe yüksek ama sektör uyuyor" },
+      { inv:"Can Teknoloji A.Ş.", brand:"Blak Coffee Co", score:85, notes:"Yüksek bütçe + coffee sektörü" },
+      { inv:"Can Teknoloji A.Ş.", brand:"Coffee in Munchies", score:70, notes:"Alternatif coffee markası" },
+      { inv:"Hüseyin Toprak", brand:"Yelken Balıkçısı", score:90, notes:"Mükemmel: premium seafood + yüksek bütçe" },
+      { inv:"Hüseyin Toprak", brand:"SushiMore", score:82, notes:"İyi: premium Asya mutfağı" },
+      { inv:"Melek Arslan", brand:"Kasap Döner", score:80, notes:"Uygun bütçe ve sektör" },
+      { inv:"Ömer Yıldız", brand:"Fit Salad Bar", score:76, notes:"Sağlıklı yaşam sektörü + AVM tercihi" },
+      { inv:"Grup Doruk Yatırım", brand:"The Coffee Factory", score:95, notes:"Master franchise: en yüksek uyum" },
+      { inv:"Deniz Acar", brand:"Blak Coffee Co", score:82, notes:"Coffee sektörü + bütçe uyumu" },
+      { inv:"Deniz Acar", brand:"Türk Kahvesi Evi", score:75, notes:"Ankara + coffee + düşük yatırım" },
+    ];
+    for (const m of matchPairs) {
+      const invId = investorIds[m.inv] || null;
+      const brandId = brandIds[m.brand] || null;
+      if (!invId || !brandId) continue;
+      await pool.query(`
+        INSERT INTO investor_brand_matches(investor_id,brand_id,score,notes,created_by)
+        VALUES($1,$2,$3,$4,$5) ON CONFLICT(investor_id,brand_id) DO NOTHING`,
+        [invId, brandId, m.score, m.notes, adminId]
+      );
+    }
+  }
+
+  // ── MESSAGE TEMPLATES ──────────────────────────────────────────
   const templateCount = await pool.query("SELECT COUNT(*)::int AS count FROM message_templates");
   if (templateCount.rows[0].count === 0) {
-    await pool.query(
-      `INSERT INTO message_templates(channel,event_name,title,body,active,image_url)
-       VALUES
-       ('whatsapp','Yeni Lead','Merhaba Hoşgeldiniz','Sayın {{name}}, başvurunuz alınmıştır. En kısa sürede dönüş sağlayacağız.',true,null),
-       ('mail','Sözleşme Süreci','Sözleşme Süreci Hakkında','Merhaba {{name}}, sözleşmeniz onay beklemektedir.',true,null),
-       ('sms','Toplantı Hatırlatma','Toplantı Hatırlatma','{{name}}, yarın 14:00 toplantımız bulunmaktadır.',true,null)`
-    );
+    await pool.query(`
+      INSERT INTO message_templates(channel,event_name,title,body,active,image_url) VALUES
+      ('whatsapp','Yeni Lead','Hoş Geldiniz','Sayın {{name}}, Mi Core CRM''e başvurunuz alındı. En kısa sürede iletişime geçeceğiz.',true,null),
+      ('whatsapp','Toplantı Hatırlatma','Toplantı Hatırlatma','{{name}}, yarın saat {{time}} görüşmemiz bulunmaktadır. Onaylıyor musunuz?',true,null),
+      ('mail','Sunum Gönderimi','Franchise Sunum Paketi','Merhaba {{name}}, ilgilendiğiniz {{brand}} markasının sunum paketi ektedir.',true,null),
+      ('mail','Sözleşme Süreci','Sözleşme Hazır','Sayın {{name}}, sözleşmeniz hazırlandı. İmza süreci için lütfen randevu alınız.',true,null),
+      ('mail','Teklif','Franchise Teklifi','Merhaba {{name}}, sizin için hazırladığımız {{brand}} franchise teklifini ekte bulabilirsiniz.',true,null),
+      ('sms','Hatırlatma','Takip Hatırlatma','{{name}}, {{date}} tarihindeki görüşmemiz için hatırlatma: {{note}}.',true,null)
+    `);
   }
 }
 
