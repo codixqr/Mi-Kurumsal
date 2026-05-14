@@ -1765,7 +1765,7 @@ async function computeInvestorKpis() {
       `SELECT COALESCE(AVG(
         CASE WHEN budget_max IS NOT NULL AND budget_min IS NOT NULL THEN (budget_min::numeric + budget_max::numeric)/2
         ELSE budget::numeric END
-      )),0)::numeric AS a FROM investors`,
+      ), 0)::numeric AS a FROM investors`,
     ),
   ]);
   return {
@@ -1891,7 +1891,8 @@ async function computeBrandKpis() {
   };
 }
 
-app.get("/api/investors", authMiddleware, async (req, res) => {
+app.get("/api/investors", authMiddleware, async (req, res, next) => {
+  try {
   const q = req.query || {};
   const page = Math.max(1, Number(q.page) || 1);
   const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 20));
@@ -1955,9 +1956,11 @@ app.get("/api/investors", authMiddleware, async (req, res) => {
     m.assignedMemberName = row.assigned_member_name || "";
     return m;
   });
-  const kpis = await computeInvestorKpis();
-  const reminders = await investorReminders();
+  let kpis = { total: 0, newLeads: 0, activeCount: 0, hotCount: 0, closedThisMonth: 0, avgBudget: 0 };
+  try { kpis = await computeInvestorKpis(); } catch (e) { console.error('computeInvestorKpis error:', e.message); }
+  const reminders = await investorReminders().catch(() => ({ followUpDue: [], staleHot: [] }));
   res.json({ items: rows, total, page, pageSize, kpis, reminders });
+  } catch (err) { next(err); }
 });
 
 app.post("/api/investors/bulk", authMiddleware, async (req, res) => {
@@ -2517,7 +2520,8 @@ async function computeLocationKpis() {
   };
 }
 
-app.get("/api/locations", authMiddleware, async (req, res) => {
+app.get("/api/locations", authMiddleware, async (req, res, next) => {
+  try {
   const q = req.query || {};
   const page = Math.max(1, Number(q.page) || 1);
   const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 20));
@@ -2552,8 +2556,10 @@ app.get("/api/locations", authMiddleware, async (req, res) => {
     `SELECT l.* FROM locations l WHERE ${whereSql} ORDER BY ${sortCol} ${order} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
     [...params, pageSize, offset],
   );
-  const kpis = await computeLocationKpis();
+  let kpis = { total: 0, vacant: 0, negotiating: 0, rented: 0, avgRent: 0, newThisMonth: 0 };
+  try { kpis = await computeLocationKpis(); } catch (e) { console.error('computeLocationKpis error:', e.message); }
   res.json({ items: result.rows.map(mapLocation), total, page, pageSize, kpis });
+  } catch (err) { next(err); }
 });
 
 app.post("/api/locations/bulk", authMiddleware, async (req, res) => {
@@ -2687,7 +2693,8 @@ async function computeProjectKpis() {
   };
 }
 
-app.get("/api/projects", authMiddleware, async (req, res) => {
+app.get("/api/projects", authMiddleware, async (req, res, next) => {
+  try {
   const q = req.query || {};
   const page = Math.max(1, Number(q.page) || 1);
   const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 20));
@@ -2727,8 +2734,10 @@ app.get("/api/projects", authMiddleware, async (req, res) => {
     m.locationName = r.location_name || "";
     return m;
   });
-  const kpis = await computeProjectKpis();
+  let kpis = { total: 0, active: 0, closedThisMonth: 0, avgDuration: 0, newThisMonth: 0 };
+  try { kpis = await computeProjectKpis(); } catch (e) { console.error('computeProjectKpis error:', e.message); }
   res.json({ items, total: totalR.rows[0].c, page, pageSize, kpis });
+  } catch (err) { next(err); }
 });
 
 app.get("/api/projects/kanban", authMiddleware, async (req, res) => {
@@ -2870,7 +2879,8 @@ async function computeContractKpis() {
   };
 }
 
-app.get("/api/contracts", authMiddleware, async (req, res) => {
+app.get("/api/contracts", authMiddleware, async (req, res, next) => {
+  try {
   const q = req.query || {};
   const page = Math.max(1, Number(q.page) || 1);
   const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 20));
@@ -2906,15 +2916,20 @@ app.get("/api/contracts", authMiddleware, async (req, res) => {
      LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
     [...params, pageSize, offset],
   );
-  const kpis = await computeContractKpis();
-  // Check contracts expiring in 30 days
+  let kpis = { total: 0, active: 0, signedThisMonth: 0, expiringSoon: 0, terminated: 0, totalValue: 0 };
+  try { kpis = await computeContractKpis(); } catch (e) { console.error('computeContractKpis error:', e.message); }
   const today = new Date().toISOString().split("T")[0];
   const soon = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
-  const warnings = await pool.query(
-    `SELECT id, name, end_date FROM contracts WHERE deleted_at IS NULL AND status='Aktif' AND end_date BETWEEN $1::date AND $2::date ORDER BY end_date ASC LIMIT 10`,
-    [today, soon],
-  );
-  res.json({ items: rows.rows.map(mapContract), total: totalR.rows[0].c, page, pageSize, kpis, expiryWarnings: warnings.rows });
+  let warnings = [];
+  try {
+    const wRes = await pool.query(
+      `SELECT id, name, end_date FROM contracts WHERE deleted_at IS NULL AND status='Aktif' AND end_date BETWEEN $1::date AND $2::date ORDER BY end_date ASC LIMIT 10`,
+      [today, soon],
+    );
+    warnings = wRes.rows;
+  } catch (_) {}
+  res.json({ items: rows.rows.map(mapContract), total: totalR.rows[0].c, page, pageSize, kpis, expiryWarnings: warnings });
+  } catch (err) { next(err); }
 });
 
 app.get("/api/contracts/:id/detail", authMiddleware, async (req, res) => {
@@ -3081,7 +3096,8 @@ async function computeFinanceKpis() {
   };
 }
 
-app.get("/api/finance", authMiddleware, async (req, res) => {
+app.get("/api/finance", authMiddleware, async (req, res, next) => {
+  try {
   const q = req.query || {};
   const page = Math.max(1, Number(q.page) || 1);
   const pageSize = Math.min(100, Math.max(5, Number(q.pageSize) || 20));
@@ -3110,14 +3126,19 @@ app.get("/api/finance", authMiddleware, async (req, res) => {
      LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
     [...params, pageSize, offset],
   );
-  const kpis = await computeFinanceKpis();
-  // Overdue warnings
+  let kpis = { total: 0, totalAmount: 0, collected: 0, pending: 0, overdue: 0, netProfit: 0, thisMonthRevenue: 0, thisMonthExpense: 0 };
+  try { kpis = await computeFinanceKpis(); } catch (e) { console.error('computeFinanceKpis error:', e.message); }
   const today = new Date().toISOString().split("T")[0];
-  const overdueWarn = await pool.query(
-    `SELECT id, contract_id, amount, due_date FROM finance_records WHERE deleted_at IS NULL AND status='Açık' AND due_date < $1::date ORDER BY due_date ASC LIMIT 10`,
-    [today],
-  );
-  res.json({ items: rows.rows.map(mapFinanceRecord), total: totalR.rows[0].c, page, pageSize, kpis, overdueWarnings: overdueWarn.rows });
+  let overdueWarnings = [];
+  try {
+    const overdueWarn = await pool.query(
+      `SELECT id, contract_id, amount, due_date FROM finance_records WHERE deleted_at IS NULL AND status='Açık' AND due_date < $1::date ORDER BY due_date ASC LIMIT 10`,
+      [today],
+    );
+    overdueWarnings = overdueWarn.rows;
+  } catch (_) {}
+  res.json({ items: rows.rows.map(mapFinanceRecord), total: totalR.rows[0].c, page, pageSize, kpis, overdueWarnings });
+  } catch (err) { next(err); }
 });
 
 app.get("/api/finance/:id", authMiddleware, async (req, res) => {
