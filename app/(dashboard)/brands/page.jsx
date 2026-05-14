@@ -430,18 +430,13 @@ export default function BrandsPage() {
   return (
     <div className="inv-page brands-page">
       <div className="module-head" style={{ flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <h2 style={{ margin: 0 }}>Marka Portföy Yönetimi</h2>
-          <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '0.9rem' }}>
-            Franchise portföyü, şartlar, lokasyon kriterleri ve eşleşmeler
-          </p>
-        </div>
+        <h2 style={{ margin: 0 }}>Marka Portföy Yönetimi</h2>
         <div className="header-actions" style={{ flexWrap: 'wrap' }}>
           <button type="button" className="secondary-btn" onClick={exportExcel}>
             Excel dışa aktar
           </button>
           <button type="button" className="primary-btn" onClick={() => { setForm(defaultForm()); setFormOpen(true); }}>
-            + Yeni marka
+            + Yeni Marka
           </button>
         </div>
       </div>
@@ -600,14 +595,13 @@ export default function BrandsPage() {
       )}
 
       {formOpen && (
-        <div className="inv-drawer">
-          <div className="inv-modal-head" style={{ borderRadius: '12px 12px 0 0' }}>
-            <h3 style={{ margin: 0 }}>{form.id ? 'Markayı düzenle' : 'Yeni marka'}</h3>
-            <button type="button" className="secondary-btn" onClick={() => { setFormOpen(false); setForm(defaultForm()); }}>
-              Kapat
-            </button>
-          </div>
-          <form onSubmit={saveBrand} className="inv-form-grid" style={{ maxHeight: '70vh', overflowY: 'auto', padding: 16 }}>
+        <div className="modal-overlay" onClick={() => { setFormOpen(false); setForm(defaultForm()); }}>
+          <div className="modal" style={{ maxWidth: 860, width: '96%', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0 }}>{form.id ? 'Markayı Düzenle' : 'Yeni Marka Ekle'}</h3>
+              <button type="button" className="modal-close" onClick={() => { setFormOpen(false); setForm(defaultForm()); }}>X</button>
+            </div>
+          <form onSubmit={saveBrand} className="inv-form-grid" style={{ overflowY: 'auto', padding: '16px 20px', flex: 1 }}>
             <div className="field" style={{ gridColumn: '1 / -1' }}>
               <label>Marka adı *</label>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
@@ -856,6 +850,7 @@ export default function BrandsPage() {
               </button>
             </div>
           </form>
+          </div>
         </div>
       )}
 
