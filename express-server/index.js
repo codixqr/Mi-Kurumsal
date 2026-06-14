@@ -853,6 +853,33 @@ async function initDb() {
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     UNIQUE(investor_id, brand_id)
   )`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS customer_pnl_revenues (
+    id SERIAL PRIMARY KEY,
+    investor_id INTEGER NOT NULL REFERENCES investors(id) ON DELETE CASCADE,
+    entry_date DATE NOT NULL,
+    month_name TEXT NOT NULL,
+    year_value INTEGER NOT NULL,
+    category TEXT NOT NULL DEFAULT 'Ciro',
+    description TEXT,
+    amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+    note TEXT,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS customer_pnl_expenses (
+    id SERIAL PRIMARY KEY,
+    investor_id INTEGER NOT NULL REFERENCES investors(id) ON DELETE CASCADE,
+    entry_date DATE NOT NULL,
+    month_name TEXT NOT NULL,
+    year_value INTEGER NOT NULL,
+    category TEXT NOT NULL DEFAULT 'Gıda',
+    sub_category TEXT,
+    description TEXT,
+    amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+    note TEXT,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )`);
 }
 
 async function seedDefaultDataIfNeeded() {
@@ -4368,6 +4395,398 @@ app.get("/api/health", async (req, res) => {
   }
 });
 
+// ─── Müşteri Kar/Zarar Modülü ───────────────────────────────────────────────
+
+const MONTHS_TR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+// Gelirler CRUD
+app.get("/api/pnl/customer/:investorId/revenues", authMiddleware, async (req, res, next) => {
+  try {
+    const { investorId } = req.params;
+    const { month, year } = req.query;
+    let q = `SELECT * FROM customer_pnl_revenues WHERE investor_id=$1`;
+    const params = [investorId];
+    if (month) { params.push(month); q += ` AND month_name=$${params.length}`; }
+    if (year)  { params.push(year);  q += ` AND year_value=$${params.length}`; }
+    q += ` ORDER BY entry_date DESC`;
+    const { rows } = await pool.query(q, params);
+    res.json(rows);
+  } catch (e) { next(e); }
+});
+
+app.post("/api/pnl/customer/:investorId/revenues", authMiddleware, async (req, res, next) => {
+  try {
+    const { investorId } = req.params;
+    const { entryDate, monthName, yearValue, category, description, amount, note } = req.body;
+    const { rows } = await pool.query(
+      `INSERT INTO customer_pnl_revenues(investor_id,entry_date,month_name,year_value,category,description,amount,note,created_by)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [investorId, entryDate, monthName, yearValue, category||'Ciro', description||'', Number(amount||0), note||'', req.user.id]
+    );
+    res.json(rows[0]);
+  } catch (e) { next(e); }
+});
+
+app.put("/api/pnl/customer/:investorId/revenues/:id", authMiddleware, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { entryDate, monthName, yearValue, category, description, amount, note } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE customer_pnl_revenues SET entry_date=$1,month_name=$2,year_value=$3,category=$4,description=$5,amount=$6,note=$7 WHERE id=$8 RETURNING *`,
+      [entryDate, monthName, yearValue, category||'Ciro', description||'', Number(amount||0), note||'', id]
+    );
+    res.json(rows[0]);
+  } catch (e) { next(e); }
+});
+
+app.delete("/api/pnl/customer/:investorId/revenues/:id", authMiddleware, async (req, res, next) => {
+  try {
+    await pool.query(`DELETE FROM customer_pnl_revenues WHERE id=$1`, [req.params.id]);
+    res.status(204).end();
+  } catch (e) { next(e); }
+});
+
+// Giderler CRUD
+app.get("/api/pnl/customer/:investorId/expenses", authMiddleware, async (req, res, next) => {
+  try {
+    const { investorId } = req.params;
+    const { month, year } = req.query;
+    let q = `SELECT * FROM customer_pnl_expenses WHERE investor_id=$1`;
+    const params = [investorId];
+    if (month) { params.push(month); q += ` AND month_name=$${params.length}`; }
+    if (year)  { params.push(year);  q += ` AND year_value=$${params.length}`; }
+    q += ` ORDER BY entry_date DESC`;
+    const { rows } = await pool.query(q, params);
+    res.json(rows);
+  } catch (e) { next(e); }
+});
+
+app.post("/api/pnl/customer/:investorId/expenses", authMiddleware, async (req, res, next) => {
+  try {
+    const { investorId } = req.params;
+    const { entryDate, monthName, yearValue, category, subCategory, description, amount, note } = req.body;
+    const { rows } = await pool.query(
+      `INSERT INTO customer_pnl_expenses(investor_id,entry_date,month_name,year_value,category,sub_category,description,amount,note,created_by)
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      [investorId, entryDate, monthName, yearValue, category||'Gıda', subCategory||'', description||'', Number(amount||0), note||'', req.user.id]
+    );
+    res.json(rows[0]);
+  } catch (e) { next(e); }
+});
+
+app.put("/api/pnl/customer/:investorId/expenses/:id", authMiddleware, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { entryDate, monthName, yearValue, category, subCategory, description, amount, note } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE customer_pnl_expenses SET entry_date=$1,month_name=$2,year_value=$3,category=$4,sub_category=$5,description=$6,amount=$7,note=$8 WHERE id=$9 RETURNING *`,
+      [entryDate, monthName, yearValue, category||'Gıda', subCategory||'', description||'', Number(amount||0), note||'', id]
+    );
+    res.json(rows[0]);
+  } catch (e) { next(e); }
+});
+
+app.delete("/api/pnl/customer/:investorId/expenses/:id", authMiddleware, async (req, res, next) => {
+  try {
+    await pool.query(`DELETE FROM customer_pnl_expenses WHERE id=$1`, [req.params.id]);
+    res.status(204).end();
+  } catch (e) { next(e); }
+});
+
+// Özet
+app.get("/api/pnl/customer/:investorId/summary", authMiddleware, async (req, res, next) => {
+  try {
+    const { investorId } = req.params;
+    const { month, year } = req.query;
+    let revQ = `SELECT COALESCE(SUM(amount),0)::numeric AS total FROM customer_pnl_revenues WHERE investor_id=$1`;
+    let expQ = `SELECT COALESCE(SUM(amount),0)::numeric AS total FROM customer_pnl_expenses WHERE investor_id=$1`;
+    const params = [investorId];
+    if (month) { params.push(month); revQ += ` AND month_name=$${params.length}`; expQ += ` AND month_name=$${params.length}`; }
+    if (year)  { params.push(year);  revQ += ` AND year_value=$${params.length}`; expQ += ` AND year_value=$${params.length}`; }
+
+    const [rev, exp, inv] = await Promise.all([
+      pool.query(revQ, params),
+      pool.query(expQ, params),
+      pool.query(`SELECT id,name,email,phone,sector,city FROM investors WHERE id=$1`, [investorId]),
+    ]);
+    const totalRevenue = Number(rev.rows[0].total || 0);
+    const totalExpense = Number(exp.rows[0].total || 0);
+    const netProfit    = totalRevenue - totalExpense;
+    const margin       = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0';
+    res.json({ investor: inv.rows[0] || {}, totalRevenue, totalExpense, netProfit, margin });
+  } catch (e) { next(e); }
+});
+
+// PDF Export (branded)
+app.get("/api/pnl/customer/:investorId/export-pdf", authMiddleware, async (req, res, next) => {
+  try {
+    const PDFDocument = require("pdfkit");
+    const { investorId } = req.params;
+    const { month, year } = req.query;
+
+    let revQ = `SELECT * FROM customer_pnl_revenues WHERE investor_id=$1 ORDER BY entry_date`;
+    let expQ = `SELECT * FROM customer_pnl_expenses WHERE investor_id=$1 ORDER BY entry_date`;
+    const params = [investorId];
+    if (month) { params.push(month); revQ = revQ.replace('ORDER', `AND month_name=$${params.length} ORDER`); expQ = expQ.replace('ORDER', `AND month_name=$${params.length} ORDER`); }
+    if (year)  { params.push(year);  revQ = revQ.replace('ORDER', `AND year_value=$${params.length} ORDER`); expQ = expQ.replace('ORDER', `AND year_value=$${params.length} ORDER`); }
+
+    const [revRows, expRows, invRes] = await Promise.all([
+      pool.query(revQ, params),
+      pool.query(expQ, params),
+      pool.query(`SELECT * FROM investors WHERE id=$1`, [investorId]),
+    ]);
+
+    const investor     = invRes.rows[0] || {};
+    const revenues     = revRows.rows;
+    const expenses     = expRows.rows;
+    const totalRevenue = revenues.reduce((s, r) => s + Number(r.amount || 0), 0);
+    const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
+    const netProfit    = totalRevenue - totalExpense;
+    const margin       = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : '0.0';
+    const fmtTL = (n) => Number(n || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2 }) + ' ₺';
+    const periodLabel = month && year ? `${month} ${year}` : year ? `${year} Yılı` : 'Tüm Dönem';
+
+    const doc = new PDFDocument({ size: 'A4', margin: 45, bufferPages: true });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="musteri-kar-zarar-${investorId}.pdf"`);
+    doc.pipe(res);
+
+    const BRAND_GREEN  = '#1a5c38';
+    const BRAND_LIGHT  = '#f0fdf4';
+    const TEXT_DARK    = '#1e293b';
+    const TEXT_GRAY    = '#64748b';
+    const pageW        = doc.page.width - 90;
+
+    // ── Logo & Başlık ──────────────────────────────────────────────────
+    const logoPath = path.join(__dirname, '..', 'public', 'logo', 'micore_logo.png');
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 45, 38, { height: 42 });
+    }
+    doc.fontSize(8).fillColor(TEXT_GRAY)
+       .text('Mi Kurumsal CRM', 45, 42, { align: 'right', width: pageW });
+    doc.fontSize(7).fillColor(TEXT_GRAY)
+       .text('www.mikurumsal.com', 45, 53, { align: 'right', width: pageW });
+    doc.moveTo(45, 88).lineTo(45 + pageW, 88).lineWidth(1.5).strokeColor(BRAND_GREEN).stroke();
+
+    // ── Belge Başlığı ──────────────────────────────────────────────────
+    doc.moveDown(0.5);
+    doc.fontSize(18).fillColor(BRAND_GREEN).font('Helvetica-Bold')
+       .text('MÜŞTERİ KAR / ZARAR RAPORU', 45, 98, { width: pageW });
+    doc.fontSize(10).fillColor(TEXT_GRAY).font('Helvetica')
+       .text(`Dönem: ${periodLabel}   |   Oluşturma Tarihi: ${new Date().toLocaleDateString('tr-TR')}`, 45, 120);
+
+    // ── Müşteri Bilgileri ──────────────────────────────────────────────
+    doc.roundedRect(45, 135, pageW, 54, 6).fill(BRAND_LIGHT);
+    doc.fontSize(9).fillColor(TEXT_DARK).font('Helvetica-Bold').text('MÜŞTERİ BİLGİLERİ', 55, 142);
+    doc.font('Helvetica').fillColor(TEXT_GRAY).fontSize(8.5)
+       .text(`Ad Soyad: ${investor.name || '—'}`, 55, 155)
+       .text(`Sektör: ${investor.sector || '—'}  |  Şehir: ${investor.city || '—'}`, 55, 167)
+       .text(`Tel: ${investor.phone || '—'}  |  E-posta: ${investor.email || '—'}`, 55, 179);
+    doc.y = 200;
+
+    // ── KPI Kutuları ──────────────────────────────────────────────────
+    const kpiBoxW = pageW / 3 - 6;
+    const kpiY    = doc.y + 5;
+    const kpis = [
+      { label: 'TOPLAM GELİR', value: fmtTL(totalRevenue), color: '#16a34a' },
+      { label: 'TOPLAM GİDER', value: fmtTL(totalExpense), color: '#dc2626' },
+      { label: 'NET KAR / ZARAR', value: fmtTL(netProfit),  color: netProfit >= 0 ? '#16a34a' : '#dc2626' },
+    ];
+    kpis.forEach((k, i) => {
+      const x = 45 + i * (kpiBoxW + 9);
+      doc.roundedRect(x, kpiY, kpiBoxW, 50, 5).fill('#fff').stroke('#e2e8f0');
+      doc.fontSize(7).fillColor(TEXT_GRAY).font('Helvetica').text(k.label, x + 8, kpiY + 10);
+      doc.fontSize(12).fillColor(k.color).font('Helvetica-Bold').text(k.value, x + 8, kpiY + 24, { width: kpiBoxW - 16 });
+    });
+    doc.y = kpiY + 60;
+
+    // helper: table
+    const drawTable = (headers, rows, y0) => {
+      const colW = pageW / headers.length;
+      doc.roundedRect(45, y0, pageW, 20, 3).fill(BRAND_GREEN);
+      headers.forEach((h, i) => {
+        doc.fontSize(8).fillColor('#fff').font('Helvetica-Bold')
+           .text(h, 45 + i * colW + 6, y0 + 6, { width: colW - 8, align: i === headers.length - 1 ? 'right' : 'left' });
+      });
+      let rowY = y0 + 20;
+      rows.forEach((row, ri) => {
+        const rowH = 18;
+        doc.rect(45, rowY, pageW, rowH).fill(ri % 2 === 0 ? '#f8fafc' : '#fff');
+        row.forEach((cell, ci) => {
+          doc.fontSize(8).fillColor(TEXT_DARK).font('Helvetica')
+             .text(String(cell || ''), 45 + ci * colW + 6, rowY + 5, { width: colW - 8, align: ci === row.length - 1 ? 'right' : 'left' });
+        });
+        rowY += rowH;
+      });
+      doc.rect(45, y0, pageW, rowY - y0).lineWidth(0.5).strokeColor('#e2e8f0').stroke();
+      return rowY + 8;
+    };
+
+    // ── Gelirler Tablosu ──────────────────────────────────────────────
+    doc.fontSize(11).fillColor(BRAND_GREEN).font('Helvetica-Bold').text('GELİRLER', 45, doc.y + 4);
+    doc.y += 2;
+    const revTableData = revenues.map(r => [
+      r.entry_date ? new Date(r.entry_date).toLocaleDateString('tr-TR') : '—',
+      r.month_name || '—',
+      r.category || '—',
+      r.description || '—',
+      fmtTL(r.amount),
+    ]);
+    const afterRev = drawTable(['Tarih', 'Ay', 'Kategori', 'Açıklama', 'Tutar'], revTableData, doc.y + 2);
+    if (revenues.length > 0) {
+      doc.fontSize(8.5).fillColor('#16a34a').font('Helvetica-Bold')
+         .text(`Toplam Gelir: ${fmtTL(totalRevenue)}`, 45, afterRev, { align: 'right', width: pageW });
+    }
+    doc.y = afterRev + 18;
+
+    // Sayfa kontrolü
+    if (doc.y > 680) { doc.addPage(); }
+
+    // ── Giderler Tablosu ──────────────────────────────────────────────
+    doc.fontSize(11).fillColor('#dc2626').font('Helvetica-Bold').text('GİDERLER', 45, doc.y + 4);
+    doc.y += 2;
+    const expTableData = expenses.map(r => [
+      r.entry_date ? new Date(r.entry_date).toLocaleDateString('tr-TR') : '—',
+      r.month_name || '—',
+      r.category || '—',
+      r.description || '—',
+      fmtTL(r.amount),
+    ]);
+    const afterExp = drawTable(['Tarih', 'Ay', 'Kategori', 'Açıklama', 'Tutar'], expTableData, doc.y + 2);
+    if (expenses.length > 0) {
+      doc.fontSize(8.5).fillColor('#dc2626').font('Helvetica-Bold')
+         .text(`Toplam Gider: ${fmtTL(totalExpense)}`, 45, afterExp, { align: 'right', width: pageW });
+    }
+    doc.y = afterExp + 18;
+
+    // Sayfa kontrolü
+    if (doc.y > 650) { doc.addPage(); }
+
+    // ── Sonuç Kutusu ──────────────────────────────────────────────────
+    const resultY = doc.y + 8;
+    doc.roundedRect(45, resultY, pageW, 70, 6).fill(netProfit >= 0 ? '#f0fdf4' : '#fef2f2').stroke(netProfit >= 0 ? '#16a34a' : '#dc2626');
+    doc.fontSize(10).fillColor(TEXT_DARK).font('Helvetica-Bold').text('ÖZET', 60, resultY + 12);
+    doc.fontSize(9).fillColor(TEXT_GRAY).font('Helvetica')
+       .text(`Toplam Gelir: ${fmtTL(totalRevenue)}`, 60, resultY + 28)
+       .text(`Toplam Gider: ${fmtTL(totalExpense)}`, 60, resultY + 41);
+    doc.fontSize(11).fillColor(netProfit >= 0 ? '#16a34a' : '#dc2626').font('Helvetica-Bold')
+       .text(`Net ${netProfit >= 0 ? 'Kar' : 'Zarar'}: ${fmtTL(Math.abs(netProfit))}  (Marj: %${margin})`, 60, resultY + 55);
+
+    // ── Footer ────────────────────────────────────────────────────────
+    const totalPages = doc.bufferedPageRange().count;
+    for (let i = 0; i < totalPages; i++) {
+      doc.switchToPage(i);
+      const footerY = doc.page.height - 45;
+      doc.moveTo(45, footerY).lineTo(45 + pageW, footerY).lineWidth(0.5).strokeColor('#d1d5db').stroke();
+      if (fs.existsSync(logoPath)) {
+        doc.image(logoPath, 45, footerY + 5, { height: 20 });
+      }
+      doc.fontSize(7).fillColor(TEXT_GRAY).font('Helvetica')
+         .text('Mi Kurumsal CRM — Danışmanlık & Franchise Yönetim Sistemi', 45, footerY + 8, { width: pageW - 60, align: 'center' })
+         .text(`Sayfa ${i + 1} / ${totalPages}`, 45, footerY + 18, { align: 'right', width: pageW });
+    }
+
+    doc.end();
+  } catch (e) { next(e); }
+});
+
+// Excel Export
+app.get("/api/pnl/customer/:investorId/export-excel", authMiddleware, async (req, res, next) => {
+  try {
+    const XLSX = require("xlsx");
+    const { investorId } = req.params;
+    const { month, year } = req.query;
+
+    let revQ = `SELECT * FROM customer_pnl_revenues WHERE investor_id=$1 ORDER BY entry_date`;
+    let expQ = `SELECT * FROM customer_pnl_expenses WHERE investor_id=$1 ORDER BY entry_date`;
+    const params = [investorId];
+    if (month) { params.push(month); revQ = revQ.replace('ORDER', `AND month_name=$${params.length} ORDER`); expQ = expQ.replace('ORDER', `AND month_name=$${params.length} ORDER`); }
+    if (year)  { params.push(year);  revQ = revQ.replace('ORDER', `AND year_value=$${params.length} ORDER`); expQ = expQ.replace('ORDER', `AND year_value=$${params.length} ORDER`); }
+
+    const [revRows, expRows, invRes] = await Promise.all([
+      pool.query(revQ, params),
+      pool.query(expQ, params),
+      pool.query(`SELECT * FROM investors WHERE id=$1`, [investorId]),
+    ]);
+
+    const investor     = invRes.rows[0] || {};
+    const revenues     = revRows.rows;
+    const expenses     = expRows.rows;
+    const totalRevenue = revenues.reduce((s, r) => s + Number(r.amount || 0), 0);
+    const totalExpense = expenses.reduce((s, r) => s + Number(r.amount || 0), 0);
+    const netProfit    = totalRevenue - totalExpense;
+
+    const wb = XLSX.utils.book_new();
+
+    // Gelirler sheet
+    const revData = [
+      ['Mi Kurumsal CRM — Müşteri Gelir Tablosu'],
+      [`Müşteri: ${investor.name || ''}`, `Dönem: ${month || ''} ${year || ''}`],
+      [],
+      ['Tarih', 'Ay', 'Yıl', 'Kategori', 'Açıklama', 'Tutar (₺)'],
+      ...revenues.map(r => [
+        r.entry_date ? new Date(r.entry_date).toLocaleDateString('tr-TR') : '',
+        r.month_name || '',
+        r.year_value || '',
+        r.category || '',
+        r.description || '',
+        Number(r.amount || 0),
+      ]),
+      [],
+      ['', '', '', '', 'TOPLAM GELİR', totalRevenue],
+    ];
+    const wsRev = XLSX.utils.aoa_to_sheet(revData);
+    wsRev['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 6 }, { wch: 14 }, { wch: 28 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wsRev, 'Gelirler');
+
+    // Giderler sheet
+    const expData = [
+      ['Mi Kurumsal CRM — Müşteri Gider Tablosu'],
+      [`Müşteri: ${investor.name || ''}`, `Dönem: ${month || ''} ${year || ''}`],
+      [],
+      ['Tarih', 'Ay', 'Yıl', 'Kategori', 'Alt Kategori', 'Açıklama', 'Tutar (₺)'],
+      ...expenses.map(r => [
+        r.entry_date ? new Date(r.entry_date).toLocaleDateString('tr-TR') : '',
+        r.month_name || '',
+        r.year_value || '',
+        r.category || '',
+        r.sub_category || '',
+        r.description || '',
+        Number(r.amount || 0),
+      ]),
+      [],
+      ['', '', '', '', '', 'TOPLAM GİDER', totalExpense],
+    ];
+    const wsExp = XLSX.utils.aoa_to_sheet(expData);
+    wsExp['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 6 }, { wch: 14 }, { wch: 14 }, { wch: 24 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(wb, wsExp, 'Giderler');
+
+    // Özet sheet
+    const ozet = [
+      ['Mi Kurumsal CRM — Müşteri Kar/Zarar Özeti'],
+      [`Müşteri: ${investor.name || ''}`, `Sektör: ${investor.sector || ''}`, `Şehir: ${investor.city || ''}`],
+      [`Tel: ${investor.phone || ''}`, `E-posta: ${investor.email || ''}`],
+      [],
+      ['Kalem', 'Tutar (₺)'],
+      ['Toplam Gelir', totalRevenue],
+      ['Toplam Gider', totalExpense],
+      ['Net Kar/Zarar', netProfit],
+      ['Kar Marjı (%)', totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) : 0],
+      [],
+      [`Oluşturma: ${new Date().toLocaleString('tr-TR')} — Mi Kurumsal CRM`],
+    ];
+    const wsOzet = XLSX.utils.aoa_to_sheet(ozet);
+    wsOzet['!cols'] = [{ wch: 20 }, { wch: 16 }];
+    XLSX.utils.book_append_sheet(wb, wsOzet, 'Özet');
+
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="musteri-kar-zarar-${investorId}.xlsx"`);
+    res.send(buf);
+  } catch (e) { next(e); }
+});
+
+// ─── Global Error Handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ message: "Sunucu hatası oluştu.", detail: err.message });

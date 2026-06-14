@@ -402,6 +402,35 @@ CREATE TABLE IF NOT EXISTS pnl_field_mappings (
   UNIQUE(source_header)
 );
 
+CREATE TABLE IF NOT EXISTS customer_pnl_revenues (
+  id SERIAL PRIMARY KEY,
+  investor_id INTEGER NOT NULL REFERENCES investors(id) ON DELETE CASCADE,
+  entry_date DATE NOT NULL,
+  month_name TEXT NOT NULL,
+  year_value INTEGER NOT NULL,
+  category TEXT NOT NULL DEFAULT 'Ciro',
+  description TEXT,
+  amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+  note TEXT,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS customer_pnl_expenses (
+  id SERIAL PRIMARY KEY,
+  investor_id INTEGER NOT NULL REFERENCES investors(id) ON DELETE CASCADE,
+  entry_date DATE NOT NULL,
+  month_name TEXT NOT NULL,
+  year_value INTEGER NOT NULL,
+  category TEXT NOT NULL DEFAULT 'Gıda',
+  sub_category TEXT,
+  description TEXT,
+  amount NUMERIC(14,2) NOT NULL DEFAULT 0,
+  note TEXT,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS tasks (
   id SERIAL PRIMARY KEY,
   note TEXT NOT NULL,

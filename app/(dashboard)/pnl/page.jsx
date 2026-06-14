@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/apiClient';
+import CustomerPnl from './CustomerPnl';
 
 const MONTHS = ['OCAK','ŞUBAT','MART','NİSAN','MAYIS','HAZİRAN','TEMMUZ','AĞUSTOS','EYLÜL','EKİM','KASIM','ARALIK'];
 const EXPENSE_CATS = ['Gıda','Personel','Kira','Elektrik','Su','Doğalgaz','POS Komisyon','Paket Servis','Vergi','Devir Sayım / Stok Farkı','Diğer'];
@@ -31,6 +32,7 @@ const emptyPerForm = () => ({
 });
 
 export default function PnlPage() {
+  const [mode, setMode] = useState('firma'); // 'firma' | 'musteri'
   const [activeTab, setActiveTab] = useState('ozet');
   const [filterMonth, setFilterMonth] = useState('');
   const [filterYear, setFilterYear] = useState(String(new Date().getFullYear()));
@@ -354,11 +356,30 @@ export default function PnlPage() {
     netProfit: annualRows.reduce((s, x) => s + Number(x.netProfit || 0), 0),
   };
 
+  if (mode === 'musteri') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+          <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#1e293b' }}>Müşteri Kar / Zarar Yönetimi</h2>
+          <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 10, padding: 4, gap: 4 }}>
+            <button onClick={() => setMode('firma')} style={modeBtn(mode === 'firma')}>Firma Kar/Zarar</button>
+            <button onClick={() => setMode('musteri')} style={modeBtn(mode === 'musteri')}>Müşteri Kar/Zarar</button>
+          </div>
+        </div>
+        <CustomerPnl />
+      </div>
+    );
+  }
+
   return (
     <section className="card page-section active">
       <div className="module-head">
-        <h2>Kar / Zarar Yönetimi</h2>
+        <h2>Firma Kar / Zarar Yönetimi</h2>
         <div className="header-actions">
+          <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: 10, padding: 4, gap: 4 }}>
+            <button onClick={() => setMode('firma')} style={modeBtn(mode === 'firma')}>Firma Kar/Zarar</button>
+            <button onClick={() => setMode('musteri')} style={modeBtn(mode === 'musteri')}>Müşteri Kar/Zarar</button>
+          </div>
           <button className="export-btn" onClick={() => window.open(`/api/export/pnl?token=${localStorage.getItem('access_token')}`)}>Excel Dışa Aktar</button>
         </div>
       </div>
@@ -958,3 +979,9 @@ export default function PnlPage() {
     </section>
   );
 }
+
+const modeBtn = (active) => ({
+  padding: '7px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: '0.85rem',
+  fontWeight: 700, background: active ? '#1a5c38' : 'transparent', color: active ? '#fff' : '#64748b',
+  transition: 'all 0.15s',
+});
