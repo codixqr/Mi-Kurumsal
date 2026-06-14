@@ -1246,6 +1246,73 @@ async function seedDefaultDataIfNeeded() {
       ('sms','Hatırlatma','Takip Hatırlatma','{{name}}, {{date}} tarihindeki görüşmemiz için hatırlatma: {{note}}.',true,null)
     `);
   }
+
+  // ── CUSTOMER P&L ÖRNEK VERİ ────────────────────────────────────────────────
+  const firstInvId = investorIds['Ahmet Kılıç'] || investorIds[Object.keys(investorIds)[0]];
+  const secondInvId = investorIds['Yaman Holding'] || investorIds[Object.keys(investorIds)[1]];
+  if (firstInvId) {
+    const exCpnl = await pool.query(`SELECT id FROM customer_pnl_revenues WHERE investor_id=$1 LIMIT 1`, [firstInvId]);
+    if (exCpnl.rowCount === 0) {
+      const months = [
+        { name:'Ocak',  year:2026, idx:1 },
+        { name:'Şubat', year:2026, idx:2 },
+        { name:'Mart',  year:2026, idx:3 },
+        { name:'Nisan', year:2026, idx:4 },
+        { name:'Mayıs', year:2026, idx:5 },
+        { name:'Haziran',year:2026,idx:6 },
+      ];
+      for (const m of months) {
+        const dateStr = `2026-${String(m.idx).padStart(2,'0')}-01`;
+        // Gelirler
+        await pool.query(`INSERT INTO customer_pnl_revenues(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [firstInvId, dateStr, m.name, m.year, 'Ciro', `${m.name} ayı satış geliri`, 140000 + m.idx * 8000, adminId]);
+        await pool.query(`INSERT INTO customer_pnl_revenues(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [firstInvId, dateStr, m.name, m.year, 'Komisyon Geliri', `${m.name} franchise komisyonu`, 18000 + m.idx * 500, adminId]);
+        if (m.idx % 2 === 0) {
+          await pool.query(`INSERT INTO customer_pnl_revenues(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+            [firstInvId, dateStr, m.name, m.year, 'Danışmanlık Geliri', 'Ek danışmanlık hizmet bedeli', 12000, adminId]);
+        }
+        // Giderler
+        await pool.query(`INSERT INTO customer_pnl_expenses(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [firstInvId, dateStr, m.name, m.year, 'Personel', `${m.name} personel maaşları`, 55000, adminId]);
+        await pool.query(`INSERT INTO customer_pnl_expenses(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [firstInvId, dateStr, m.name, m.year, 'Kira', 'Mağaza kira bedeli', 28000, adminId]);
+        await pool.query(`INSERT INTO customer_pnl_expenses(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [firstInvId, dateStr, m.name, m.year, 'Gıda', `${m.name} malzeme/hammadde`, 32000 + m.idx * 1000, adminId]);
+        await pool.query(`INSERT INTO customer_pnl_expenses(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [firstInvId, dateStr, m.name, m.year, 'Elektrik', 'Elektrik + su faturası', 4500, adminId]);
+        await pool.query(`INSERT INTO customer_pnl_expenses(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [firstInvId, dateStr, m.name, m.year, 'POS Komisyon', 'Kart komisyon bedeli', 3200 + m.idx * 200, adminId]);
+        if (m.idx === 3 || m.idx === 6) {
+          await pool.query(`INSERT INTO customer_pnl_expenses(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+            [firstInvId, dateStr, m.name, m.year, 'Vergi', 'Dönemsel vergi ödemesi', 14000, adminId]);
+        }
+      }
+    }
+  }
+  if (secondInvId) {
+    const exCpnl2 = await pool.query(`SELECT id FROM customer_pnl_revenues WHERE investor_id=$1 LIMIT 1`, [secondInvId]);
+    if (exCpnl2.rowCount === 0) {
+      const months2 = [
+        { name:'Mart',  year:2026, idx:3 },
+        { name:'Nisan', year:2026, idx:4 },
+        { name:'Mayıs', year:2026, idx:5 },
+      ];
+      for (const m of months2) {
+        const dateStr = `2026-${String(m.idx).padStart(2,'0')}-01`;
+        await pool.query(`INSERT INTO customer_pnl_revenues(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [secondInvId, dateStr, m.name, m.year, 'Ciro', `${m.name} çoklu şube ciro`, 380000 + m.idx * 15000, adminId]);
+        await pool.query(`INSERT INTO customer_pnl_revenues(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [secondInvId, dateStr, m.name, m.year, 'Komisyon Geliri', 'Master franchise komisyonu', 45000, adminId]);
+        await pool.query(`INSERT INTO customer_pnl_expenses(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [secondInvId, dateStr, m.name, m.year, 'Personel', 'Çoklu şube personel gideri', 140000, adminId]);
+        await pool.query(`INSERT INTO customer_pnl_expenses(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [secondInvId, dateStr, m.name, m.year, 'Kira', 'Şubeler toplam kira', 85000, adminId]);
+        await pool.query(`INSERT INTO customer_pnl_expenses(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+          [secondInvId, dateStr, m.name, m.year, 'Gıda', 'Malzeme ve hammadde', 92000, adminId]);
+      }
+    }
+  }
 }
 
 function normalizeMonthName(sheetName) {
@@ -4398,6 +4465,126 @@ app.get("/api/health", async (req, res) => {
 // ─── Müşteri Kar/Zarar Modülü ───────────────────────────────────────────────
 
 const MONTHS_TR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+// Excel Şablon İndir
+app.get("/api/pnl/customer/excel-template", authMiddleware, async (req, res, next) => {
+  try {
+    const XLSX = require("xlsx");
+    const wb = XLSX.utils.book_new();
+    const gelirData = [
+      ['Tarih','Ay','Yıl','Kategori','Açıklama','Tutar'],
+      ['2026-01-01','Ocak','2026','Ciro','Ocak ayı satış geliri',150000],
+      ['2026-01-15','Ocak','2026','Komisyon Geliri','Franchise komisyon bedeli',22000],
+      ['2026-02-01','Şubat','2026','Ciro','Şubat satış geliri',162000],
+      ['2026-02-10','Şubat','2026','Danışmanlık Geliri','Ek danışmanlık hizmeti',12000],
+    ];
+    const wsGelir = XLSX.utils.aoa_to_sheet(gelirData);
+    wsGelir['!cols'] = [{wch:12},{wch:10},{wch:6},{wch:18},{wch:30},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, wsGelir, 'Gelirler');
+    const giderData = [
+      ['Tarih','Ay','Yıl','Kategori','Alt Kategori','Açıklama','Tutar'],
+      ['2026-01-02','Ocak','2026','Personel','','Ocak personel maaşları',55000],
+      ['2026-01-03','Ocak','2026','Kira','','Mağaza kirası',28000],
+      ['2026-01-05','Ocak','2026','Gıda','Hammadde','Ocak malzeme alımı',34000],
+      ['2026-01-10','Ocak','2026','Elektrik','','Elektrik faturası',4200],
+      ['2026-02-02','Şubat','2026','Personel','','Şubat personel maaşları',55000],
+      ['2026-02-03','Şubat','2026','Kira','','Mağaza kirası',28000],
+    ];
+    const wsGider = XLSX.utils.aoa_to_sheet(giderData);
+    wsGider['!cols'] = [{wch:12},{wch:10},{wch:6},{wch:14},{wch:14},{wch:26},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, wsGider, 'Giderler');
+    const buf = XLSX.write(wb, { type:'buffer', bookType:'xlsx' });
+    res.setHeader('Content-Type','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition','attachment; filename="musteri-pnl-sablon.xlsx"');
+    res.send(buf);
+  } catch(e) { next(e); }
+});
+
+// Aylık Özet
+app.get("/api/pnl/customer/:investorId/monthly-summary", authMiddleware, async (req, res, next) => {
+  try {
+    const { investorId } = req.params;
+    const { year } = req.query;
+    const y = year || new Date().getFullYear();
+    const [revRows, expRows] = await Promise.all([
+      pool.query(`SELECT month_name, COALESCE(SUM(amount),0)::numeric AS total FROM customer_pnl_revenues WHERE investor_id=$1 AND year_value=$2 GROUP BY month_name`, [investorId, y]),
+      pool.query(`SELECT month_name, COALESCE(SUM(amount),0)::numeric AS total FROM customer_pnl_expenses WHERE investor_id=$1 AND year_value=$2 GROUP BY month_name`, [investorId, y]),
+    ]);
+    const revMap = {}; revRows.rows.forEach(r => revMap[r.month_name] = Number(r.total));
+    const expMap = {}; expRows.rows.forEach(r => expMap[r.month_name] = Number(r.total));
+    const summary = MONTHS_TR.map(m => ({
+      month: m, revenue: revMap[m]||0, expense: expMap[m]||0, net: (revMap[m]||0)-(expMap[m]||0),
+    }));
+    res.json(summary);
+  } catch(e) { next(e); }
+});
+
+// Excel İçe Aktar — parse + preview
+app.post("/api/pnl/customer/:investorId/import-excel", authMiddleware, upload.single('file'), async (req, res, next) => {
+  try {
+    const XLSX = require("xlsx");
+    if (!req.file) return res.status(400).json({ message: 'Dosya gerekli' });
+    const wb = XLSX.readFile(req.file.path);
+    const result = { revenues: [], expenses: [] };
+    for (const sheetName of wb.SheetNames) {
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      const isRevSheet = /gelir|revenue|ciro|satış/i.test(sheetName);
+      const isExpSheet = /gider|expense|maliyet|masraf/i.test(sheetName);
+      for (const row of rows) {
+        const get = (...names) => {
+          for (const n of names) {
+            const k = Object.keys(row).find(k => k.trim().toLowerCase().includes(n.toLowerCase()));
+            if (k) return String(row[k] || '').trim();
+          }
+          return '';
+        };
+        const rawAmt = get('tutar','amount','gelir','gider','para','fiyat');
+        const tutar = parseFloat(String(rawAmt).replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+        if (!tutar) continue;
+        const tip = get('tip','type','tür','tur');
+        const isRevRow = /gelir|satış|ciro|komisyon|revenue/i.test(tip);
+        const isExpRow = /gider|masraf|expense|maliyet/i.test(tip);
+        const entry = {
+          entryDate: get('tarih','date') || new Date().toISOString().split('T')[0],
+          monthName: get('ay','month') || MONTHS_TR[new Date().getMonth()],
+          yearValue: parseInt(get('yıl','yil','year')) || new Date().getFullYear(),
+          category: get('kategori','category') || '',
+          subCategory: get('alt kategori','sub','subcategory') || '',
+          description: get('açıklama','aciklama','description','not','note') || '',
+          amount: tutar,
+        };
+        const isRev = isRevSheet || isRevRow || (!isExpSheet && !isExpRow && !tip);
+        if (isExpSheet || isExpRow) result.expenses.push(entry);
+        else result.revenues.push(entry);
+      }
+    }
+    try { fs.unlinkSync(req.file.path); } catch(_) {}
+    res.json({ revenues: result.revenues.slice(0,200), expenses: result.expenses.slice(0,200), totalRevenues: result.revenues.length, totalExpenses: result.expenses.length });
+  } catch(e) { next(e); }
+});
+
+// Excel İçe Aktar — confirm (insert)
+app.post("/api/pnl/customer/:investorId/confirm-import", authMiddleware, async (req, res, next) => {
+  try {
+    const { investorId } = req.params;
+    const { revenues=[], expenses=[] } = req.body;
+    let ir=0, ie=0;
+    for (const r of revenues) {
+      await pool.query(
+        `INSERT INTO customer_pnl_revenues(investor_id,entry_date,month_name,year_value,category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [investorId, r.entryDate||new Date().toISOString().split('T')[0], r.monthName||MONTHS_TR[0], r.yearValue||2026, r.category||'Ciro', r.description||'', Number(r.amount||0), req.user.id]
+      ); ir++;
+    }
+    for (const r of expenses) {
+      await pool.query(
+        `INSERT INTO customer_pnl_expenses(investor_id,entry_date,month_name,year_value,category,sub_category,description,amount,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [investorId, r.entryDate||new Date().toISOString().split('T')[0], r.monthName||MONTHS_TR[0], r.yearValue||2026, r.category||'Gıda', r.subCategory||'', r.description||'', Number(r.amount||0), req.user.id]
+      ); ie++;
+    }
+    res.json({ insertedRevenues:ir, insertedExpenses:ie, total:ir+ie });
+  } catch(e) { next(e); }
+});
 
 // Gelirler CRUD
 app.get("/api/pnl/customer/:investorId/revenues", authMiddleware, async (req, res, next) => {
