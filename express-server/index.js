@@ -4227,47 +4227,32 @@ app.get("/api/reports/summary", authMiddleware, async (req, res) => {
   }
 });
 
-app.get("/api/dashboard/stats", authMiddleware, async (req, res) => {
-  const { from, to } = req.query;
-  const fromClause = from ? new Date(from) : new Date("1970-01-01");
-  const toClause = to ? new Date(to) : new Date();
-  const params = [fromClause, toClause];
-
-  const leadCount = await pool.query(
-    `SELECT COUNT(*)::int AS value FROM investors
-     WHERE deleted_at IS NULL AND created_at BETWEEN $1 AND $2`,
-    params,
-  );
-  const winCount = await pool.query(
-    `SELECT COUNT(*)::int AS value FROM investors
-     WHERE deleted_at IS NULL AND pipeline_stage ILIKE '%Kapandı%' AND created_at BETWEEN $1 AND $2`,
-    params,
-  );
-  const projectCount = await pool.query(
-    `SELECT COUNT(*)::int AS value FROM projects
-     WHERE deleted_at IS NULL AND created_at BETWEEN $1 AND $2`,
-    params,
-  );
-  const financeCount = await pool.query(
-    `SELECT COUNT(*)::int AS value FROM contracts
-     WHERE deleted_at IS NULL AND created_at BETWEEN $1 AND $2`,
-    params,
-  );
-  const taskCount = await pool.query(
-    `SELECT COUNT(*)::int AS value FROM tasks
-     WHERE status != 'Tamamlandı'`,
-  );
-
-  const invRem = await investorReminders();
-  res.json({
-    activeInvestors: leadCount.rows[0].value,
-    activeProjects: projectCount.rows[0].value,
-    openTasks: taskCount.rows[0].value,
-    strongMatches: winCount.rows[0].value,
-    financeCount: financeCount.rows[0].value,
-    investorFollowUps: invRem.followUpDue,
-    investorStaleHot: invRem.staleHot,
-  });
+app.get("/api/dashboard/stats", authMiddleware, async (req, res, next) => {
+  try {
+    const [leadCount, winCount, projectCount, financeCount, taskCount, brandCount, locCount, finRevCount] = await Promise.all([
+      pool.query(`SELECT COUNT(*)::int AS value FROM investors WHERE deleted_at IS NULL`),
+      pool.query(`SELECT COUNT(*)::int AS value FROM investors WHERE deleted_at IS NULL AND pipeline_stage ILIKE '%Kapandı%'`),
+      pool.query(`SELECT COUNT(*)::int AS value FROM projects WHERE deleted_at IS NULL`),
+      pool.query(`SELECT COUNT(*)::int AS value FROM contracts WHERE deleted_at IS NULL AND status='Aktif'`),
+      pool.query(`SELECT COUNT(*)::int AS value FROM tasks WHERE deleted_at IS NULL AND status != 'Tamamlandı'`),
+      pool.query(`SELECT COUNT(*)::int AS value FROM brands WHERE deleted_at IS NULL`),
+      pool.query(`SELECT COUNT(*)::int AS value FROM locations WHERE deleted_at IS NULL`),
+      pool.query(`SELECT COALESCE(SUM(amount::numeric),0)::numeric AS value FROM finance_records WHERE status='Tahsil Edildi'`),
+    ]);
+    const invRem = await investorReminders().catch(() => ({ followUpDue: [], staleHot: [] }));
+    res.json({
+      activeInvestors: leadCount.rows[0].value,
+      activeProjects: projectCount.rows[0].value,
+      openTasks: taskCount.rows[0].value,
+      strongMatches: winCount.rows[0].value,
+      financeCount: financeCount.rows[0].value,
+      totalBrands: brandCount.rows[0].value,
+      totalLocations: locCount.rows[0].value,
+      totalRevenue: Number(finRevCount.rows[0].value || 0),
+      investorFollowUps: invRem.followUpDue,
+      investorStaleHot: invRem.staleHot,
+    });
+  } catch (err) { next(err); }
 });
 
 
