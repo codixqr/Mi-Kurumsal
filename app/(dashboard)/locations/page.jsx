@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/apiClient';
+import citiesData from '@/lib/tr-cities-districts.json';
 
 const LOCATION_TYPES = ['AVM', 'Cadde', 'Plaza', 'Sanayi', 'Turistik'];
 const POTENTIALS = ['Düşük', 'Orta', 'Yüksek', 'Premium'];
@@ -219,8 +220,24 @@ export default function LocationsPage() {
           <form className="inv-form-grid" onSubmit={saveForm}>
             <div className="field"><label>Lokasyon adı</label><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
             <div className="field"><label>AVM/Cadde adı</label><input value={form.avenueName} onChange={(e) => setForm({ ...form, avenueName: e.target.value })} /></div>
-            <div className="field"><label>Şehir</label><input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></div>
-            <div className="field"><label>İlçe</label><input value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} /></div>
+            <div className="field">
+              <label>Şehir</label>
+              <select value={form.city ? form.city.toUpperCase() : ''} onChange={(e) => setForm({ ...form, city: e.target.value, district: '' })}>
+                <option value="">Seçin</option>
+                {citiesData.city.map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="field">
+              <label>İlçe</label>
+              <select value={form.district ? form.district.toUpperCase() : ''} onChange={(e) => setForm({ ...form, district: e.target.value })} disabled={!form.city}>
+                <option value="">{form.city ? 'Seçin' : 'Önce il seçin'}</option>
+                {citiesData.city.find((c) => c.name.toLowerCase() === (form.city || '').toLowerCase())?.discrits.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
             <div className="field" style={{ gridColumn: '1 / -1' }}><label>Açık adres</label><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
             <div className="field"><label>Google Maps</label><input value={form.mapsLink} onChange={(e) => setForm({ ...form, mapsLink: e.target.value })} /></div>
             <div className="field"><label>Tip</label><select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>{LOCATION_TYPES.map((s) => <option key={s}>{s}</option>)}</select></div>

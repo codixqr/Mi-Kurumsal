@@ -1,0 +1,1495 @@
+{
+  "cityCount": 81,
+  "totalDistrictCount": 922,
+  "city": [
+    {
+      "plateCode": 1,
+      "name": "ADANA",
+      "discritCount": 15,
+      "discrits": [
+        "ALADAĞ",
+        "CEYHAN",
+        "ÇUKUROVA",
+        "FEKE",
+        "İMAMOĞLU",
+        "KARAİSALI",
+        "KARATAŞ",
+        "KOZAN",
+        "POZANTI",
+        "SAİMBEYLİ",
+        "SARIÇAM",
+        "SEYHAN",
+        "TUFANBEYLİ",
+        "YUMURTALIK",
+        "YÜREĞİR"
+      ]
+    },
+    {
+      "plateCode": 2,
+      "name": "ADIYAMAN",
+      "discritCount": 8,
+      "discrits": [
+        "BESNİ",
+        "ÇELİKHAN",
+        "GERGER",
+        "GÖLBAŞI",
+        "KAHTA",
+        "SAMSAT",
+        "SİNCİK",
+        "TUT"
+      ]
+    },
+    {
+      "plateCode": 3,
+      "name": "AFYONKARAHİSAR",
+      "discritCount": 17,
+      "discrits": [
+        "BAŞMAKÇI",
+        "BAYAT",
+        "BOLVADİN",
+        "ÇAY",
+        "ÇOBANLAR",
+        "DAZKIRI",
+        "DİNAR",
+        "EMİRDAĞ",
+        "EVCİLER",
+        "HOCALAR",
+        "İHSANİYE",
+        "İSCEHİSAR",
+        "KIZILÖREN",
+        "SANDIKLI",
+        "SİNANPAŞA",
+        "SULTANDAĞI",
+        "ŞUHUT"
+      ]
+    },
+    {
+      "plateCode": 4,
+      "name": "AĞRI",
+      "discritCount": 7,
+      "discrits": [
+        "DİYADİN",
+        "DOĞUBAYAZIT",
+        "ELEŞKİRT",
+        "HAMUR",
+        "PATNOS",
+        "TAŞLIÇAY",
+        "TUTAK"
+      ]
+    },
+    {
+      "plateCode": 5,
+      "name": "AMASYA",
+      "discritCount": 6,
+      "discrits": [
+        "GÖYNÜCEK",
+        "GÜMÜŞHACIKÖY",
+        "HAMAMÖZÜ",
+        "MERZİFON",
+        "SULUOVA",
+        "TAŞOVA"
+      ]
+    },
+    {
+      "plateCode": 6,
+      "name": "ANKARA",
+      "discritCount": 25,
+      "discrits": [
+        "AKYURT",
+        "ALTINDAĞ",
+        "AYAŞ",
+        "BALA",
+        "BEYPAZARI",
+        "ÇAMLIDERE",
+        "ÇANKAYA",
+        "ÇUBUK",
+        "ELMADAĞ",
+        "ETİMESGUT",
+        "EVREN",
+        "GÖLBAŞI",
+        "GÜDÜL",
+        "HAYMANA",
+        "KAHRAMANKAZAN",
+        "KALECİK",
+        "KEÇİÖREN",
+        "KIZILCAHAMAM",
+        "AMAK",
+        "NALLIHAN",
+        "POLATLI",
+        "PURSAKLAR",
+        "SİNCAN",
+        "ŞEREFLİKOÇHİSAR",
+        "YENİMAHALLE"
+      ]
+    },
+    {
+      "plateCode": 7,
+      "name": "ANTALYA",
+      "discritCount": 19,
+      "discrits": [
+        "AKSEKİ",
+        "AKSU",
+        "ALANYA",
+        "DEMRE",
+        "DÖŞEMEALTI",
+        "ELMALI",
+        "FİNİKE",
+        "GAZİPAŞA",
+        "GÜNDOĞMUŞ",
+        "İBRADI",
+        "KAŞ",
+        "KEMER",
+        "KEPEZ",
+        "KONYAALTI",
+        "KORKUTELİ",
+        "KUMLUCA",
+        "MANAVGAT",
+        "MURATPAŞA",
+        "SERİK"
+      ]
+    },
+    {
+      "plateCode": 8,
+      "name": "ARTVİN",
+      "discritCount": 8,
+      "discrits": [
+        "ARDANUÇ",
+        "ARHAVİ",
+        "BORÇKA",
+        "HOPA",
+        "KEMALPAŞA",
+        "MURGUL",
+        "ŞAVŞAT",
+        "YUSUFELİ"
+      ]
+    },
+    {
+      "plateCode": 9,
+      "name": "AYDIN",
+      "discritCount": 17,
+      "discrits": [
+        "BOZDOĞAN",
+        "BUHARKENT",
+        "ÇİNE",
+        "DİDİM",
+        "EFELER",
+        "GERMENCİK",
+        "İNCİRLİOVA",
+        "KARACASU",
+        "KARPUZLU",
+        "KOÇARLI",
+        "KÖŞK",
+        "KUŞADASI",
+        "KUYUCAK",
+        "NAZİLLİ",
+        "SÖKE",
+        "SULTANHİSAR",
+        "YENİPAZAR"
+      ]
+    },
+    {
+      "plateCode": 10,
+      "name": "BALIKESİR",
+      "discritCount": 20,
+      "discrits": [
+        "ALTIEYLÜL",
+        "AYVALIK",
+        "BALYA",
+        "BANDIRMA",
+        "BİGADİÇ",
+        "BURHANİYE",
+        "DURSUNBEY",
+        "EDREMİT",
+        "ERDEK",
+        "GÖMEÇ",
+        "GÖNEN",
+        "HAVRAN",
+        "İVRİNDİ",
+        "KARESİ",
+        "KEPSUT",
+        "MANYAS",
+        "MARMARA",
+        "SAVAŞTEPE",
+        "SINDIRGI",
+        "SUSURLUK"
+      ]
+    },
+    {
+      "plateCode": 11,
+      "name": "BİLECİK",
+      "discritCount": 7,
+      "discrits": [
+        "BOZÜYÜK",
+        "GÖLPAZARI",
+        "İNHİSAR",
+        "OSMANELİ",
+        "PAZARYERİ",
+        "SÖĞÜT",
+        "YENİPAZAR"
+      ]
+    },
+    {
+      "plateCode": 12,
+      "name": "BİNGÖL",
+      "discritCount": 7,
+      "discrits": [
+        "ADAKLI",
+        "GENÇ",
+        "KARLIOVA",
+        "KİĞI",
+        "SOLHAN",
+        "YAYLADERE",
+        "YEDİSU"
+      ]
+    },
+    {
+      "plateCode": 13,
+      "name": "BİTLİS",
+      "discritCount": 6,
+      "discrits": [
+        "ADİLCEVAZ",
+        "AHLAT",
+        "GÜROYMAK",
+        "HİZAN",
+        "MUTKİ",
+        "TATVAN"
+      ]
+    },
+    {
+      "plateCode": 14,
+      "name": "BOLU",
+      "discritCount": 8,
+      "discrits": [
+        "DÖRTDİVAN",
+        "GEREDE",
+        "GÖYNÜK",
+        "KIBRISCIK",
+        "MENGEN",
+        "MUDURNU",
+        "SEBEN",
+        "YENİÇAĞA"
+      ]
+    },
+    {
+      "plateCode": 15,
+      "name": "BURDUR",
+      "discritCount": 10,
+      "discrits": [
+        "AĞLASUN",
+        "ALTINYAYLA",
+        "BUCAK",
+        "ÇAVDIR",
+        "ÇELTİKÇİ",
+        "GÖLHİSAR",
+        "KARAMANLI",
+        "KEMER",
+        "TEFENNİ",
+        "YEŞİLOVA"
+      ]
+    },
+    {
+      "plateCode": 16,
+      "name": "BURSA",
+      "discritCount": 17,
+      "discrits": [
+        "BÜYÜKORHAN",
+        "GEMLİK",
+        "G��RSU",
+        "HARMANCIK",
+        "İNEGÖL",
+        "İZNİK",
+        "KARACABEY",
+        "KELES",
+        "KESTEL",
+        "MUDANYA",
+        "MUSTAFAKEMALPAŞA",
+        "NİLÜFER",
+        "ORHANELİ",
+        "ORHANGAZİ",
+        "OSMANGAZİ",
+        "YENİŞEHİR",
+        "YILDIRIM"
+      ]
+    },
+    {
+      "plateCode": 17,
+      "name": "ÇANAKKALE",
+      "discritCount": 11,
+      "discrits": [
+        "AYVACIK",
+        "BAYRAMİÇ",
+        "BİGA",
+        "BOZCAADA",
+        "ÇAN",
+        "ECEABAT",
+        "EZİNE",
+        "GELİBOLU",
+        "GÖKÇEADA",
+        "LAPSEKİ",
+        "YENİCE"
+      ]
+    },
+    {
+      "plateCode": 18,
+      "name": "ÇANKIRI",
+      "discritCount": 11,
+      "discrits": [
+        "ATKARACALAR",
+        "BAYRAMÖREN",
+        "ÇERKEŞ",
+        "ELDİVAN",
+        "ILGAZ",
+        "KIZILIRMAK",
+        "KORGUN",
+        "KURŞUNLU",
+        "ORTA",
+        "ŞABANÖZÜ",
+        "YAPRAKLI"
+      ]
+    },
+    {
+      "plateCode": 19,
+      "name": "ÇORUM",
+      "discritCount": 13,
+      "discrits": [
+        "ALACA",
+        "BAYAT",
+        "BOĞAZKALE",
+        "DODURGA",
+        "İSKİLİP",
+        "KARGI",
+        "LAÇİN",
+        "MECİTÖZÜ",
+        "OĞUZLAR",
+        "ORTAKÖY",
+        "OSMANCIK",
+        "SUNGURLU",
+        "UĞURLUDAĞ"
+      ]
+    },
+    {
+      "plateCode": 20,
+      "name": "DENİZLİ",
+      "discritCount": 19,
+      "discrits": [
+        "ACIPAYAM",
+        "BABADAĞ",
+        "BAKLAN",
+        "BEKİLLİ",
+        "BEYAĞAÇ",
+        "BOZKURT",
+        "BULDAN",
+        "ÇAL",
+        "ÇAMELİ",
+        "ÇARDAK",
+        "ÇİVRİL",
+        "GÜNEY",
+        "HONAZ",
+        "KALE",
+        "MERKEZEFENDİ",
+        "PAMUKKALE",
+        "SARAYKÖY",
+        "SERİNHİSAR",
+        "TAVAS"
+      ]
+    },
+    {
+      "plateCode": 21,
+      "name": "DİYARBAKIR",
+      "discritCount": 17,
+      "discrits": [
+        "BAĞLAR",
+        "BİSMİL",
+        "ÇERMİK",
+        "ÇINAR",
+        "ÇÜNGÜŞ",
+        "DİCLE",
+        "EĞİL",
+        "ERGANİ",
+        "HANİ",
+        "HAZRO",
+        "KAYAPINAR",
+        "KOCAKÖY",
+        "KULP",
+        "LİCE",
+        "SİLVAN",
+        "SUR",
+        "YENİŞEHİR"
+      ]
+    },
+    {
+      "plateCode": 22,
+      "name": "EDİRNE",
+      "discritCount": 8,
+      "discrits": [
+        "ENEZ",
+        "HAVSA",
+        "İPSALA",
+        "KEŞAN",
+        "LALAPAŞA",
+        "MERİÇ",
+        "SÜLOĞLU",
+        "UZUNKÖPRÜ"
+      ]
+    },
+    {
+      "plateCode": 23,
+      "name": "ELAZIĞ",
+      "discritCount": 10,
+      "discrits": [
+        "AĞIN",
+        "ALACAKAYA",
+        "ARICAK",
+        "BASKİL",
+        "KARAKOÇAN",
+        "KEBAN",
+        "KOVANCILAR",
+        "MADEN",
+        "PALU",
+        "SİVRİCE"
+      ]
+    },
+    {
+      "plateCode": 24,
+      "name": "ERZİNCAN",
+      "discritCount": 8,
+      "discrits": [
+        "ÇAYIRLI",
+        "İLİÇ",
+        "KEMAH",
+        "KEMALİYE",
+        "OTLUKBELİ",
+        "REFAHİYE",
+        "TERCAN",
+        "ÜZÜMLÜ"
+      ]
+    },
+    {
+      "plateCode": 25,
+      "name": "ERZURUM",
+      "discritCount": 20,
+      "discrits": [
+        "AŞKALE",
+        "AZİZİYE",
+        "ÇAT",
+        "HINIS",
+        "HORASAN",
+        "İSPİR",
+        "KARAÇOBAN",
+        "KARAYAZI",
+        "KÖPRÜKÖY",
+        "NARMAN",
+        "OLTU",
+        "OLUR",
+        "PALANDÖKEN",
+        "PASİNLER",
+        "PAZARYOLU",
+        "ŞENKAYA",
+        "TEKMAN",
+        "TORTUM",
+        "UZUNDERE",
+        "YAKUTİYE"
+      ]
+    },
+    {
+      "plateCode": 26,
+      "name": "ESKİŞEHİR",
+      "discritCount": 14,
+      "discrits": [
+        "ALPU",
+        "BEYLİKOVA",
+        "ÇİFTELER",
+        "GÜNYÜZÜ",
+        "HAN",
+        "İNÖNÜ",
+        "MAHMUDİYE",
+        "MİHALGAZİ",
+        "MİHALIÇÇIK",
+        "ODUNPAZARI",
+        "SARICAKAYA",
+        "SEYİTGAZİ",
+        "SİVRİHİSAR",
+        "TEPEBAŞI"
+      ]
+    },
+    {
+      "plateCode": 27,
+      "name": "GAZİANTEP",
+      "discritCount": 9,
+      "discrits": [
+        "ARABAN",
+        "İSLAHİYE",
+        "KARKAMIŞ",
+        "NİZİP",
+        "NURDAĞI",
+        "OĞUZELİ",
+        "ŞAHİNBEY",
+        "ŞEHİTKAMİL",
+        "YAVUZELİ"
+      ]
+    },
+    {
+      "plateCode": 28,
+      "name": "GİRESUN",
+      "discritCount": 15,
+      "discrits": [
+        "ALUCRA",
+        "BULANCAK",
+        "ÇAMOLUK",
+        "ÇANAKÇI",
+        "DERELİ",
+        "DOĞANKENT",
+        "ESPİYE",
+        "EYNESİL",
+        "GÖRELE",
+        "GÜCE",
+        "KEŞAP",
+        "PİRAZİZ",
+        "ŞEBİNKARAHİSAR",
+        "TİREBOLU",
+        "YAĞLIDERE"
+      ]
+    },
+    {
+      "plateCode": 29,
+      "name": "GÜMÜŞHANE",
+      "discritCount": 5,
+      "discrits": [
+        "KELKİT",
+        "KÖSE",
+        "KÜRTÜN",
+        "ŞİRAN",
+        "TORUL"
+      ]
+    },
+    {
+      "plateCode": 30,
+      "name": "HAKKARİ",
+      "discritCount": 4,
+      "discrits": [
+        "ÇUKURCA",
+        "DERECİK",
+        "ŞEMDİNLİ",
+        "YÜKSEKOVA"
+      ]
+    },
+    {
+      "plateCode": 31,
+      "name": "HATAY",
+      "discritCount": 15,
+      "discrits": [
+        "ALTINÖZÜ",
+        "ANTAKYA",
+        "ARSUZ",
+        "BELEN",
+        "DEFNE",
+        "DÖRTYOL",
+        "ERZİN",
+        "HASSA",
+        "İSKENDERUN",
+        "KIRIKHAN",
+        "KUMLU",
+        "PAYAS",
+        "REYHANLI",
+        "SAMANDAĞ",
+        "YAYLADAĞI"
+      ]
+    },
+    {
+      "plateCode": 32,
+      "name": "ISPARTA",
+      "discritCount": 12,
+      "discrits": [
+        "AKSU",
+        "ATABEY",
+        "EĞİRDİR",
+        "GELENDOST",
+        "GÖNEN",
+        "KEÇİBORLU",
+        "SENİRKENT",
+        "SÜTÇÜLER",
+        "ŞARKİKARAAĞAÇ",
+        "ULUBORLU",
+        "YALVAÇ",
+        "YENİŞARBADEMLİ"
+      ]
+    },
+    {
+      "plateCode": 33,
+      "name": "MERSİN",
+      "discritCount": 13,
+      "discrits": [
+        "AKDENİZ",
+        "ANAMUR",
+        "AYDINCIK",
+        "BOZYAZI",
+        "ÇAMLIYAYLA",
+        "ERDEMLİ",
+        "GÜLNAR",
+        "MEZİTLİ",
+        "MUT",
+        "SİLİFKE",
+        "TARSUS",
+        "TOROSLAR",
+        "YENİŞEHİR"
+      ]
+    },
+    {
+      "plateCode": 34,
+      "name": "İSTANBUL",
+      "discritCount": 39,
+      "discrits": [
+        "ADALAR",
+        "ARNAVUTKÖY",
+        "ATAŞEHİR",
+        "AVCILAR",
+        "BAĞCILAR",
+        "BAHÇELİEVLER",
+        "BAKIRKÖY",
+        "BAŞAKŞEHİR",
+        "BAYRAMPAŞA",
+        "BEŞİKTAŞ",
+        "BEYKOZ",
+        "BEYLİKDÜZÜ",
+        "BEYOĞLU",
+        "BÜYÜKÇEKMECE",
+        "ÇATALCA",
+        "ÇEKMEKÖY",
+        "ESENLER",
+        "ESENYURT",
+        "EYÜPSULTAN",
+        "FATİH",
+        "GAZİOSMANPAŞA",
+        "GÜNGÖREN",
+        "KADIKÖY",
+        "KAĞITHANE",
+        "KARTAL",
+        "KÜÇÜKÇEKMECE",
+        "MALTEPE",
+        "PENDİK",
+        "SANCAKTEPE",
+        "SARIYER",
+        "SİLİVRİ",
+        "SULTANBEYLİ",
+        "SULTANGAZİ",
+        "ŞİLE",
+        "ŞİŞLİ",
+        "TUZLA",
+        "ÜMRANİYE",
+        "ÜSKÜDAR",
+        "ZEYTİNBURNU"
+      ]
+    },
+    {
+      "plateCode": 35,
+      "name": "İZMİR",
+      "discritCount": 30,
+      "discrits": [
+        "ALİAĞA",
+        "BALÇOVA",
+        "BAYINDIR",
+        "BAYRAKLI",
+        "BERGAMA",
+        "BEYDAĞ",
+        "BORNOVA",
+        "BUCA",
+        "ÇEŞME",
+        "ÇİĞLİ",
+        "DİKİLİ",
+        "FOÇA",
+        "GAZİEMİR",
+        "GÜZELBAHÇE",
+        "KARABAĞLAR",
+        "KARABURUN",
+        "KARŞIYAKA",
+        "KEMALPAŞA",
+        "KINIK",
+        "KİRAZ",
+        "KONAK",
+        "MENDERES",
+        "MENEMEN",
+        "NARLIDERE",
+        "ÖDEMİŞ",
+        "SEFERİHİSAR",
+        "SELÇUK",
+        "TİRE",
+        "TORBALI",
+        "URLA"
+      ]
+    },
+    {
+      "plateCode": 36,
+      "name": "KARS",
+      "discritCount": 7,
+      "discrits": [
+        "AKYAKA",
+        "ARPAÇAY",
+        "DİGOR",
+        "KAĞIZMAN",
+        "SARIKAMIŞ",
+        "SELİM",
+        "SUSUZ"
+      ]
+    },
+    {
+      "plateCode": 37,
+      "name": "KASTAMONU",
+      "discritCount": 19,
+      "discrits": [
+        "ABANA",
+        "AĞLI",
+        "ARAÇ",
+        "AZDAVAY",
+        "BOZKURT",
+        "CİDE",
+        "ÇATALZEYTİN",
+        "DADAY",
+        "DEVREKANİ",
+        "DOĞANYURT",
+        "HANÖNÜ",
+        "İHSANGAZİ",
+        "İNEBOLU",
+        "KÜRE",
+        "PINARBAŞI",
+        "SEYDİLER",
+        "ŞENPAZAR",
+        "TAŞKÖPRÜ",
+        "TOSYA"
+      ]
+    },
+    {
+      "plateCode": 38,
+      "name": "KAYSERİ",
+      "discritCount": 16,
+      "discrits": [
+        "AKKIŞLA",
+        "BÜNYAN",
+        "DEVELİ",
+        "FELAHİYE",
+        "HACILAR",
+        "İNCESU",
+        "KOCASİNAN",
+        "MELİKGAZİ",
+        "ÖZVATAN",
+        "PINARBAŞI",
+        "SARIOĞLAN",
+        "SARIZ",
+        "TALAS",
+        "TOMARZA",
+        "YAHYALI",
+        "YEŞİLHİSAR"
+      ]
+    },
+    {
+      "plateCode": 39,
+      "name": "KIRKLARELİ",
+      "discritCount": 7,
+      "discrits": [
+        "BABAESKİ",
+        "DEMİRKÖY",
+        "KOFÇAZ",
+        "LÜLEBURGAZ",
+        "PEHLİVANKÖY",
+        "PINARHİSAR",
+        "VİZE"
+      ]
+    },
+    {
+      "plateCode": 40,
+      "name": "KIRŞEHİR",
+      "discritCount": 6,
+      "discrits": [
+        "AKÇAKENT",
+        "AKPINAR",
+        "BOZTEPE",
+        "ÇİÇEKDAĞI",
+        "KAMAN",
+        "MUCUR"
+      ]
+    },
+    {
+      "plateCode": 41,
+      "name": "KOCAELİ",
+      "discritCount": 12,
+      "discrits": [
+        "BAŞİSKELE",
+        "ÇAYIROVA",
+        "DARICA",
+        "DERİNCE",
+        "DİLOVASI",
+        "GEBZE",
+        "GÖLCÜK",
+        "İZMİT",
+        "KANDIRA",
+        "KARAMÜRSEL",
+        "KARTEPE",
+        "KÖRFEZ"
+      ]
+    },
+    {
+      "plateCode": 42,
+      "name": "KONYA",
+      "discritCount": 31,
+      "discrits": [
+        "AHIRLI",
+        "AKÖREN",
+        "AKŞEHİR",
+        "ALTINEKİN",
+        "BEYŞEHİR",
+        "BOZKIR",
+        "CİHANBEYLİ",
+        "ÇELTİK",
+        "ÇUMRA",
+        "DERBENT",
+        "DEREBUCAK",
+        "DOĞANHİSAR",
+        "EMİRGAZİ",
+        "EREĞLİ",
+        "GÜNEYSINIR",
+        "HADİM",
+        "HALKAPINAR",
+        "HÜYÜK",
+        "ILGIN",
+        "KADINHANI",
+        "KARAPINAR",
+        "KARATAY",
+        "KULU",
+        "MERAM",
+        "SARAYÖNÜ",
+        "SELÇUKLU",
+        "SEYDİŞEHİR",
+        "TAŞKENT",
+        "TUZLUKÇU",
+        "YALIHÜYÜK",
+        "YUNAK"
+      ]
+    },
+    {
+      "plateCode": 43,
+      "name": "KÜTAHYA",
+      "discritCount": 12,
+      "discrits": [
+        "ALTINTAŞ",
+        "ASLANAPA",
+        "ÇAVDARHİSAR",
+        "DOMANİÇ",
+        "DUMLUPINAR",
+        "EMET",
+        "GEDİZ",
+        "HİSARCIK",
+        "PAZARLAR",
+        "SİMAV",
+        "ŞAPHANE",
+        "TAVŞANLI"
+      ]
+    },
+    {
+      "plateCode": 44,
+      "name": "MALATYA",
+      "discritCount": 13,
+      "discrits": [
+        "AKÇADAĞ",
+        "ARAPGİR",
+        "ARGUVAN",
+        "BATTALGAZİ",
+        "DARENDE",
+        "DOĞANŞEHİR",
+        "DOĞANYOL",
+        "HEKİMHAN",
+        "KALE",
+        "KULUNCAK",
+        "PÜTÜRGE",
+        "YAZIHAN",
+        "YEŞİLYURT"
+      ]
+    },
+    {
+      "plateCode": 45,
+      "name": "MANİSA",
+      "discritCount": 17,
+      "discrits": [
+        "AHMETLİ",
+        "AKHİSAR",
+        "ALAŞEHİR",
+        "DEMİRCİ",
+        "GÖLMARMARA",
+        "GÖRDES",
+        "KIRKAĞAÇ",
+        "KÖPRÜBAŞI",
+        "KULA",
+        "SALİHLİ",
+        "SARIGÖL",
+        "SARUHANLI",
+        "SELENDİ",
+        "SOMA",
+        "ŞEHZADELER",
+        "TURGUTLU",
+        "YUNUSEMRE"
+      ]
+    },
+    {
+      "plateCode": 46,
+      "name": "KAHRAMANMARAŞ",
+      "discritCount": 11,
+      "discrits": [
+        "AFŞİN",
+        "ANDIRIN",
+        "ÇAĞLAYANCERİT",
+        "DULKADİROĞLU",
+        "EKİNÖZÜ",
+        "ELBİSTAN",
+        "GÖKSUN",
+        "NURHAK",
+        "ONİKİŞUBAT",
+        "PAZARCIK",
+        "TÜRKOĞLU"
+      ]
+    },
+    {
+      "plateCode": 47,
+      "name": "MARDİN",
+      "discritCount": 10,
+      "discrits": [
+        "ARTUKLU",
+        "DARGEÇİT",
+        "DERİK",
+        "KIZILTEPE",
+        "MAZIDAĞI",
+        "MİDYAT",
+        "NUSAYBİN",
+        "ÖMERLİ",
+        "SAVUR",
+        "YEŞİLLİ"
+      ]
+    },
+    {
+      "plateCode": 48,
+      "name": "MUĞLA",
+      "discritCount": 13,
+      "discrits": [
+        "BODRUM",
+        "DALAMAN",
+        "DATÇA",
+        "FETHİYE",
+        "KAVAKLIDERE",
+        "KÖYCEĞİZ",
+        "MARMARİS",
+        "MENTEŞE",
+        "MİLAS",
+        "ORTACA",
+        "SEYDİKEMER",
+        "ULA",
+        "YATAĞAN"
+      ]
+    },
+    {
+      "plateCode": 49,
+      "name": "MUŞ",
+      "discritCount": 5,
+      "discrits": [
+        "BULANIK",
+        "HASKÖY",
+        "KORKUT",
+        "MALAZGİRT",
+        "VARTO"
+      ]
+    },
+    {
+      "plateCode": 50,
+      "name": "NEVŞEHİR",
+      "discritCount": 7,
+      "discrits": [
+        "ACIGÖL",
+        "AVANOS",
+        "DERİNKUYU",
+        "GÜLŞEHİR",
+        "HACIBEKTAŞ",
+        "KOZAKLI",
+        "ÜRGÜP"
+      ]
+    },
+    {
+      "plateCode": 51,
+      "name": "NİĞDE",
+      "discritCount": 5,
+      "discrits": [
+        "ALTUNHİSAR",
+        "BOR",
+        "ÇAMARDI",
+        "ÇİFTLİK",
+        "ULUKIŞLA"
+      ]
+    },
+    {
+      "plateCode": 52,
+      "name": "ORDU",
+      "discritCount": 19,
+      "discrits": [
+        "AKKUŞ",
+        "ALTINORDU",
+        "AYBASTI",
+        "ÇAMAŞ",
+        "ÇATALPINAR",
+        "ÇAYBAŞI",
+        "FATSA",
+        "GÖLKÖY",
+        "GÜLYALI",
+        "GÜRGENTEPE",
+        "İKİZCE",
+        "KABADÜZ",
+        "KABATAŞ",
+        "KORGAN",
+        "KUMRU",
+        "MESUDİYE",
+        "PERŞEMBE",
+        "ULUBEY",
+        "ÜNYE"
+      ]
+    },
+    {
+      "plateCode": 53,
+      "name": "RİZE",
+      "discritCount": 11,
+      "discrits": [
+        "ARDEŞEN",
+        "ÇAMLIHEMŞİN",
+        "ÇAYELİ",
+        "DEREPAZARI",
+        "FINDIKLI",
+        "GÜNEYSU",
+        "HEMŞİN",
+        "İKİZDERE",
+        "İYİDERE",
+        "KALKANDERE",
+        "PAZAR"
+      ]
+    },
+    {
+      "plateCode": 54,
+      "name": "SAKARYA",
+      "discritCount": 16,
+      "discrits": [
+        "ADAPAZARI",
+        "AKYAZI",
+        "ARİFİYE",
+        "ERENLER",
+        "FERİZLİ",
+        "GEYVE",
+        "HENDEK",
+        "KARAPÜRÇEK",
+        "KARASU",
+        "KAYNARCA",
+        "KOCAALİ",
+        "PAMUKOVA",
+        "SAPANCA",
+        "SERDİVAN",
+        "SÖĞÜTLÜ",
+        "TARAKLI"
+      ]
+    },
+    {
+      "plateCode": 55,
+      "name": "SAMSUN",
+      "discritCount": 17,
+      "discrits": [
+        "19 MAYIS",
+        "ALAÇAM",
+        "ASARCIK",
+        "ATAKUM",
+        "AYVACIK",
+        "BAFRA",
+        "CANİK",
+        "ÇARŞAMBA",
+        "HAVZA",
+        "İLKADIM",
+        "KAVAK",
+        "LADİK",
+        "SALIPAZARI",
+        "TEKKEKÖY",
+        "TERME",
+        "VEZİRKÖPRÜ",
+        "YAKAKENT"
+      ]
+    },
+    {
+      "plateCode": 56,
+      "name": "SİİRT",
+      "discritCount": 6,
+      "discrits": [
+        "BAYKAN",
+        "ERUH",
+        "KURTALAN",
+        "PERVARİ",
+        "ŞİRVAN",
+        "TİLLO"
+      ]
+    },
+    {
+      "plateCode": 57,
+      "name": "SİNOP",
+      "discritCount": 8,
+      "discrits": [
+        "AYANCIK",
+        "BOYABAT",
+        "DİKMEN",
+        "DURAĞAN",
+        "ERFELEK",
+        "GERZE",
+        "SARAYDÜZÜ",
+        "TÜRKELİ"
+      ]
+    },
+    {
+      "plateCode": 58,
+      "name": "SİVAS",
+      "discritCount": 16,
+      "discrits": [
+        "AKINCILAR",
+        "ALTINYAYLA",
+        "DİVRİĞİ",
+        "DOĞANŞAR",
+        "GEMEREK",
+        "GÖLOVA",
+        "GÜRÜN",
+        "HAFİK",
+        "İMRANLI",
+        "KANGAL",
+        "KOYULHİSAR",
+        "SUŞEHRİ",
+        "ŞARKIŞLA",
+        "ULAŞ",
+        "YILDIZELİ",
+        "ZARA"
+      ]
+    },
+    {
+      "plateCode": 59,
+      "name": "TEKİRDAĞ",
+      "discritCount": 11,
+      "discrits": [
+        "ÇERKEZKÖY",
+        "ÇORLU",
+        "ERGENE",
+        "HAYRABOLU",
+        "KAPAKLI",
+        "MALKARA",
+        "MARMARAEREĞLİSİ",
+        "MURATLI",
+        "SARAY",
+        "SÜLEYMANPAŞA",
+        "ŞARKÖY"
+      ]
+    },
+    {
+      "plateCode": 60,
+      "name": "TOKAT",
+      "discritCount": 11,
+      "discrits": [
+        "ALMUS",
+        "ARTOVA",
+        "BAŞÇİFTLİK",
+        "ERBAA",
+        "NİKSAR",
+        "PAZAR",
+        "REŞADİYE",
+        "SULUSARAY",
+        "TURHAL",
+        "YEŞİLYURT",
+        "ZİLE"
+      ]
+    },
+    {
+      "plateCode": 61,
+      "name": "TRABZON",
+      "discritCount": 18,
+      "discrits": [
+        "AKÇAABAT",
+        "ARAKLI",
+        "ARSİN",
+        "BEŞİKDÜZÜ",
+        "ÇARŞIBAŞI",
+        "ÇAYKARA",
+        "DERNEKPAZARI",
+        "DÜZKÖY",
+        "HAYRAT",
+        "KÖPRÜBAŞI",
+        "MAÇKA",
+        "OF",
+        "ORTAHİSAR",
+        "SÜRMENE",
+        "ŞALPAZARI",
+        "TONYA",
+        "VAKFIKEBİR",
+        "YOMRA"
+      ]
+    },
+    {
+      "plateCode": 62,
+      "name": "TUNCELİ",
+      "discritCount": 7,
+      "discrits": [
+        "ÇEMİŞGEZEK",
+        "HOZAT",
+        "MAZGİRT",
+        "NAZIMİYE",
+        "OVACIK",
+        "PERTEK",
+        "PÜLÜMÜR"
+      ]
+    },
+    {
+      "plateCode": 63,
+      "name": "ŞANLIURFA",
+      "discritCount": 13,
+      "discrits": [
+        "AKÇAKALE",
+        "BİRECİK",
+        "BOZOVA",
+        "CEYLANPINAR",
+        "EYYÜBİYE",
+        "HALFETİ",
+        "HALİLİYE",
+        "HARRAN",
+        "HİLVAN",
+        "KARAKÖPRÜ",
+        "SİVEREK",
+        "SURUÇ",
+        "VİRANŞEHİR"
+      ]
+    },
+    {
+      "plateCode": 64,
+      "name": "UŞAK",
+      "discritCount": 5,
+      "discrits": [
+        "BANAZ",
+        "EŞME",
+        "KARAHALLI",
+        "SİVASLI",
+        "ULUBEY"
+      ]
+    },
+    {
+      "plateCode": 65,
+      "name": "VAN",
+      "discritCount": 13,
+      "discrits": [
+        "BAHÇESARAY",
+        "BAŞKALE",
+        "ÇALDIRAN",
+        "ÇATAK",
+        "EDREMİT",
+        "ERCİŞ",
+        "GEVAŞ",
+        "GÜRPINAR",
+        "İPEKYOLU",
+        "MURADİYE",
+        "ÖZALP",
+        "SARAY",
+        "TUŞBA"
+      ]
+    },
+    {
+      "plateCode": 66,
+      "name": "YOZGAT",
+      "discritCount": 13,
+      "discrits": [
+        "AKDAĞMADENİ",
+        "AYDINCIK",
+        "BOĞAZLIYAN",
+        "ÇANDIR",
+        "ÇAYIRALAN",
+        "ÇEKEREK",
+        "KADIŞEHRİ",
+        "SARAYKENT",
+        "SARIKAYA",
+        "SORGUN",
+        "ŞEFAATLİ",
+        "YENİFAKILI",
+        "YERKÖY"
+      ]
+    },
+    {
+      "plateCode": 67,
+      "name": "ZONGULDAK",
+      "discritCount": 7,
+      "discrits": [
+        "ALAPLI",
+        "ÇAYCUMA",
+        "DEVREK",
+        "EREĞLİ",
+        "GÖKÇEBEY",
+        "KİLİMLİ",
+        "KOZLU"
+      ]
+    },
+    {
+      "plateCode": 68,
+      "name": "AKSARAY",
+      "discritCount": 7,
+      "discrits": [
+        "AĞAÇÖREN",
+        "ESKİL",
+        "GÜLAĞAÇ",
+        "GÜZELYURT",
+        "ORTAKÖY",
+        "SARIYAHŞİ",
+        "SULTANHANI"
+      ]
+    },
+    {
+      "plateCode": 69,
+      "name": "BAYBURT",
+      "discritCount": 2,
+      "discrits": [
+        "AYDINTEPE",
+        "DEMİRÖZÜ"
+      ]
+    },
+    {
+      "plateCode": 70,
+      "name": "KARAMAN",
+      "discritCount": 5,
+      "discrits": [
+        "AYRANCI",
+        "BAŞYAYLA",
+        "ERMENEK",
+        "KAZIMKARABEKİR",
+        "SARIVELİLER"
+      ]
+    },
+    {
+      "plateCode": 71,
+      "name": "KIRIKKALE",
+      "discritCount": 8,
+      "discrits": [
+        "BAHŞILI",
+        "BALIŞEYH",
+        "ÇELEBİ",
+        "DELİCE",
+        "KARAKEÇİLİ",
+        "KESKİN",
+        "SULAKYURT",
+        "YAHŞİHAN"
+      ]
+    },
+    {
+      "plateCode": 72,
+      "name": "BATMAN",
+      "discritCount": 5,
+      "discrits": [
+        "BEŞİRİ",
+        "GERCÜŞ",
+        "HASANKEYF",
+        "KOZLUK",
+        "SASON"
+      ]
+    },
+    {
+      "plateCode": 73,
+      "name": "ŞIRNAK",
+      "discritCount": 6,
+      "discrits": [
+        "BEYTÜŞŞEBAP",
+        "CİZRE",
+        "GÜÇLÜKONAK",
+        "İDİL",
+        "SİLOPİ",
+        "ULUDERE"
+      ]
+    },
+    {
+      "plateCode": 74,
+      "name": "BARTIN",
+      "discritCount": 3,
+      "discrits": [
+        "AMASRA",
+        "KURUCAŞİLE",
+        "ULUS"
+      ]
+    },
+    {
+      "plateCode": 75,
+      "name": "ARDAHAN",
+      "discritCount": 5,
+      "discrits": [
+        "ÇILDIR",
+        "DAMAL",
+        "GÖLE",
+        "HANAK",
+        "POSOF"
+      ]
+    },
+    {
+      "plateCode": 76,
+      "name": "IĞDIR",
+      "discritCount": 3,
+      "discrits": [
+        "ARALIK",
+        "KARAKOYUNLU",
+        "TUZLUCA"
+      ]
+    },
+    {
+      "plateCode": 77,
+      "name": "YALOVA",
+      "discritCount": 5,
+      "discrits": [
+        "ALTINOVA",
+        "ARMUTLU",
+        "ÇINARCIK",
+        "ÇİFTLİKKÖY",
+        "TERMAL"
+      ]
+    },
+    {
+      "plateCode": 78,
+      "name": "KARABÜK",
+      "discritCount": 6,
+      "discrits": [
+        "EFLANİ",
+        "ESKİPAZAR",
+        "OVACIK",
+        "SAFRANBOLU",
+        "YENİCE"
+      ]
+    },
+    {
+      "plateCode": 79,
+      "name": "KİLİS",
+      "discritCount": 3,
+      "discrits": [
+        "ELBEYLİ",
+        "MUSABEYLİ",
+        "POLATELİ"
+      ]
+    },
+    {
+      "plateCode": 80,
+      "name": "OSMANİYE",
+      "discritCount": 6,
+      "discrits": [
+        "BAHÇE",
+        "DÜZİÇİ",
+        "HASANBEYLİ",
+        "KADİRLİ",
+        "SUMBAS",
+        "TOPRAKKALE"
+      ]
+    },
+    {
+      "plateCode": 81,
+      "name": "DÜZCE",
+      "discritCount": 7,
+      "discrits": [
+        "AKÇAKOCA",
+        "CUMAYERİ",
+        "ÇİLİMLİ",
+        "GÖLYAKA",
+        "GÜMÜŞOVA",
+        "KAYNAŞLI",
+        "YIĞILCA"
+      ]
+    }
+  ]
+}

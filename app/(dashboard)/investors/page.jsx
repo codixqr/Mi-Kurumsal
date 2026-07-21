@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { useAuth } from '@/lib/AuthContext';
+import citiesData from '@/lib/tr-cities-districts.json';
 
 const formatNumberString = (val) => {
   if (val === null || val === undefined || val === '') return '';
@@ -748,12 +749,21 @@ export default function InvestorsPage() {
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label>Şehir *</label>
-                <input required list="inv-city-form" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-                <datalist id="inv-city-form">{CITIES.map((c) => <option key={c} value={c} />)}</datalist>
+                <select required value={form.city ? form.city.toUpperCase() : ''} onChange={(e) => setForm({ ...form, city: e.target.value, district: '' })}>
+                  <option value="">Seçin</option>
+                  {citiesData.city.map((c) => (
+                    <option key={c.name} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label>İlçe</label>
-                <input value={form.district} onChange={(e) => setForm({ ...form, district: e.target.value })} />
+                <select value={form.district ? form.district.toUpperCase() : ''} onChange={(e) => setForm({ ...form, district: e.target.value })} disabled={!form.city}>
+                  <option value="">{form.city ? 'Seçin' : 'Önce il seçin'}</option>
+                  {citiesData.city.find((c) => c.name.toLowerCase() === (form.city || '').toLowerCase())?.discrits.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
               </div>
               <div className="field field-wide" style={{ margin: 0, gridColumn: 'span 2' }}>
                 <label>Hedef şehirler</label>
