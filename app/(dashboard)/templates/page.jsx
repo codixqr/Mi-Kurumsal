@@ -139,7 +139,7 @@ export default function TemplatesPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: bulkMode ? '320px 1fr' : '280px 1fr', gap: 16, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: bulkMode ? 'minmax(280px, 320px) 1fr' : 'minmax(240px, 280px) 1fr', gap: 16, alignItems: 'start' }} className="templates-layout">
 
         {/* ── Sol: Şablon Listesi ── */}
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, overflow: 'hidden' }}>

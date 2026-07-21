@@ -97,7 +97,7 @@ export default function ReportsPage() {
           {/* ── Pipeline Dönüşüm Görseli ── */}
           <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 24, marginTop: 20 }}>
             <h3 style={{ margin: '0 0 16px', fontSize: '1rem', color: '#1e293b' }}>Pipeline Dönüşüm Analizi</h3>
-            <div style={{ display: 'flex', gap: 0, alignItems: 'stretch' }}>
+            <div style={{ display: 'flex', gap: 0, alignItems: 'stretch', flexWrap: 'wrap' }}>
               {[
                 { label: 'Toplam Yatırımcı', value: report?.leads ?? 0, bg: '#f1f5f9', color: '#475569' },
                 { label: 'Aktif Süreç', value: Math.max(0, (report?.leads ?? 0) - (report?.wins ?? 0)), bg: '#dbeafe', color: '#1d4ed8' },

@@ -754,7 +754,7 @@ export default function PnlPage() {
           </div>
 
           {financeKpis && (
-            <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(5, 1fr)', marginBottom: 20 }}>
+            <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', marginBottom: 20 }}>
               <div className="kpi-card">
                 <div className="kpi-value">{Number(financeKpis.totalIncome || 0).toLocaleString('tr-TR')} ₺</div>
                 <div className="kpi-label">Toplam Gelir</div>
@@ -837,7 +837,7 @@ export default function PnlPage() {
           {summary && (
             <div style={{ marginTop: 24, padding: 20, background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
               <h4 style={{ margin: '0 0 12px', color: '#1e293b' }}>CRM Geliri vs Operasyonel Gelir Karşılaştırması</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
                 <div style={{ textAlign: 'center', padding: 16, background: 'white', borderRadius: 8, border: '1px solid #e2e8f0' }}>
                   <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#2563eb' }}>
                     {Number(financeRecords.reduce((s, r) => s + Number(r.netAmount || r.net_amount || r.amount || 0), 0)).toLocaleString('tr-TR')} ₺

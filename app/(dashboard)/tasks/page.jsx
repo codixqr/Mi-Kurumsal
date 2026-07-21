@@ -196,7 +196,7 @@ export default function TasksPage() {
 
       {/* KPI Cards */}
       {kpis && (
-        <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 16 }}>
+        <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', marginBottom: 16 }}>
           <div className="kpi-card">
             <div className="kpi-value">{kpis.total}</div>
             <div className="kpi-label">Toplam Görev</div>
@@ -385,7 +385,7 @@ export default function TasksPage() {
 
       {/* BOARD VIEW */}
       {view === 'board' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
           {boardCols.map(col => {
             const colItems = items.filter(t => t.status === col.key);
             return (

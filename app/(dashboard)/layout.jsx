@@ -103,7 +103,7 @@ export default function DashboardLayout({ children }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button className="menu-toggle-btn" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Menüyü Aç">☰</button>
             <div>
-              <h1 style={{ margin: 0 }}>Mi Core Yönetim Paneli</h1>
+              <h1 style={{ margin: 0, fontSize: 'clamp(1rem, 3vw, 1.5rem)' }}>Mi Core Yönetim Paneli</h1>
               <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
                 {activeMenu?.name || 'Genel Bakış'}
               </p>
@@ -116,6 +116,7 @@ export default function DashboardLayout({ children }) {
         </header>
         {children}
       </main>
+
     </div>
   );
 }

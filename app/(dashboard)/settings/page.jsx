@@ -161,7 +161,7 @@ export default function SettingsPage() {
         <h2>Ayarlar (Yönetici)</h2>
       </div>
 
-      <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', marginBottom: '20px', flexWrap: 'wrap', gap: '4px' }}>
         {SETTINGS_TABS.map(t => (
           <button key={t.id} style={tabStyle(t.id)} onClick={() => setActiveTab(t.id)}>{t.label}</button>
         ))}
