@@ -3,11 +3,12 @@
 import { useAuth } from '@/lib/AuthContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function DashboardLayout({ children }) {
   const { user, logout, loading } = useAuth();
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const menuItems = [
     { name: 'Panel', path: '/', id: 'dashboard' },
@@ -35,6 +36,11 @@ export default function DashboardLayout({ children }) {
     }
   }, [user, pathname]);
 
+  // Close sidebar on path change
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
   if (loading) return <div className="loading-screen">Yükleniyor...</div>;
   if (!user) return null;
 
@@ -50,24 +56,29 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="app">
-      <aside className="sidebar">
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+      
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-logo-area">
-          <div className="sidebar-logo-img-wrap">
-            <img
-              src="/logo/micore_logo.png"
-              alt="Mi Core"
-              className="sidebar-logo-img"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                const fb = e.target.parentElement;
-                fb.innerHTML = '<span class="sidebar-logo-fallback">Mi</span>';
-              }}
-            />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
+            <div className="sidebar-logo-img-wrap">
+              <img
+                src="/logo/micore_logo.png"
+                alt="Mi Core"
+                className="sidebar-logo-img"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  const fb = e.target.parentElement;
+                  fb.innerHTML = '<span class="sidebar-logo-fallback">Mi</span>';
+                }}
+              />
+            </div>
+            <div className="sidebar-logo-text">
+              <span className="sidebar-logo-name">Mi Core</span>
+              <span className="sidebar-logo-sub">CRM Yönetim Sistemi</span>
+            </div>
           </div>
-          <div className="sidebar-logo-text">
-            <span className="sidebar-logo-name">Mi Core</span>
-            <span className="sidebar-logo-sub">CRM Yönetim Sistemi</span>
-          </div>
+          <button className="sidebar-close-btn" onClick={() => setSidebarOpen(false)} aria-label="Menüyü Kapat">✕</button>
         </div>
         <nav className="menu">
           {filteredMenuItems.map((item) => {
@@ -89,11 +100,14 @@ export default function DashboardLayout({ children }) {
 
       <main className="content">
         <header className="header">
-          <div>
-            <h1>Mi Core Yönetim Paneli</h1>
-            <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
-              {activeMenu?.name || 'Genel Bakış'}
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button className="menu-toggle-btn" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Menüyü Aç">☰</button>
+            <div>
+              <h1 style={{ margin: 0 }}>Mi Core Yönetim Paneli</h1>
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.85rem' }}>
+                {activeMenu?.name || 'Genel Bakış'}
+              </p>
+            </div>
           </div>
           <div className="header-actions">
             <button type="button" className="primary-btn" onClick={() => window.location.href='/investors'}>+ Yeni Lead</button>

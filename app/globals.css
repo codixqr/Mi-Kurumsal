@@ -716,21 +716,87 @@ tbody td {
   margin-top: 4px;
 }
 
+/* Sidebar toggle and close buttons default styles */
+.menu-toggle-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--primary-dark);
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.menu-toggle-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-close-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.sidebar-close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
 @media (max-width: 1180px) {
   .app {
     grid-template-columns: 1fr;
+    position: relative;
+  }
+
+  .menu-toggle-btn {
+    display: block;
+  }
+
+  .sidebar-close-btn {
+    display: block;
   }
 
   .sidebar {
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 5;
+    left: -260px;
+    width: 250px;
+    height: 100vh;
+    z-index: 999;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 998;
   }
 
   .menu {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .stats-grid,
@@ -745,6 +811,7 @@ tbody td {
 
   .header-actions {
     width: 100%;
+    margin-top: 10px;
   }
 
   .matching-form {
