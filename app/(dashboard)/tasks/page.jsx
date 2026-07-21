@@ -60,7 +60,7 @@ export default function TasksPage() {
         apiClient.get('/projects?pageSize=200').catch(() => ({ items: [] })),
         apiClient.get('/locations?pageSize=200').catch(() => ({ items: [] })),
         apiClient.get('/contracts?pageSize=200').catch(() => ({ items: [] })),
-        apiClient.get('/team').catch(() => []),
+        apiClient.get('/team-members/options').catch(() => []),
       ]);
       setInvestors(Array.isArray(i) ? i : i.items || []);
       setBrands(Array.isArray(b) ? b : b.items || []);
