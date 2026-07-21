@@ -1500,10 +1500,17 @@ app.post("/api/auth/login", async (req, res) => {
     return res.status(401).json({ message: "Şifre hatalı." });
   }
 
-  const tmRes = await pool.query("SELECT permissions FROM team_members WHERE user_id = $1", [user.id]);
-  const permissions = user.role === "admin"
-    ? ["investors", "brands", "locations", "projects", "contracts", "tasks", "reports", "templates", "matching", "pnl", "timeline"]
-    : (tmRes.rows[0]?.permissions || []);
+  let permissions = [];
+  if (user.role === "admin") {
+    permissions = ["investors", "brands", "locations", "projects", "contracts", "tasks", "reports", "templates", "matching", "pnl", "timeline"];
+  } else {
+    try {
+      const tmRes = await pool.query("SELECT permissions FROM team_members WHERE user_id = $1", [user.id]);
+      permissions = tmRes.rows[0]?.permissions || [];
+    } catch (err) {
+      console.error("Failed to fetch team member permissions:", err.message);
+    }
+  }
 
   const token = signToken(user, permissions);
   await logActivity({
@@ -1519,23 +1526,27 @@ app.post("/api/auth/login", async (req, res) => {
 });
 
 app.get("/api/auth/me", authMiddleware, async (req, res) => {
-  const result = await pool.query(
-    `SELECT u.id, u.name, u.email, u.role, tm.permissions 
-     FROM users u
-     LEFT JOIN team_members tm ON tm.user_id = u.id
-     WHERE u.id = $1`,
-    [req.user.id]
-  );
-  if (result.rowCount === 0) {
-    return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+  try {
+    const result = await pool.query("SELECT id,name,email,role FROM users WHERE id = $1", [req.user.id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+    }
+    const user = result.rows[0];
+    if (user.role === "admin") {
+      user.permissions = ["investors", "brands", "locations", "projects", "contracts", "tasks", "reports", "templates", "matching", "pnl", "timeline"];
+    } else {
+      try {
+        const tmRes = await pool.query("SELECT permissions FROM team_members WHERE user_id = $1", [user.id]);
+        user.permissions = tmRes.rows[0]?.permissions || [];
+      } catch (err) {
+        console.error("Failed to fetch team member permissions for me:", err.message);
+        user.permissions = [];
+      }
+    }
+    return res.json(user);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
-  const user = result.rows[0];
-  if (user.role === "admin") {
-    user.permissions = ["investors", "brands", "locations", "projects", "contracts", "tasks", "reports", "templates", "matching", "pnl", "timeline"];
-  } else {
-    user.permissions = user.permissions || [];
-  }
-  return res.json(user);
 });
 
 app.post("/api/uploads", authMiddleware, upload.single("file"), async (req, res) => {

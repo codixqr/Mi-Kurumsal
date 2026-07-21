@@ -21,16 +21,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLogin = async () => {
-    try {
-      // Varsayılan admin bilgileriyle hızlı giriş
-      await login('admin@mikurumsal.com', 'Admin123*');
-      router.push('/');
-    } catch (err) {
-      setError('Hızlı giriş başarısız. Lütfen veritabanının çalıştığından emin olun.');
-    }
-  };
-
   return (
     <div className="login-container" style={{
       display: 'flex', justifyContent: 'center', alignItems: 'center', 
@@ -68,19 +58,6 @@ export default function LoginPage() {
           </div>
           <button type="submit" className="primary-btn" style={{ width: '100%', marginTop: '20px', padding: '12px' }}>Giriş Yap</button>
         </form>
-
-        <div style={{ marginTop: '20px', textAlign: 'center' }}>
-          <div style={{ borderTop: '1px solid #ddd', paddingTop: '20px' }}>
-            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '10px' }}>Geliştirici Modu (Hızlı Erişim)</p>
-            <button 
-              onClick={handleQuickLogin} 
-              className="secondary-btn" 
-              style={{ width: '100%', padding: '10px', backgroundColor: '#e2e8f0', border: '1px solid #cbd5e0' }}
-            >
-              🚀 Admin Olarak Hızlı Giriş
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
