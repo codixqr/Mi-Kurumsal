@@ -3658,18 +3658,37 @@ app.get("/api/tasks/kpis", authMiddleware, async (req, res) => {
   try {
     const today = new Date().toISOString().split("T")[0];
     const weekEnd = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+    
+    let cond = "WHERE deleted_at IS NULL";
+    const params = [];
+    if (req.user.role !== "admin" && req.user.role !== "manager") {
+      const member = await pool.query("SELECT id FROM team_members WHERE user_id=$1 LIMIT 1", [req.user.id]);
+      if (member.rowCount > 0) {
+        cond += " AND assignee_id = $1";
+        params.push(member.rows[0].id);
+      }
+    }
+
+    const runCount = async (whereExtra = "", extraParams = []) => {
+      const sql = `SELECT COUNT(*)::int AS c FROM tasks ${cond} ${whereExtra}`;
+      // Combined params: params (contains assignee_id if regular user) + extraParams (contains dates if any)
+      const r = await pool.query(sql, [...params, ...extraParams]);
+      return r.rows[0].c;
+    };
+
+    const pIdx = params.length; // 0 or 1
     const [total, open, inProgress, done, overdue, thisWeek, critical] = await Promise.all([
-      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE deleted_at IS NULL"),
-      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE status='Açık' AND deleted_at IS NULL"),
-      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE status='Devam Ediyor' AND deleted_at IS NULL"),
-      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE status='Tamamlandı' AND deleted_at IS NULL"),
-      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE status != 'Tamamlandı' AND due_date < $1 AND deleted_at IS NULL", [today]),
-      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE status != 'Tamamlandı' AND due_date BETWEEN $1 AND $2 AND deleted_at IS NULL", [today, weekEnd]),
-      pool.query("SELECT COUNT(*)::int AS c FROM tasks WHERE priority IN ('Yüksek','Çok Yüksek') AND status != 'Tamamlandı' AND deleted_at IS NULL"),
+      runCount(),
+      runCount("AND status='Açık'"),
+      runCount("AND status='Devam Ediyor'"),
+      runCount("AND status='Tamamlandı'"),
+      runCount(`AND status != 'Tamamlandı' AND due_date < $${pIdx + 1}`, [today]),
+      runCount(`AND status != 'Tamamlandı' AND due_date BETWEEN $${pIdx + 1} AND $${pIdx + 2}`, [today, weekEnd]),
+      runCount("AND priority IN ('Yüksek','Çok Yüksek') AND status != 'Tamamlandı'"),
     ]);
+
     res.json({
-      total: total.rows[0].c, open: open.rows[0].c, inProgress: inProgress.rows[0].c,
-      done: done.rows[0].c, overdue: overdue.rows[0].c, thisWeek: thisWeek.rows[0].c, critical: critical.rows[0].c,
+      total, open, inProgress, done, overdue, thisWeek, critical
     });
   } catch (err) { next(err); }
 });
