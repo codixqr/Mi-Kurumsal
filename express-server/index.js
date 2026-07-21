@@ -3645,7 +3645,7 @@ const TASK_BASE_SELECT = `
     b.name AS brand_name,
     p.name AS project_name,
     l.name AS location_name,
-    c.name AS contract_name
+    c.note AS contract_name
   FROM tasks t
   LEFT JOIN investors i ON i.id = t.investor_id
   LEFT JOIN brands b ON b.id = t.brand_id
