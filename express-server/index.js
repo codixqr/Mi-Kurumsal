@@ -1967,22 +1967,43 @@ async function computeInvestorKpis() {
 }
 
 async function investorReminders() {
-  const today = new Date().toISOString().split("T")[0];
-  const staleDate = new Date(Date.now() - 7 * 86400000).toISOString();
-  const follow = await pool.query(
-    `SELECT id,name,follow_up_date,priority FROM investors
-     WHERE follow_up_date IS NOT NULL AND follow_up_date <= $1::date
-     ORDER BY follow_up_date ASC LIMIT 50`,
-    [today],
-  );
-  const stale = await pool.query(
-    `SELECT id,name,priority,last_activity_at,created_at FROM investors
-     WHERE priority IN ('Yüksek','Çok sıcak')
-     AND COALESCE(last_activity_at, created_at) < $1::timestamptz
-     ORDER BY COALESCE(last_activity_at, created_at) ASC LIMIT 50`,
-    [staleDate],
-  );
-  return { followUpDue: follow.rows, staleHot: stale.rows };
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const staleDate = new Date(Date.now() - 7 * 86400000).toISOString();
+    
+    let followUpDue = [];
+    try {
+      const follow = await pool.query(
+        `SELECT id,name,follow_up_date,priority FROM investors
+         WHERE follow_up_date IS NOT NULL AND follow_up_date <= $1::date
+         ORDER BY follow_up_date ASC LIMIT 50`,
+        [today],
+      );
+      followUpDue = follow.rows;
+    } catch (err) {
+      console.error("investorReminders followUp query failed:", err.message);
+    }
+
+    let staleHot = [];
+    try {
+      // Safely query created_at as fallback since last_activity_at column might not exist
+      const stale = await pool.query(
+        `SELECT id,name,priority,created_at FROM investors
+         WHERE priority IN ('Yüksek','Çok sıcak')
+         AND created_at < $1::timestamptz
+         ORDER BY created_at ASC LIMIT 50`,
+        [staleDate],
+      );
+      staleHot = stale.rows;
+    } catch (err) {
+      console.error("investorReminders stale query failed:", err.message);
+    }
+
+    return { followUpDue, staleHot };
+  } catch (err) {
+    console.error("investorReminders failed:", err.message);
+    return { followUpDue: [], staleHot: [] };
+  }
 }
 
 function brandOnboardingFromBody(b) {
@@ -4440,26 +4461,37 @@ app.get("/api/reports/summary", authMiddleware, async (req, res) => {
 
 app.get("/api/dashboard/stats", authMiddleware, async (req, res, next) => {
   try {
+    const runQuery = async (sql) => {
+      try {
+        const qr = await pool.query(sql);
+        return qr.rows[0]?.value || 0;
+      } catch (e) {
+        console.error("Dashboard stats query failed:", sql, e.message);
+        return 0;
+      }
+    };
+
     const [leadCount, winCount, projectCount, financeCount, taskCount, brandCount, locCount, finRevCount] = await Promise.all([
-      pool.query(`SELECT COUNT(*)::int AS value FROM investors WHERE deleted_at IS NULL`),
-      pool.query(`SELECT COUNT(*)::int AS value FROM investors WHERE deleted_at IS NULL AND pipeline_stage ILIKE '%Kapandı%'`),
-      pool.query(`SELECT COUNT(*)::int AS value FROM projects WHERE deleted_at IS NULL`),
-      pool.query(`SELECT COUNT(*)::int AS value FROM contracts WHERE deleted_at IS NULL AND status='Aktif'`),
-      pool.query(`SELECT COUNT(*)::int AS value FROM tasks WHERE deleted_at IS NULL AND status != 'Tamamlandı'`),
-      pool.query(`SELECT COUNT(*)::int AS value FROM brands WHERE deleted_at IS NULL`),
-      pool.query(`SELECT COUNT(*)::int AS value FROM locations WHERE deleted_at IS NULL`),
-      pool.query(`SELECT COALESCE(SUM(amount::numeric),0)::numeric AS value FROM finance_records WHERE status='Tahsil Edildi'`),
+      runQuery(`SELECT COUNT(*)::int AS value FROM investors WHERE deleted_at IS NULL`),
+      runQuery(`SELECT COUNT(*)::int AS value FROM investors WHERE deleted_at IS NULL AND pipeline_stage ILIKE '%Kapandı%'`),
+      runQuery(`SELECT COUNT(*)::int AS value FROM projects WHERE deleted_at IS NULL`),
+      runQuery(`SELECT COUNT(*)::int AS value FROM contracts WHERE deleted_at IS NULL AND status='Aktif'`),
+      runQuery(`SELECT COUNT(*)::int AS value FROM tasks WHERE deleted_at IS NULL AND status != 'Tamamlandı'`),
+      runQuery(`SELECT COUNT(*)::int AS value FROM brands WHERE deleted_at IS NULL`),
+      runQuery(`SELECT COUNT(*)::int AS value FROM locations WHERE deleted_at IS NULL`),
+      runQuery(`SELECT COALESCE(SUM(amount::numeric),0)::numeric AS value FROM finance_records WHERE status='Tahsil Edildi'`),
     ]);
+
     const invRem = await investorReminders().catch(() => ({ followUpDue: [], staleHot: [] }));
     res.json({
-      activeInvestors: leadCount.rows[0].value,
-      activeProjects: projectCount.rows[0].value,
-      openTasks: taskCount.rows[0].value,
-      strongMatches: winCount.rows[0].value,
-      financeCount: financeCount.rows[0].value,
-      totalBrands: brandCount.rows[0].value,
-      totalLocations: locCount.rows[0].value,
-      totalRevenue: Number(finRevCount.rows[0].value || 0),
+      activeInvestors: leadCount,
+      activeProjects: projectCount,
+      openTasks: taskCount,
+      strongMatches: winCount,
+      financeCount: financeCount,
+      totalBrands: brandCount,
+      totalLocations: locCount,
+      totalRevenue: Number(finRevCount || 0),
       investorFollowUps: invRem.followUpDue,
       investorStaleHot: invRem.staleHot,
     });
