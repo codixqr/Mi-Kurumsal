@@ -4,6 +4,17 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { useAuth } from '@/lib/AuthContext';
 
+const formatNumberString = (val) => {
+  if (val === null || val === undefined || val === '') return '';
+  const clean = String(val).replace(/\D/g, '');
+  if (!clean) return '';
+  return Number(clean).toLocaleString('tr-TR');
+};
+
+const parseFormattedString = (val) => {
+  return String(val).replace(/\D/g, '');
+};
+
 const CITIES = [
   'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Amasya', 'Ankara', 'Antalya', 'Artvin', 'Aydın', 'Balıkesir', 'Bilecik', 'Bingöl', 'Bitlis', 'Bolu', 'Burdur', 'Bursa', 'Çanakkale', 'Çankırı', 'Çorum', 'Denizli', 'Diyarbakır', 'Edirne', 'Elazığ', 'Erzincan', 'Erzurum', 'Eskişehir', 'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkari', 'Hatay', 'Isparta', 'Mersin', 'İstanbul', 'İzmir', 'Kars', 'Kastamonu', 'Kayseri', 'Kırklareli', 'Kırşehir', 'Kocaeli', 'Konya', 'Kütahya', 'Malatya', 'Manisa', 'Kahramanmaraş', 'Mardin', 'Muğla', 'Muş', 'Nevşehir', 'Niğde', 'Ordu', 'Rize', 'Sakarya', 'Samsun', 'Siirt', 'Sinop', 'Sivas', 'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Şanlıurfa', 'Uşak', 'Van', 'Yozgat', 'Zonguldak', 'Aksaray', 'Bayburt', 'Karaman', 'Kırıkkale', 'Batman', 'Şırnak', 'Bartın', 'Ardahan', 'Iğdır', 'Yalova', 'Karabük', 'Kilis', 'Osmaniye', 'Düzce',
 ];
@@ -767,11 +778,11 @@ export default function InvestorsPage() {
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label>Bütçe min *</label>
-                <input required type="number" min="0" value={form.budgetMin} onChange={(e) => setForm({ ...form, budgetMin: e.target.value })} />
+                <input required type="text" value={formatNumberString(form.budgetMin)} onChange={(e) => setForm({ ...form, budgetMin: parseFormattedString(e.target.value) })} />
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label>Bütçe max *</label>
-                <input required type="number" min="0" value={form.budgetMax} onChange={(e) => setForm({ ...form, budgetMax: e.target.value })} />
+                <input required type="text" value={formatNumberString(form.budgetMax)} onChange={(e) => setForm({ ...form, budgetMax: parseFormattedString(e.target.value) })} />
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label>Para birimi</label>

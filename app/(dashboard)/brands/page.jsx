@@ -3,6 +3,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/apiClient';
 
+const formatNumberString = (val) => {
+  if (val === null || val === undefined || val === '') return '';
+  const clean = String(val).replace(/\D/g, '');
+  if (!clean) return '';
+  return Number(clean).toLocaleString('tr-TR');
+};
+
+const parseFormattedString = (val) => {
+  return String(val).replace(/\D/g, '');
+};
+
 const SECTORS = [
   'Gıda',
   'Kahve',
@@ -711,11 +722,11 @@ export default function BrandsPage() {
             </div>
             <div className="field">
               <label>Toplam yatırım min</label>
-              <input type="number" value={form.minBudget} onChange={(e) => setForm({ ...form, minBudget: e.target.value })} required />
+              <input type="text" value={formatNumberString(form.minBudget)} onChange={(e) => setForm({ ...form, minBudget: parseFormattedString(e.target.value) })} required />
             </div>
             <div className="field">
               <label>Toplam yatırım max</label>
-              <input type="number" value={form.maxBudget} onChange={(e) => setForm({ ...form, maxBudget: e.target.value })} required />
+              <input type="text" value={formatNumberString(form.maxBudget)} onChange={(e) => setForm({ ...form, maxBudget: parseFormattedString(e.target.value) })} required />
             </div>
             <div className="field">
               <label>Para birimi</label>
@@ -727,7 +738,7 @@ export default function BrandsPage() {
             </div>
             <div className="field">
               <label>Franchise giriş bedeli</label>
-              <input type="number" value={form.franchiseFee} onChange={(e) => setForm({ ...form, franchiseFee: e.target.value })} />
+              <input type="text" value={formatNumberString(form.franchiseFee)} onChange={(e) => setForm({ ...form, franchiseFee: parseFormattedString(e.target.value) })} />
             </div>
             <div className="field">
               <label>Royalty %</label>
@@ -739,7 +750,7 @@ export default function BrandsPage() {
             </div>
             <div className="field">
               <label>Ort. aylık ciro</label>
-              <input type="number" value={form.avgMonthlyRevenue} onChange={(e) => setForm({ ...form, avgMonthlyRevenue: e.target.value })} />
+              <input type="text" value={formatNumberString(form.avgMonthlyRevenue)} onChange={(e) => setForm({ ...form, avgMonthlyRevenue: parseFormattedString(e.target.value) })} />
             </div>
             <div className="field">
               <label>Ort. kârlılık %</label>
