@@ -110,7 +110,7 @@ export default function DashboardLayout({ children }) {
             </div>
           </div>
           <div className="header-actions">
-            <button type="button" className="primary-btn" onClick={() => window.location.href='/investors'}>+ Yeni Lead</button>
+            <button type="button" className="primary-btn" onClick={() => window.location.href='/investors?new=true'}>+ Yeni Lead</button>
             <button onClick={logout} className="danger-btn">Çıkış</button>
           </div>
         </header>

@@ -192,6 +192,17 @@ export default function InvestorsPage() {
     fetchList();
   }, [fetchList]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('new') === 'true') {
+      setForm(defaultForm());
+      setFormOpen(true);
+      const url = new URL(window.location);
+      url.searchParams.delete('new');
+      window.history.replaceState({}, '', url);
+    }
+  }, []);
+
   const toggleSort = (col) => {
     if (sort === col) setOrder(order === 'asc' ? 'desc' : 'asc');
     else {

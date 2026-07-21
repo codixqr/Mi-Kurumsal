@@ -421,7 +421,7 @@ export default function TasksPage() {
               <h3>{form.id ? 'Görevi Düzenle' : 'Yeni Görev Oluştur'}</h3>
               <button onClick={() => setShowForm(false)} className="modal-close">X</button>
             </div>
-            <form onSubmit={handleSave}>
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
               <div className="modal-body">
                 <div className="form-grid">
                   <div className="field full-width">
