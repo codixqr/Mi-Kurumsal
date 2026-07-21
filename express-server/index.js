@@ -24,6 +24,41 @@ const pool = new Pool({
     : false,
 });
 
+const https = require("https");
+let robotoRegularBuffer = null;
+let robotoBoldBuffer = null;
+
+function fetchFont(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, (res) => {
+      if (res.statusCode !== 200) {
+        reject(new Error(`Failed to download font: status ${res.statusCode}`));
+        return;
+      }
+      const chunks = [];
+      res.on("data", (chunk) => chunks.push(chunk));
+      res.on("end", () => resolve(Buffer.concat(chunks)));
+      res.on("error", reject);
+    }).on("error", reject);
+  });
+}
+
+async function getRobotoRegular() {
+  if (!robotoRegularBuffer) {
+    console.log("Downloading Roboto-Regular font...");
+    robotoRegularBuffer = await fetchFont("https://raw.githubusercontent.com/google/fonts/main/ofl/roboto/static/Roboto-Regular.ttf");
+  }
+  return robotoRegularBuffer;
+}
+
+async function getRobotoBold() {
+  if (!robotoBoldBuffer) {
+    console.log("Downloading Roboto-Bold font...");
+    robotoBoldBuffer = await fetchFont("https://raw.githubusercontent.com/google/fonts/main/ofl/roboto/static/Roboto-Bold.ttf");
+  }
+  return robotoBoldBuffer;
+}
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "..")));
@@ -1490,7 +1525,7 @@ app.get("/api/uploads/:module", authMiddleware, async (req, res) => {
 app.get("/api/admin/db-status", async (req, res) => {
   try {
     const pg = pool;
-    const tables = ['users', 'investors', 'brands', 'locations', 'projects', 'contracts', 'tasks', 'pnl', 'message_templates', 'activity_logs'];
+    const tables = ['users', 'investors', 'brands', 'locations', 'projects', 'contracts', 'tasks', 'pnl_reports', 'message_templates', 'activity_logs'];
     const status = {};
 
     for (const table of tables) {
@@ -3744,8 +3779,31 @@ app.get("/api/export-pdf/:module", authMiddleware, async (req, res) => {
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader("Content-Disposition", `attachment; filename=mi-crm-${moduleName}.pdf`);
   doc.pipe(res);
+
+  // Dynamic font registration
+  try {
+    const fontReg = await getRobotoRegular();
+    const fontBold = await getRobotoBold();
+    if (fontReg) doc.registerFont("Roboto", fontReg);
+    if (fontBold) doc.registerFont("Roboto-Bold", fontBold);
+  } catch (err) {
+    console.error("PDF font loading failed, using default Helvetica:", err.message);
+  }
+
+  const hasRoboto = doc.font("Roboto-Bold").name === "Roboto-Bold";
+  if (!hasRoboto) {
+    doc.font("Helvetica-Bold");
+  }
+
   doc.fontSize(14).text(`Mi Core CRM - ${moduleName.toUpperCase()} Raporu`, { underline: true });
   doc.moveDown(0.6);
+
+  if (hasRoboto) {
+    doc.font("Roboto");
+  } else {
+    doc.font("Helvetica");
+  }
+
   if (!rows.length) {
     doc.fontSize(11).text("Bu modül için kayıt bulunamadı.");
   } else {
@@ -4738,6 +4796,20 @@ app.get("/api/pnl/customer/:investorId/export-pdf", authMiddleware, async (req, 
     res.setHeader('Content-Disposition', `attachment; filename="musteri-kar-zarar-${investorId}.pdf"`);
     doc.pipe(res);
 
+    // Dynamic font registration
+    try {
+      const fontReg = await getRobotoRegular();
+      const fontBold = await getRobotoBold();
+      if (fontReg) doc.registerFont("Roboto", fontReg);
+      if (fontBold) doc.registerFont("Roboto-Bold", fontBold);
+    } catch (err) {
+      console.error("PDF font loading failed, using default Helvetica:", err.message);
+    }
+
+    const hasRoboto = doc.font("Roboto-Bold").name === "Roboto-Bold";
+    const fontRegular = hasRoboto ? "Roboto" : "Helvetica";
+    const fontBold    = hasRoboto ? "Roboto-Bold" : "Helvetica-Bold";
+
     const BRAND_GREEN  = '#1a5c38';
     const BRAND_LIGHT  = '#f0fdf4';
     const TEXT_DARK    = '#1e293b';
@@ -4750,22 +4822,24 @@ app.get("/api/pnl/customer/:investorId/export-pdf", authMiddleware, async (req, 
       doc.image(logoPath, 45, 38, { height: 42 });
     }
     doc.fontSize(8).fillColor(TEXT_GRAY)
+       .font(fontRegular)
        .text('Mi Kurumsal CRM', 45, 42, { align: 'right', width: pageW });
     doc.fontSize(7).fillColor(TEXT_GRAY)
+       .font(fontRegular)
        .text('www.mikurumsal.com', 45, 53, { align: 'right', width: pageW });
     doc.moveTo(45, 88).lineTo(45 + pageW, 88).lineWidth(1.5).strokeColor(BRAND_GREEN).stroke();
 
     // ── Belge Başlığı ──────────────────────────────────────────────────
     doc.moveDown(0.5);
-    doc.fontSize(18).fillColor(BRAND_GREEN).font('Helvetica-Bold')
+    doc.fontSize(18).fillColor(BRAND_GREEN).font(fontBold)
        .text('MÜŞTERİ KAR / ZARAR RAPORU', 45, 98, { width: pageW });
-    doc.fontSize(10).fillColor(TEXT_GRAY).font('Helvetica')
+    doc.fontSize(10).fillColor(TEXT_GRAY).font(fontRegular)
        .text(`Dönem: ${periodLabel}   |   Oluşturma Tarihi: ${new Date().toLocaleDateString('tr-TR')}`, 45, 120);
 
     // ── Müşteri Bilgileri ──────────────────────────────────────────────
     doc.roundedRect(45, 135, pageW, 54, 6).fill(BRAND_LIGHT);
-    doc.fontSize(9).fillColor(TEXT_DARK).font('Helvetica-Bold').text('MÜŞTERİ BİLGİLERİ', 55, 142);
-    doc.font('Helvetica').fillColor(TEXT_GRAY).fontSize(8.5)
+    doc.fontSize(9).fillColor(TEXT_DARK).font(fontBold).text('MÜŞTERİ BİLGİLERİ', 55, 142);
+    doc.font(fontRegular).fillColor(TEXT_GRAY).fontSize(8.5)
        .text(`Ad Soyad: ${investor.name || '—'}`, 55, 155)
        .text(`Sektör: ${investor.sector || '—'}  |  Şehir: ${investor.city || '—'}`, 55, 167)
        .text(`Tel: ${investor.phone || '—'}  |  E-posta: ${investor.email || '—'}`, 55, 179);
@@ -4782,8 +4856,8 @@ app.get("/api/pnl/customer/:investorId/export-pdf", authMiddleware, async (req, 
     kpis.forEach((k, i) => {
       const x = 45 + i * (kpiBoxW + 9);
       doc.roundedRect(x, kpiY, kpiBoxW, 50, 5).fill('#fff').stroke('#e2e8f0');
-      doc.fontSize(7).fillColor(TEXT_GRAY).font('Helvetica').text(k.label, x + 8, kpiY + 10);
-      doc.fontSize(12).fillColor(k.color).font('Helvetica-Bold').text(k.value, x + 8, kpiY + 24, { width: kpiBoxW - 16 });
+      doc.fontSize(7).fillColor(TEXT_GRAY).font(fontRegular).text(k.label, x + 8, kpiY + 10);
+      doc.fontSize(12).fillColor(k.color).font(fontBold).text(k.value, x + 8, kpiY + 24, { width: kpiBoxW - 16 });
     });
     doc.y = kpiY + 60;
 
@@ -4792,7 +4866,7 @@ app.get("/api/pnl/customer/:investorId/export-pdf", authMiddleware, async (req, 
       const colW = pageW / headers.length;
       doc.roundedRect(45, y0, pageW, 20, 3).fill(BRAND_GREEN);
       headers.forEach((h, i) => {
-        doc.fontSize(8).fillColor('#fff').font('Helvetica-Bold')
+        doc.fontSize(8).fillColor('#fff').font(fontBold)
            .text(h, 45 + i * colW + 6, y0 + 6, { width: colW - 8, align: i === headers.length - 1 ? 'right' : 'left' });
       });
       let rowY = y0 + 20;
@@ -4800,7 +4874,7 @@ app.get("/api/pnl/customer/:investorId/export-pdf", authMiddleware, async (req, 
         const rowH = 18;
         doc.rect(45, rowY, pageW, rowH).fill(ri % 2 === 0 ? '#f8fafc' : '#fff');
         row.forEach((cell, ci) => {
-          doc.fontSize(8).fillColor(TEXT_DARK).font('Helvetica')
+          doc.fontSize(8).fillColor(TEXT_DARK).font(fontRegular)
              .text(String(cell || ''), 45 + ci * colW + 6, rowY + 5, { width: colW - 8, align: ci === row.length - 1 ? 'right' : 'left' });
         });
         rowY += rowH;
@@ -4810,7 +4884,7 @@ app.get("/api/pnl/customer/:investorId/export-pdf", authMiddleware, async (req, 
     };
 
     // ── Gelirler Tablosu ──────────────────────────────────────────────
-    doc.fontSize(11).fillColor(BRAND_GREEN).font('Helvetica-Bold').text('GELİRLER', 45, doc.y + 4);
+    doc.fontSize(11).fillColor(BRAND_GREEN).font(fontBold).text('GELİRLER', 45, doc.y + 4);
     doc.y += 2;
     const revTableData = revenues.map(r => [
       r.entry_date ? new Date(r.entry_date).toLocaleDateString('tr-TR') : '—',
@@ -4821,7 +4895,7 @@ app.get("/api/pnl/customer/:investorId/export-pdf", authMiddleware, async (req, 
     ]);
     const afterRev = drawTable(['Tarih', 'Ay', 'Kategori', 'Açıklama', 'Tutar'], revTableData, doc.y + 2);
     if (revenues.length > 0) {
-      doc.fontSize(8.5).fillColor('#16a34a').font('Helvetica-Bold')
+      doc.fontSize(8.5).fillColor('#16a34a').font(fontBold)
          .text(`Toplam Gelir: ${fmtTL(totalRevenue)}`, 45, afterRev, { align: 'right', width: pageW });
     }
     doc.y = afterRev + 18;
@@ -4830,7 +4904,7 @@ app.get("/api/pnl/customer/:investorId/export-pdf", authMiddleware, async (req, 
     if (doc.y > 680) { doc.addPage(); }
 
     // ── Giderler Tablosu ──────────────────────────────────────────────
-    doc.fontSize(11).fillColor('#dc2626').font('Helvetica-Bold').text('GİDERLER', 45, doc.y + 4);
+    doc.fontSize(11).fillColor('#dc2626').font(fontBold).text('GİDERLER', 45, doc.y + 4);
     doc.y += 2;
     const expTableData = expenses.map(r => [
       r.entry_date ? new Date(r.entry_date).toLocaleDateString('tr-TR') : '—',
@@ -4841,7 +4915,7 @@ app.get("/api/pnl/customer/:investorId/export-pdf", authMiddleware, async (req, 
     ]);
     const afterExp = drawTable(['Tarih', 'Ay', 'Kategori', 'Açıklama', 'Tutar'], expTableData, doc.y + 2);
     if (expenses.length > 0) {
-      doc.fontSize(8.5).fillColor('#dc2626').font('Helvetica-Bold')
+      doc.fontSize(8.5).fillColor('#dc2626').font(fontBold)
          .text(`Toplam Gider: ${fmtTL(totalExpense)}`, 45, afterExp, { align: 'right', width: pageW });
     }
     doc.y = afterExp + 18;
@@ -4852,11 +4926,11 @@ app.get("/api/pnl/customer/:investorId/export-pdf", authMiddleware, async (req, 
     // ── Sonuç Kutusu ──────────────────────────────────────────────────
     const resultY = doc.y + 8;
     doc.roundedRect(45, resultY, pageW, 70, 6).fill(netProfit >= 0 ? '#f0fdf4' : '#fef2f2').stroke(netProfit >= 0 ? '#16a34a' : '#dc2626');
-    doc.fontSize(10).fillColor(TEXT_DARK).font('Helvetica-Bold').text('ÖZET', 60, resultY + 12);
-    doc.fontSize(9).fillColor(TEXT_GRAY).font('Helvetica')
+    doc.fontSize(10).fillColor(TEXT_DARK).font(fontBold).text('ÖZET', 60, resultY + 12);
+    doc.fontSize(9).fillColor(TEXT_GRAY).font(fontRegular)
        .text(`Toplam Gelir: ${fmtTL(totalRevenue)}`, 60, resultY + 28)
        .text(`Toplam Gider: ${fmtTL(totalExpense)}`, 60, resultY + 41);
-    doc.fontSize(11).fillColor(netProfit >= 0 ? '#16a34a' : '#dc2626').font('Helvetica-Bold')
+    doc.fontSize(11).fillColor(netProfit >= 0 ? '#16a34a' : '#dc2626').font(fontBold)
        .text(`Net ${netProfit >= 0 ? 'Kar' : 'Zarar'}: ${fmtTL(Math.abs(netProfit))}  (Marj: %${margin})`, 60, resultY + 55);
 
     // ── Footer ────────────────────────────────────────────────────────
@@ -4868,7 +4942,7 @@ app.get("/api/pnl/customer/:investorId/export-pdf", authMiddleware, async (req, 
       if (fs.existsSync(logoPath)) {
         doc.image(logoPath, 45, footerY + 5, { height: 20 });
       }
-      doc.fontSize(7).fillColor(TEXT_GRAY).font('Helvetica')
+      doc.fontSize(7).fillColor(TEXT_GRAY).font(fontRegular)
          .text('Mi Kurumsal CRM — Danışmanlık & Franchise Yönetim Sistemi', 45, footerY + 8, { width: pageW - 60, align: 'center' })
          .text(`Sayfa ${i + 1} / ${totalPages}`, 45, footerY + 18, { align: 'right', width: pageW });
     }

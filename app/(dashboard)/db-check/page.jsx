@@ -17,7 +17,7 @@ export default function DbCheckPage() {
     projects: ['id', 'name', 'project_type', 'owner_team', 'priority', 'progress', 'stage', 'due_date', 'description', 'checklist', 'assignees', 'created_at', 'deleted_at'],
     contracts: ['id', 'note', 'contract_type', 'status', 'counterparty', 'start_date', 'end_date', 'amount', 'currency', 'created_at', 'deleted_at'],
     tasks: ['id', 'note', 'status', 'created_at', 'deleted_at'],
-    pnl: ['id', 'month_name', 'year_value', 'revenue', 'expense', 'profit', 'note', 'created_at'],
+    pnl_reports: ['id', 'month_name', 'year_value', 'revenue', 'expense', 'profit', 'note', 'created_at'],
     message_templates: ['id', 'channel', 'event_name', 'title', 'body', 'active', 'created_at'],
     activity_logs: ['id', 'user_id', 'user_name', 'module_name', 'action_type', 'summary', 'created_at']
   };

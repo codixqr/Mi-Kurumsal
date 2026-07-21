@@ -23,6 +23,7 @@ export default function DashboardLayout({ children }) {
     { name: 'Raporlar', path: '/reports', id: 'reports' },
     { name: 'Şablonlar', path: '/templates', id: 'templates' },
     { name: 'Akıllı Eşleştirme', path: '/matching', id: 'matching' },
+    { name: 'İşlem Geçmişi', path: '/timeline', id: 'timeline' },
     { name: 'Veri Tabanı', path: '/db-check', id: 'db-check' },
   ];
 
@@ -61,6 +62,7 @@ export default function DashboardLayout({ children }) {
           <Link href="/reports" className={`menu-link ${pathname.startsWith('/reports') ? 'active' : ''}`}>Raporlar</Link>
           <Link href="/templates" className={`menu-link ${pathname.startsWith('/templates') ? 'active' : ''}`}>Şablonlar</Link>
           <Link href="/matching" className={`menu-link ${pathname.startsWith('/matching') ? 'active' : ''}`}>Akıllı Eşleştirme</Link>
+          <Link href="/timeline" className={`menu-link ${pathname.startsWith('/timeline') ? 'active' : ''}`}>İşlem Geçmişi</Link>
           {user.role === 'admin' && <Link href="/settings" className={`menu-link ${pathname.startsWith('/settings') ? 'active' : ''}`}>Ayarlar</Link>}
           {user.role === 'admin' && <Link href="/db-check" className={`menu-link ${pathname.startsWith('/db-check') ? 'active' : ''}`} style={{opacity: 0.5}}>Veri Tabanı</Link>}
         </nav>
