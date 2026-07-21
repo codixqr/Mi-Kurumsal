@@ -1937,33 +1937,42 @@ function investorRowFromBody(body) {
 }
 
 async function computeInvestorKpis() {
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-  const activeStages = ["Yeni Lead", "İlk Temas", "İhtiyaç Analizi", "Marka Eşleşmesi", "Sunum", "Lokasyon Çalışması", "Teklif", "Sözleşme"];
-  const [total, newLeads, active, hot, closedMonth, avgBudget] = await Promise.all([
-    pool.query("SELECT COUNT(*)::int AS c FROM investors"),
-    pool.query("SELECT COUNT(*)::int AS c FROM investors WHERE pipeline_stage = $1", ["Yeni Lead"]),
-    pool.query(`SELECT COUNT(*)::int AS c FROM investors WHERE pipeline_stage = ANY($1::text[])`, [activeStages]),
-    pool.query(`SELECT COUNT(*)::int AS c FROM investors WHERE priority IN ('Yüksek','Çok sıcak')`),
-    pool.query(
-      `SELECT COUNT(*)::int AS c FROM investors WHERE pipeline_stage = 'Kapanış' AND updated_at >= $1::date`,
-      [monthStart],
-    ),
-    pool.query(
-      `SELECT COALESCE(AVG(
-        CASE WHEN budget_max IS NOT NULL AND budget_min IS NOT NULL THEN (budget_min::numeric + budget_max::numeric)/2
-        ELSE budget::numeric END
-      ), 0)::numeric AS a FROM investors`,
-    ),
-  ]);
-  return {
-    total: total.rows[0].c,
-    newLeads: newLeads.rows[0].c,
-    activePipeline: active.rows[0].c,
-    hotInvestors: hot.rows[0].c,
-    closedThisMonth: closedMonth.rows[0].c,
-    avgBudget: Number(avgBudget.rows[0].a || 0),
-  };
+  try {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    const activeStages = ["Yeni Lead", "İlk Temas", "İhtiyaç Analizi", "Marka Eşleşmesi", "Sunum", "Lokasyon Çalışması", "Teklif", "Sözleşme"];
+    
+    const runQuery = async (sql, params = []) => {
+      try {
+        const qr = await pool.query(sql, params);
+        return qr.rows[0]?.c || Number(qr.rows[0]?.a || 0);
+      } catch (e) {
+        console.error("computeInvestorKpis query failed:", sql, e.message);
+        return 0;
+      }
+    };
+
+    const [total, newLeads, active, hot, closedMonth, avgBudget] = await Promise.all([
+      runQuery("SELECT COUNT(*)::int AS c FROM investors WHERE deleted_at IS NULL"),
+      runQuery("SELECT COUNT(*)::int AS c FROM investors WHERE deleted_at IS NULL AND pipeline_stage = $1", ["Yeni Lead"]),
+      runQuery("SELECT COUNT(*)::int AS c FROM investors WHERE deleted_at IS NULL AND pipeline_stage = ANY($1::text[])", [activeStages]),
+      runQuery("SELECT COUNT(*)::int AS c FROM investors WHERE deleted_at IS NULL AND priority IN ('Yüksek','Çok sıcak')"),
+      runQuery("SELECT COUNT(*)::int AS c FROM investors WHERE deleted_at IS NULL AND pipeline_stage = 'Kapanış' AND updated_at >= $1::date", [monthStart]),
+      runQuery("SELECT COALESCE(AVG(budget::numeric), 0)::numeric AS a FROM investors WHERE deleted_at IS NULL"),
+    ]);
+
+    return {
+      total,
+      newLeads,
+      activePipeline: active,
+      hotInvestors: hot,
+      closedThisMonth: closedMonth,
+      avgBudget,
+    };
+  } catch (err) {
+    console.error("computeInvestorKpis failed:", err.message);
+    return { total: 0, newLeads: 0, activePipeline: 0, hotInvestors: 0, closedThisMonth: 0, avgBudget: 0 };
+  }
 }
 
 async function investorReminders() {
@@ -2073,31 +2082,47 @@ function brandWriteValues(body) {
 }
 
 async function computeBrandKpis() {
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
-  const [total, activeAgreed, inDiscussion, passive, avgInv, newMonth] = await Promise.all([
-    pool.query("SELECT COUNT(*)::int AS c FROM brands"),
-    pool.query(
-      "SELECT COUNT(*)::int AS c FROM brands WHERE active = true AND COALESCE(agreement_status,'') = 'Anlaşmalı'",
-    ),
-    pool.query(
-      "SELECT COUNT(*)::int AS c FROM brands WHERE COALESCE(agreement_status,'') IN ('Görüşülüyor','Beklemede')",
-    ),
-    pool.query(
-      "SELECT COUNT(*)::int AS c FROM brands WHERE active = false OR COALESCE(agreement_status,'') IN ('Pasif','Reddedildi')",
-    ),
-    pool.query(
-      "SELECT COALESCE(AVG((min_budget::numeric + max_budget::numeric) / 2), 0)::numeric AS a FROM brands WHERE min_budget IS NOT NULL AND max_budget IS NOT NULL",
-    ),
-    pool.query("SELECT COUNT(*)::int AS c FROM brands WHERE created_at::date >= $1::date", [monthStart]),
-  ]);
-  return {
-    total: total.rows[0].c,
-    activeAgreed: activeAgreed.rows[0].c,
-    inDiscussion: inDiscussion.rows[0].c,
-    passive: passive.rows[0].c,
-    avgInvestment: Number(avgInv.rows[0].a || 0),
-    newThisMonth: newMonth.rows[0].c,
-  };
+  try {
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
+    const runQuery = async (sql, params = []) => {
+      try {
+        const qr = await pool.query(sql, params);
+        return qr.rows[0]?.c || Number(qr.rows[0]?.a || 0);
+      } catch (e) {
+        console.error("computeBrandKpis query failed:", sql, e.message);
+        return 0;
+      }
+    };
+
+    const [total, activeAgreed, inDiscussion, passive, avgInv, newMonth] = await Promise.all([
+      runQuery("SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL"),
+      runQuery(
+        "SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL AND active = true AND COALESCE(agreement_status,'') = 'Anlaşmalı'",
+      ),
+      runQuery(
+        "SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL AND COALESCE(agreement_status,'') IN ('Görüşülüyor','Beklemede')",
+      ),
+      runQuery(
+        "SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL AND (active = false OR COALESCE(agreement_status,'') IN ('Pasif','Reddedildi'))",
+      ),
+      runQuery(
+        "SELECT COALESCE(AVG((min_budget::numeric + max_budget::numeric) / 2), 0)::numeric AS a FROM brands WHERE deleted_at IS NULL AND min_budget IS NOT NULL AND max_budget IS NOT NULL",
+      ),
+      runQuery("SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL AND created_at::date >= $1::date", [monthStart]),
+    ]);
+
+    return {
+      total,
+      activeAgreed,
+      inDiscussion,
+      passive,
+      avgInvestment: avgInv,
+      newThisMonth: newMonth,
+    };
+  } catch (err) {
+    console.error("computeBrandKpis failed:", err.message);
+    return { total: 0, activeAgreed: 0, inDiscussion: 0, passive: 0, avgInvestment: 0, newThisMonth: 0 };
+  }
 }
 
 app.get("/api/investors", authMiddleware, async (req, res, next) => {
@@ -2710,23 +2735,39 @@ function locationRowFromBody(body, userId) {
 }
 
 async function computeLocationKpis() {
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
-  const [total, active, empty, highPotential, avgRent, addedMonth] = await Promise.all([
-    pool.query("SELECT COUNT(*)::int AS c FROM locations"),
-    pool.query("SELECT COUNT(*)::int AS c FROM locations WHERE status IN ('Dolu','Görüşmede','Kiralandı')"),
-    pool.query("SELECT COUNT(*)::int AS c FROM locations WHERE status='Boş'"),
-    pool.query("SELECT COUNT(*)::int AS c FROM locations WHERE potential IN ('Yüksek','Premium')"),
-    pool.query("SELECT COALESCE(AVG(rent::numeric),0)::numeric AS a FROM locations"),
-    pool.query("SELECT COUNT(*)::int AS c FROM locations WHERE created_at::date >= $1::date", [monthStart]),
-  ]);
-  return {
-    total: total.rows[0].c,
-    active: active.rows[0].c,
-    empty: empty.rows[0].c,
-    highPotential: highPotential.rows[0].c,
-    avgRent: Number(avgRent.rows[0].a || 0),
-    newThisMonth: addedMonth.rows[0].c,
-  };
+  try {
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
+    const runQuery = async (sql, params = []) => {
+      try {
+        const qr = await pool.query(sql, params);
+        return qr.rows[0]?.c || Number(qr.rows[0]?.a || 0);
+      } catch (e) {
+        console.error("computeLocationKpis query failed:", sql, e.message);
+        return 0;
+      }
+    };
+
+    const [total, active, empty, highPotential, avgRent, addedMonth] = await Promise.all([
+      runQuery("SELECT COUNT(*)::int AS c FROM locations WHERE deleted_at IS NULL"),
+      runQuery("SELECT COUNT(*)::int AS c FROM locations WHERE deleted_at IS NULL AND status IN ('Dolu','Görüşmede','Kiralandı')"),
+      runQuery("SELECT COUNT(*)::int AS c FROM locations WHERE deleted_at IS NULL AND status='Boş'"),
+      runQuery("SELECT COUNT(*)::int AS c FROM locations WHERE deleted_at IS NULL AND potential IN ('Yüksek','Premium')"),
+      runQuery("SELECT COALESCE(AVG(rent::numeric),0)::numeric AS a FROM locations WHERE deleted_at IS NULL"),
+      runQuery("SELECT COUNT(*)::int AS c FROM locations WHERE deleted_at IS NULL AND created_at::date >= $1::date", [monthStart]),
+    ]);
+
+    return {
+      total,
+      active,
+      empty,
+      highPotential,
+      avgRent,
+      newThisMonth: addedMonth,
+    };
+  } catch (err) {
+    console.error("computeLocationKpis failed:", err.message);
+    return { total: 0, active: 0, empty: 0, highPotential: 0, avgRent: 0, newThisMonth: 0 };
+  }
 }
 
 app.get("/api/locations", authMiddleware, async (req, res, next) => {
@@ -2883,23 +2924,39 @@ function projectRowFromBody(body) {
 }
 
 async function computeProjectKpis() {
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
-  const [total, active, closed, waiting, avgClose, monthOpen] = await Promise.all([
-    pool.query("SELECT COUNT(*)::int AS c FROM projects"),
-    pool.query("SELECT COUNT(*)::int AS c FROM projects WHERE stage NOT IN ('Kapanış')"),
-    pool.query("SELECT COUNT(*)::int AS c FROM projects WHERE stage='Kapanış'"),
-    pool.query("SELECT COUNT(*)::int AS c FROM projects WHERE stage IN ('Lead','Analiz')"),
-    pool.query("SELECT COALESCE(AVG(EXTRACT(DAY FROM (COALESCE(close_date,due_date) - created_at::date))),0)::numeric AS a FROM projects WHERE stage='Kapanış'"),
-    pool.query("SELECT COUNT(*)::int AS c FROM projects WHERE created_at::date >= $1::date", [monthStart]),
-  ]);
-  return {
-    total: total.rows[0].c,
-    active: active.rows[0].c,
-    closed: closed.rows[0].c,
-    waiting: waiting.rows[0].c,
-    avgCloseDays: Number(avgClose.rows[0].a || 0),
-    newThisMonth: monthOpen.rows[0].c,
-  };
+  try {
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
+    const runQuery = async (sql, params = []) => {
+      try {
+        const qr = await pool.query(sql, params);
+        return qr.rows[0]?.c || Number(qr.rows[0]?.a || 0);
+      } catch (e) {
+        console.error("computeProjectKpis query failed:", sql, e.message);
+        return 0;
+      }
+    };
+
+    const [total, active, closed, waiting, avgClose, monthOpen] = await Promise.all([
+      runQuery("SELECT COUNT(*)::int AS c FROM projects WHERE deleted_at IS NULL"),
+      runQuery("SELECT COUNT(*)::int AS c FROM projects WHERE deleted_at IS NULL AND stage NOT IN ('Kapanış')"),
+      runQuery("SELECT COUNT(*)::int AS c FROM projects WHERE deleted_at IS NULL AND stage='Kapanış'"),
+      runQuery("SELECT COUNT(*)::int AS c FROM projects WHERE deleted_at IS NULL AND stage IN ('Lead','Analiz')"),
+      runQuery("SELECT COALESCE(AVG(EXTRACT(DAY FROM (due_date - created_at::date))),0)::numeric AS a FROM projects WHERE deleted_at IS NULL AND stage='Kapanış'"),
+      runQuery("SELECT COUNT(*)::int AS c FROM projects WHERE deleted_at IS NULL AND created_at::date >= $1::date", [monthStart]),
+    ]);
+
+    return {
+      total,
+      active,
+      closed,
+      waiting,
+      avgCloseDays: avgClose,
+      newThisMonth: monthOpen,
+    };
+  } catch (err) {
+    console.error("computeProjectKpis failed:", err.message);
+    return { total: 0, active: 0, closed: 0, waiting: 0, avgCloseDays: 0, newThisMonth: 0 };
+  }
 }
 
 app.get("/api/projects", authMiddleware, async (req, res, next) => {
@@ -3067,25 +3124,42 @@ app.delete("/api/projects/:id", authMiddleware, async (req, res) => {
 
 // ─── CONTRACT KPI ────────────────────────────────────────────────────────────
 async function computeContractKpis() {
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
-  const thirtyDays = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
-  const today = new Date().toISOString().split("T")[0];
-  const [total, active, signedMonth, expiringSoon, terminated, totalValue] = await Promise.all([
-    pool.query("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL"),
-    pool.query("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL AND status='Aktif'"),
-    pool.query("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL AND sign_date >= $1::date", [monthStart]),
-    pool.query("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL AND status='Aktif' AND end_date BETWEEN $1::date AND $2::date", [today, thirtyDays]),
-    pool.query("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL AND status='Feshedildi'"),
-    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM contracts WHERE deleted_at IS NULL AND status IN ('Aktif','İmzalandı')"),
-  ]);
-  return {
-    total: total.rows[0].c,
-    active: active.rows[0].c,
-    signedThisMonth: signedMonth.rows[0].c,
-    expiringSoon: expiringSoon.rows[0].c,
-    terminated: terminated.rows[0].c,
-    totalValue: Number(totalValue.rows[0].s || 0),
-  };
+  try {
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
+    const thirtyDays = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
+
+    const runQuery = async (sql, params = []) => {
+      try {
+        const qr = await pool.query(sql, params);
+        return qr.rows[0]?.c || Number(qr.rows[0]?.s || 0);
+      } catch (e) {
+        console.error("computeContractKpis query failed:", sql, e.message);
+        return 0;
+      }
+    };
+
+    const [total, active, signedMonth, expiringSoon, terminated, totalValue] = await Promise.all([
+      runQuery("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL"),
+      runQuery("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL AND status='Aktif'"),
+      runQuery("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL AND start_date >= $1::date", [monthStart]),
+      runQuery("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL AND status='Aktif' AND end_date BETWEEN $1::date AND $2::date", [today, thirtyDays]),
+      runQuery("SELECT COUNT(*)::int AS c FROM contracts WHERE deleted_at IS NULL AND status='Feshedildi'"),
+      runQuery("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM contracts WHERE deleted_at IS NULL AND status IN ('Aktif','İmzalandı')"),
+    ]);
+
+    return {
+      total,
+      active,
+      signedThisMonth: signedMonth,
+      expiringSoon,
+      terminated,
+      totalValue,
+    };
+  } catch (err) {
+    console.error("computeContractKpis failed:", err.message);
+    return { total: 0, active: 0, signedThisMonth: 0, expiringSoon: 0, terminated: 0, totalValue: 0 };
+  }
 }
 
 app.get("/api/contracts", authMiddleware, async (req, res, next) => {
@@ -3284,25 +3358,41 @@ app.delete("/api/contracts/:id", authMiddleware, async (req, res) => {
 
 // ─── FINANCE RECORDS ─────────────────────────────────────────────────────────
 async function computeFinanceKpis() {
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
-  const today = new Date().toISOString().split("T")[0];
-  const [totalIncome, collected, pending, overdue, monthIncome, totalExpense] = await Promise.all([
-    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL"),
-    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL AND status='Tahsil edildi'"),
-    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL AND status='Açık'"),
-    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL AND status='Gecikti'"),
-    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL AND created_at::date >= $1::date", [monthStart]),
-    pool.query("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_expenses WHERE expense_date >= $1::date", [monthStart]),
-  ]);
-  const net = Number(collected.rows[0].s || 0) - Number(totalExpense.rows[0].s || 0);
-  return {
-    totalIncome: Number(totalIncome.rows[0].s || 0),
-    collected: Number(collected.rows[0].s || 0),
-    pending: Number(pending.rows[0].s || 0),
-    overdue: Number(overdue.rows[0].s || 0),
-    monthIncome: Number(monthIncome.rows[0].s || 0),
-    netProfit: net,
-  };
+  try {
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0];
+
+    const runQuery = async (sql, params = []) => {
+      try {
+        const qr = await pool.query(sql, params);
+        return Number(qr.rows[0]?.s || 0);
+      } catch (e) {
+        console.error("computeFinanceKpis query failed:", sql, e.message);
+        return 0;
+      }
+    };
+
+    const [totalIncome, collected, pending, overdue, monthIncome, totalExpense] = await Promise.all([
+      runQuery("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL"),
+      runQuery("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL AND status='Tahsil edildi'"),
+      runQuery("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL AND status='Açık'"),
+      runQuery("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL AND status='Gecikti'"),
+      runQuery("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_records WHERE deleted_at IS NULL AND created_at::date >= $1::date", [monthStart]),
+      runQuery("SELECT COALESCE(SUM(amount::numeric),0)::numeric AS s FROM finance_expenses WHERE expense_date >= $1::date", [monthStart]),
+    ]);
+
+    const net = collected - totalExpense;
+    return {
+      totalIncome,
+      collected,
+      pending,
+      overdue,
+      monthIncome,
+      netProfit: net,
+    };
+  } catch (err) {
+    console.error("computeFinanceKpis failed:", err.message);
+    return { totalIncome: 0, collected: 0, pending: 0, overdue: 0, monthIncome: 0, netProfit: 0 };
+  }
 }
 
 app.get("/api/finance", authMiddleware, async (req, res, next) => {
