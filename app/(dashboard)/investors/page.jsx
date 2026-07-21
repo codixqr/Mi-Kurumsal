@@ -593,12 +593,21 @@ export default function InvestorsPage() {
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label>Şehir</label>
-          <input list="inv-city-filter" value={filterDraft.city} onChange={(e) => setFilterDraft({ ...filterDraft, city: e.target.value })} />
-          <datalist id="inv-city-filter">{CITIES.map((c) => <option key={c} value={c} />)}</datalist>
+          <select value={filterDraft.city ? filterDraft.city.toUpperCase() : ''} onChange={(e) => setFilterDraft({ ...filterDraft, city: e.target.value, district: '' })}>
+            <option value="">Tümü</option>
+            {citiesData.city.map((c) => (
+              <option key={c.name} value={c.name}>{c.name}</option>
+            ))}
+          </select>
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label>İlçe</label>
-          <input value={filterDraft.district} onChange={(e) => setFilterDraft({ ...filterDraft, district: e.target.value })} />
+          <select value={filterDraft.district ? filterDraft.district.toUpperCase() : ''} onChange={(e) => setFilterDraft({ ...filterDraft, district: e.target.value })} disabled={!filterDraft.city}>
+            <option value="">Tümü</option>
+            {citiesData.city.find((c) => c.name.toLowerCase() === (filterDraft.city || '').toLowerCase())?.discrits.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label>Sektör</label>
