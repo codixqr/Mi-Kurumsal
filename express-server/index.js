@@ -19,7 +19,9 @@ const jwtSecret = process.env.JWT_SECRET || "crm_dev_secret_change_me";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes("db.prisma.io") 
+  ssl: process.env.DATABASE_URL && 
+       !process.env.DATABASE_URL.includes("localhost") && 
+       !process.env.DATABASE_URL.includes("127.0.0.1")
     ? { rejectUnauthorized: false } 
     : false,
 });
@@ -164,13 +166,42 @@ function requireAdmin(req, res, next) {
   return next();
 }
 
-function signToken(user) {
+function requirePermission(perm) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Yetkisiz erişim." });
+    }
+    if (req.user.role === "admin") {
+      return next();
+    }
+    const permissions = req.user.permissions || [];
+    if (!permissions.includes(perm)) {
+      return res.status(403).json({ message: `Bu işlem için yetkiniz yok (${perm}).` });
+    }
+    return next();
+  };
+}
+
+function signToken(user, permissions = []) {
   return jwt.sign(
-    { id: user.id, email: user.email, role: user.role, name: user.name },
+    { id: user.id, email: user.email, role: user.role, name: user.name, permissions },
     jwtSecret,
     { expiresIn: "12h" },
   );
 }
+
+// Global Permission Guards
+app.use("/api/investors", authMiddleware, requirePermission("investors"));
+app.use("/api/brands", authMiddleware, requirePermission("brands"));
+app.use("/api/locations", authMiddleware, requirePermission("locations"));
+app.use("/api/projects", authMiddleware, requirePermission("projects"));
+app.use("/api/contracts", authMiddleware, requirePermission("contracts"));
+app.use("/api/tasks", authMiddleware, requirePermission("tasks"));
+app.use("/api/reports", authMiddleware, requirePermission("reports"));
+app.use("/api/templates", authMiddleware, requirePermission("templates"));
+app.use("/api/matching", authMiddleware, requirePermission("matching"));
+app.use("/api/pnl", authMiddleware, requirePermission("pnl"));
+app.use("/api/activity", authMiddleware, requirePermission("timeline"));
 
 function fillTemplate(rawTemplate, payload) {
   return rawTemplate.replace(/\{\{(\w+)\}\}/g, (_, key) => {
@@ -1469,7 +1500,12 @@ app.post("/api/auth/login", async (req, res) => {
     return res.status(401).json({ message: "Şifre hatalı." });
   }
 
-  const token = signToken(user);
+  const tmRes = await pool.query("SELECT permissions FROM team_members WHERE user_id = $1", [user.id]);
+  const permissions = user.role === "admin"
+    ? ["investors", "brands", "locations", "projects", "contracts", "tasks", "reports", "templates", "matching", "pnl", "timeline"]
+    : (tmRes.rows[0]?.permissions || []);
+
+  const token = signToken(user, permissions);
   await logActivity({
     userId: user.id,
     moduleName: "auth",
@@ -1478,16 +1514,28 @@ app.post("/api/auth/login", async (req, res) => {
   });
   return res.json({
     token,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    user: { id: user.id, name: user.name, email: user.email, role: user.role, permissions },
   });
 });
 
 app.get("/api/auth/me", authMiddleware, async (req, res) => {
-  const result = await pool.query("SELECT id,name,email,role FROM users WHERE id = $1", [req.user.id]);
+  const result = await pool.query(
+    `SELECT u.id, u.name, u.email, u.role, tm.permissions 
+     FROM users u
+     LEFT JOIN team_members tm ON tm.user_id = u.id
+     WHERE u.id = $1`,
+    [req.user.id]
+  );
   if (result.rowCount === 0) {
     return res.status(404).json({ message: "Kullanıcı bulunamadı." });
   }
-  return res.json(result.rows[0]);
+  const user = result.rows[0];
+  if (user.role === "admin") {
+    user.permissions = ["investors", "brands", "locations", "projects", "contracts", "tasks", "reports", "templates", "matching", "pnl", "timeline"];
+  } else {
+    user.permissions = user.permissions || [];
+  }
+  return res.json(user);
 });
 
 app.post("/api/uploads", authMiddleware, upload.single("file"), async (req, res) => {

@@ -3,13 +3,11 @@
 import { useAuth } from '@/lib/AuthContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function DashboardLayout({ children }) {
   const { user, logout, loading } = useAuth();
   const pathname = usePathname();
-
-  if (loading) return <div className="loading-screen">Yükleniyor...</div>;
-  if (!user) return null;
 
   const menuItems = [
     { name: 'Panel', path: '/', id: 'dashboard' },
@@ -24,9 +22,30 @@ export default function DashboardLayout({ children }) {
     { name: 'Şablonlar', path: '/templates', id: 'templates' },
     { name: 'Akıllı Eşleştirme', path: '/matching', id: 'matching' },
     { name: 'İşlem Geçmişi', path: '/timeline', id: 'timeline' },
-    { name: 'Veri Tabanı', path: '/db-check', id: 'db-check' },
   ];
 
+  // Route protection redirect guard on client side
+  useEffect(() => {
+    if (user && user.role !== 'admin' && pathname !== '/') {
+      const matchedMenu = menuItems.find((m) => m.path !== '/' && pathname.startsWith(m.path));
+      const userPermissions = user.permissions || [];
+      if (matchedMenu && !userPermissions.includes(matchedMenu.id)) {
+        window.location.href = '/';
+      }
+    }
+  }, [user, pathname]);
+
+  if (loading) return <div className="loading-screen">Yükleniyor...</div>;
+  if (!user) return null;
+
+  const userPermissions = user.permissions || [];
+  const hasPermission = (id) => {
+    if (user.role === 'admin') return true;
+    if (id === 'dashboard') return true;
+    return userPermissions.includes(id);
+  };
+
+  const filteredMenuItems = menuItems.filter((item) => hasPermission(item.id));
   const activeMenu = menuItems.find((m) => m.path === pathname || (m.path !== '/' && pathname.startsWith(m.path)));
 
   return (
@@ -51,20 +70,20 @@ export default function DashboardLayout({ children }) {
           </div>
         </div>
         <nav className="menu">
-          <Link href="/" className={`menu-link ${pathname === '/' ? 'active' : ''}`}>Panel</Link>
-          <Link href="/investors" className={`menu-link ${pathname.startsWith('/investors') ? 'active' : ''}`}>Yatırımcı Yönetimi</Link>
-          <Link href="/brands" className={`menu-link ${pathname.startsWith('/brands') ? 'active' : ''}`}>Marka Portföy Yönetimi</Link>
-          <Link href="/locations" className={`menu-link ${pathname.startsWith('/locations') ? 'active' : ''}`}>Lokasyon Yönetimi</Link>
-          <Link href="/projects" className={`menu-link ${pathname.startsWith('/projects') ? 'active' : ''}`}>Proje & Süreç Takibi</Link>
-          <Link href="/contracts" className={`menu-link ${pathname.startsWith('/contracts') ? 'active' : ''}`}>Sözleşme Yönetimi</Link>
-          <Link href="/tasks" className={`menu-link ${pathname.startsWith('/tasks') ? 'active' : ''}`}>Görev Yönetimi</Link>
-          <Link href="/pnl" className={`menu-link ${pathname.startsWith('/pnl') ? 'active' : ''}`}>Finans & Kar/Zarar</Link>
-          <Link href="/reports" className={`menu-link ${pathname.startsWith('/reports') ? 'active' : ''}`}>Raporlar</Link>
-          <Link href="/templates" className={`menu-link ${pathname.startsWith('/templates') ? 'active' : ''}`}>Şablonlar</Link>
-          <Link href="/matching" className={`menu-link ${pathname.startsWith('/matching') ? 'active' : ''}`}>Akıllı Eşleştirme</Link>
-          <Link href="/timeline" className={`menu-link ${pathname.startsWith('/timeline') ? 'active' : ''}`}>İşlem Geçmişi</Link>
+          {filteredMenuItems.map((item) => {
+            const extraStyle = item.id === 'db-check' ? { opacity: 0.5 } : {};
+            return (
+              <Link
+                key={item.id}
+                href={item.path}
+                className={`menu-link ${pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path)) ? 'active' : ''}`}
+                style={extraStyle}
+              >
+                {item.name}
+              </Link>
+            );
+          })}
           {user.role === 'admin' && <Link href="/settings" className={`menu-link ${pathname.startsWith('/settings') ? 'active' : ''}`}>Ayarlar</Link>}
-          {user.role === 'admin' && <Link href="/db-check" className={`menu-link ${pathname.startsWith('/db-check') ? 'active' : ''}`} style={{opacity: 0.5}}>Veri Tabanı</Link>}
         </nav>
       </aside>
 
