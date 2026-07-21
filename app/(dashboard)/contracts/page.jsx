@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/apiClient';
+import { ColumnPicker, useColumnVisibility } from '@/lib/ColumnPicker';
+
 
 const SOZLESME_TIPLERI = ['Danışmanlık', 'Franchise', 'Kiralama', 'Ortaklık'];
 const DURUMLAR = ['Taslak', 'İmzalandı', 'Aktif', 'Askıda', 'Feshedildi'];
@@ -175,6 +177,19 @@ export default function SozlesmePage() {
     { etiket: 'Toplam değer', deger: `${fmt(kpis?.totalValue)} ₺` },
   ];
 
+  const CONT_COLS = [
+    { key: 'investor', label: 'Yatırımcı' },
+    { key: 'brand', label: 'Marka' },
+    { key: 'location', label: 'Lokasyon' },
+    { key: 'type', label: 'Tip' },
+    { key: 'amount', label: 'Tutar' },
+    { key: 'startDate', label: 'Başlangıç' },
+    { key: 'endDate', label: 'Bitiş' },
+    { key: 'status', label: 'Durum' },
+    { key: 'consultant', label: 'Danışman' },
+  ];
+  const [colVisible, toggleCol] = useColumnVisibility('contracts', Object.fromEntries(CONT_COLS.map((c) => [c.key, true])));
+
   return (
     <div className="inv-page">
       <div className="module-head" style={{ flexWrap: 'wrap', gap: 12 }}>
@@ -183,10 +198,12 @@ export default function SozlesmePage() {
           <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.9rem' }}>Tüm anlaşmaları hukuki ve finansal olarak takip edin</p>
         </div>
         <div className="header-actions" style={{ flexWrap: 'wrap' }}>
+          <ColumnPicker columns={CONT_COLS} visible={colVisible} onChange={toggleCol} />
           <button className="secondary-btn" onClick={exportExcel}>Excel dışa aktar</button>
           <button className="primary-btn" onClick={() => { setForm(defaultForm()); setFormOpen(true); }}>+ Yeni sözleşme</button>
         </div>
       </div>
+
 
       {/* KPI KARTLARI */}
       <section className="inv-kpi-grid">
@@ -414,15 +431,15 @@ export default function SozlesmePage() {
           <thead>
             <tr>
               <th>Sözleşme adı</th>
-              <th>Yatırımcı</th>
-              <th>Marka</th>
-              <th>Lokasyon</th>
-              <th>Tip</th>
-              <th>Tutar</th>
-              <th>Başlangıç</th>
-              <th>Bitiş</th>
-              <th>Durum</th>
-              <th>Danışman</th>
+              {colVisible.investor !== false && <th>Yatırımcı</th>}
+              {colVisible.brand !== false && <th>Marka</th>}
+              {colVisible.location !== false && <th>Lokasyon</th>}
+              {colVisible.type !== false && <th>Tip</th>}
+              {colVisible.amount !== false && <th>Tutar</th>}
+              {colVisible.startDate !== false && <th>Başlangıç</th>}
+              {colVisible.endDate !== false && <th>Bitiş</th>}
+              {colVisible.status !== false && <th>Durum</th>}
+              {colVisible.consultant !== false && <th>Danışman</th>}
               <th>İşlem</th>
             </tr>
           </thead>
@@ -432,15 +449,15 @@ export default function SozlesmePage() {
             {!loading && items.map((item) => (
               <tr key={item.id}>
                 <td><strong>{item.name}</strong></td>
-                <td>{item.investorName || '—'}</td>
-                <td>{item.brandName || '—'}</td>
-                <td>{item.locationName || '—'}</td>
-                <td>{item.type || '—'}</td>
-                <td style={{ whiteSpace: 'nowrap' }}>{fmt(item.amount)} {item.currency}</td>
-                <td style={{ fontSize: 12 }}>{item.startDate || '—'}</td>
-                <td style={{ fontSize: 12 }}>{item.endDate || '—'}</td>
-                <td><span className="badge" style={{ ...Object.fromEntries((durumRengi(item.status)).split(';').filter(Boolean).map((s) => { const [k, v] = s.split(':'); return [k.trim(), v?.trim()]; })) }}>{item.status}</span></td>
-                <td style={{ fontSize: 12 }}>{item.consultantName || '—'}</td>
+                {colVisible.investor !== false && <td>{item.investorName || '—'}</td>}
+                {colVisible.brand !== false && <td>{item.brandName || '—'}</td>}
+                {colVisible.location !== false && <td>{item.locationName || '—'}</td>}
+                {colVisible.type !== false && <td>{item.type || '—'}</td>}
+                {colVisible.amount !== false && <td style={{ whiteSpace: 'nowrap' }}>{fmt(item.amount)} {item.currency}</td>}
+                {colVisible.startDate !== false && <td style={{ fontSize: 12 }}>{item.startDate || '—'}</td>}
+                {colVisible.endDate !== false && <td style={{ fontSize: 12 }}>{item.endDate || '—'}</td>}
+                {colVisible.status !== false && <td><span className="badge" style={{ ...Object.fromEntries((durumRengi(item.status)).split(';').filter(Boolean).map((s) => { const [k, v] = s.split(':'); return [k.trim(), v?.trim()]; })) }}>{item.status}</span></td>}
+                {colVisible.consultant !== false && <td style={{ fontSize: 12 }}>{item.consultantName || '—'}</td>}
                 <td>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     <button className="edit-btn" onClick={() => {

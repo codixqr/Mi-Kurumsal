@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import citiesData from '@/lib/tr-cities-districts.json';
+import { ColumnPicker, useColumnVisibility } from '@/lib/ColumnPicker';
+
 
 const LOCATION_TYPES = ['AVM', 'Cadde', 'Plaza', 'Sanayi', 'Turistik'];
 const POTENTIALS = ['Düşük', 'Orta', 'Yüksek', 'Premium'];
@@ -110,11 +112,24 @@ export default function LocationsPage() {
   };
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const LOC_COLS = [
+    { key: 'cityDistrict', label: 'Şehir / İlçe' },
+    { key: 'type', label: 'Tip' },
+    { key: 'sqm', label: 'm²' },
+    { key: 'rent', label: 'Kira' },
+    { key: 'segment', label: 'Segment' },
+    { key: 'potential', label: 'Potansiyel' },
+    { key: 'status', label: 'Durum' },
+    { key: 'brands', label: 'Uygun marka' },
+  ];
+  const [colVisible, toggleCol] = useColumnVisibility('locations', Object.fromEntries(LOC_COLS.map((c) => [c.key, true])));
+
   return (
     <div className="inv-page">
       <div className="module-head">
         <h2>Lokasyon Yönetimi</h2>
         <div className="header-actions">
+          <ColumnPicker columns={LOC_COLS} visible={colVisible} onChange={toggleCol} />
           <button className="secondary-btn" onClick={() => setListMode((m) => (m === 'list' ? 'map' : 'list'))}>Harita + Liste: {listMode === 'list' ? 'Liste' : 'Harita'}</button>
           <button className="secondary-btn" onClick={exportExcel}>Excel dışa aktar</button>
           <button className="primary-btn" onClick={() => { setForm(defaultForm()); setFormOpen(true); }}>+ Yeni lokasyon</button>
@@ -291,13 +306,33 @@ export default function LocationsPage() {
 
       <div className="inv-table-wrap">
         <table className="inv-table">
-          <thead><tr><th><input type="checkbox" checked={items.length > 0 && selectedIds.length === items.length} onChange={(e) => setSelectedIds(e.target.checked ? items.map((x) => x.id) : [])} /></th><th>Lokasyon</th><th>Şehir/İlçe</th><th>Tip</th><th>m²</th><th>Kira</th><th>Segment</th><th>Potansiyel</th><th>Durum</th><th>Uygun marka</th><th>İşlem</th></tr></thead>
+          <thead><tr>
+            <th><input type="checkbox" checked={items.length > 0 && selectedIds.length === items.length} onChange={(e) => setSelectedIds(e.target.checked ? items.map((x) => x.id) : [])} /></th>
+            <th>Lokasyon</th>
+            {colVisible.cityDistrict !== false && <th>Şehir/İlçe</th>}
+            {colVisible.type !== false && <th>Tip</th>}
+            {colVisible.sqm !== false && <th>m²</th>}
+            {colVisible.rent !== false && <th>Kira</th>}
+            {colVisible.segment !== false && <th>Segment</th>}
+            {colVisible.potential !== false && <th>Potansiyel</th>}
+            {colVisible.status !== false && <th>Durum</th>}
+            {colVisible.brands !== false && <th>Uygun marka</th>}
+            <th>İşlem</th>
+          </tr></thead>
           <tbody>
             {loading && <tr><td colSpan={11}>Yükleniyor...</td></tr>}
             {!loading && items.map((loc) => (
               <tr key={loc.id}>
                 <td><input type="checkbox" checked={selectedIds.includes(loc.id)} onChange={() => setSelectedIds((p) => p.includes(loc.id) ? p.filter((x) => x !== loc.id) : [...p, loc.id])} /></td>
-                <td>{loc.name}</td><td>{loc.city || '-'} / {loc.district || '-'}</td><td>{loc.type}</td><td>{loc.sqm}</td><td>{Number(loc.rent || 0).toLocaleString('tr-TR')} {loc.currency}</td><td>{loc.segment || '-'}</td><td>{loc.potential}</td><td>{loc.status}</td><td>{(loc.recommendedBrands || []).length}</td>
+                <td>{loc.name}</td>
+                {colVisible.cityDistrict !== false && <td>{loc.city || '-'} / {loc.district || '-'}</td>}
+                {colVisible.type !== false && <td>{loc.type}</td>}
+                {colVisible.sqm !== false && <td>{loc.sqm}</td>}
+                {colVisible.rent !== false && <td>{Number(loc.rent || 0).toLocaleString('tr-TR')} {loc.currency}</td>}
+                {colVisible.segment !== false && <td>{loc.segment || '-'}</td>}
+                {colVisible.potential !== false && <td>{loc.potential}</td>}
+                {colVisible.status !== false && <td>{loc.status}</td>}
+                {colVisible.brands !== false && <td>{(loc.recommendedBrands || []).length}</td>}
                 <td>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     <button className="edit-btn" onClick={() => { setForm({ ...defaultForm(), ...loc, files: loc.files || [] }); setFormOpen(true); }}>Düzenle</button>

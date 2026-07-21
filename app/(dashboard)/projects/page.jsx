@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/apiClient';
+import { ColumnPicker, useColumnVisibility } from '@/lib/ColumnPicker';
+
 
 const PIPELINES = ['Lead', 'Analiz', 'Marka eşleşmesi', 'Lokasyon çalışması', 'Teklif', 'Sözleşme', 'İnşaat / kurulum', 'Açılış', 'Kapanış'];
 const PRIORITIES = ['Düşük', 'Orta', 'Yüksek', 'Kritik'];
@@ -149,11 +151,24 @@ export default function ProjectsPage() {
 
   if (loading) return <div className="card">Yükleniyor...</div>;
 
+  const PROJ_COLS = [
+    { key: 'investor', label: 'Yatırımcı' },
+    { key: 'brand', label: 'Marka' },
+    { key: 'location', label: 'Lokasyon' },
+    { key: 'type', label: 'Tip' },
+    { key: 'owner', label: 'Sorumlu' },
+    { key: 'stage', label: 'Aşama' },
+    { key: 'progress', label: 'İlerleme' },
+    { key: 'priority', label: 'Öncelik' },
+  ];
+  const [colVisible, toggleCol] = useColumnVisibility('projects', Object.fromEntries(PROJ_COLS.map((c) => [c.key, true])));
+
   return (
     <section className="card page-section active inv-page">
       <div className="module-head">
         <h2>Proje & Süreç Takibi</h2>
         <div className="header-actions" style={{ flexWrap: 'wrap' }}>
+          <ColumnPicker columns={PROJ_COLS} visible={colVisible} onChange={toggleCol} />
           <button className="secondary-btn" type="button" onClick={() => setView((v) => (v === 'list' ? 'kanban' : 'list'))}>
             {view === 'list' ? 'Tahta görünümü' : 'Liste görünümü'}
           </button>
@@ -289,7 +304,16 @@ export default function ProjectsPage() {
           <thead>
             <tr>
               <th><input type="checkbox" checked={projects.length > 0 && selectedIds.length === projects.length} onChange={(e) => setSelectedIds(e.target.checked ? projects.map((x) => x.id) : [])} /></th>
-              <th>Proje adı</th><th>Yatırımcı</th><th>Marka</th><th>Lokasyon</th><th>Tip</th><th>Sorumlu</th><th>Aşama</th><th>İlerleme</th><th>Öncelik</th><th>İşlem</th>
+              <th>Proje adı</th>
+              {colVisible.investor !== false && <th>Yatırımcı</th>}
+              {colVisible.brand !== false && <th>Marka</th>}
+              {colVisible.location !== false && <th>Lokasyon</th>}
+              {colVisible.type !== false && <th>Tip</th>}
+              {colVisible.owner !== false && <th>Sorumlu</th>}
+              {colVisible.stage !== false && <th>Aşama</th>}
+              {colVisible.progress !== false && <th>İlerleme</th>}
+              {colVisible.priority !== false && <th>Öncelik</th>}
+              <th>İşlem</th>
             </tr>
           </thead>
           <tbody>
@@ -297,19 +321,19 @@ export default function ProjectsPage() {
               <tr key={p.id}>
                 <td><input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => setSelectedIds((prev) => prev.includes(p.id) ? prev.filter((x) => x !== p.id) : [...prev, p.id])} /></td>
                 <td><strong>{p.name}</strong><br/><small>{p.dueDate ? new Date(p.dueDate).toLocaleDateString('tr-TR') : ''}</small></td>
-                <td>{p.investorName || '-'}</td>
-                <td>{p.brandName || '-'}</td>
-                <td>{p.locationName || '-'}</td>
-                <td>{p.type}</td>
-                <td>{p.owner}</td>
-                <td>{p.stage}</td>
-                <td>
+                {colVisible.investor !== false && <td>{p.investorName || '-'}</td>}
+                {colVisible.brand !== false && <td>{p.brandName || '-'}</td>}
+                {colVisible.location !== false && <td>{p.locationName || '-'}</td>}
+                {colVisible.type !== false && <td>{p.type}</td>}
+                {colVisible.owner !== false && <td>{p.owner}</td>}
+                {colVisible.stage !== false && <td>{p.stage}</td>}
+                {colVisible.progress !== false && <td>
                   <div style={{ width: '100%', backgroundColor: '#eee', borderRadius: '4px', height: '10px' }}>
                     <div style={{ width: `${p.progress}%`, backgroundColor: '#3b82f6', height: '100%', borderRadius: '4px' }}></div>
                   </div>
                   <small>%{p.progress}</small>
-                </td>
-                <td>{p.priority}</td>
+                </td>}
+                {colVisible.priority !== false && <td>{p.priority}</td>}
                 <td>
                   <button onClick={() => handleEdit(p)} className="edit-btn">Düzenle</button>
                   <button onClick={() => openDetail(p)} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Detay</button>

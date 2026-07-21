@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { useAuth } from '@/lib/AuthContext';
+import { ColumnPicker, useColumnVisibility } from '@/lib/ColumnPicker';
+
 
 const PRIORITIES = ['Çok Yüksek', 'Yüksek', 'Orta', 'Düşük'];
 const STATUSES = ['Açık', 'Devam Ediyor', 'Tamamlandı', 'İptal'];
@@ -180,6 +182,15 @@ export default function TasksPage() {
     return task.moduleType !== 'Genel' ? task.moduleType : '';
   };
 
+  const TASK_COLS = [
+    { key: 'module', label: 'Modül / Bağlantı' },
+    { key: 'priority', label: 'Öncelik' },
+    { key: 'status', label: 'Durum' },
+    { key: 'assignee', label: 'Atanan' },
+    { key: 'dueDate', label: 'Son Tarih' },
+  ];
+  const [colVisible, toggleCol] = useColumnVisibility('tasks', Object.fromEntries(TASK_COLS.map((c) => [c.key, true])));
+
   return (
     <section className="card page-section active">
       <div className="module-head">
@@ -187,7 +198,8 @@ export default function TasksPage() {
           <h2>Görev Yönetimi</h2>
           <p>Ekip görevlerini oluştur, takip et ve yönet. Modüllere bağlı görevler ile süreç kontrolü sağla.</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <ColumnPicker columns={TASK_COLS} visible={colVisible} onChange={toggleCol} />
           <button className={`secondary-btn${view === 'table' ? ' active' : ''}`} onClick={() => setView('table')}>Tablo</button>
           <button className={`secondary-btn${view === 'board' ? ' active' : ''}`} onClick={() => setView('board')}>Tahta</button>
           <button className="primary-btn" onClick={openNew}>+ Yeni Görev</button>
@@ -304,14 +316,14 @@ export default function TasksPage() {
             <thead>
               <tr>
                 <th style={{ width: 36 }}>
-                  <input type="checkbox" checked={selected.length === items.length && items.length > 0} onChange={toggleAll} />
+                  <input type="checkbox" checked={items.length > 0 && selected.length === items.length} onChange={(e) => setSelected(e.target.checked ? items.map((t) => t.id) : [])} />
                 </th>
                 <th>Görev Başlığı</th>
-                <th>Modül / Bağlantı</th>
-                <th>Öncelik</th>
-                <th>Durum</th>
-                <th>Atanan</th>
-                <th>Son Tarih</th>
+                {colVisible.module !== false && <th>Modül / Bağlantı</th>}
+                {colVisible.priority !== false && <th>Öncelik</th>}
+                {colVisible.status !== false && <th>Durum</th>}
+                {colVisible.assignee !== false && <th>Atanan</th>}
+                {colVisible.dueDate !== false && <th>Son Tarih</th>}
                 <th>İşlemler</th>
               </tr>
             </thead>
@@ -337,6 +349,7 @@ export default function TasksPage() {
                       </div>
                     )}
                   </td>
+                  {colVisible.module !== false && (
                   <td>
                     {getLinkedName(task) ? (
                       <span style={{ background: '#f1f5f9', borderRadius: 4, padding: '2px 8px', fontSize: '0.82rem' }}>{getLinkedName(task)}</span>
@@ -344,11 +357,15 @@ export default function TasksPage() {
                       <span style={{ color: '#94a3b8', fontSize: '0.82rem' }}>Genel</span>
                     )}
                   </td>
+                  )}
+                  {colVisible.priority !== false && (
                   <td>
                     <span style={{ background: PRIORITY_COLOR[task.priority] + '22', color: PRIORITY_COLOR[task.priority], borderRadius: 4, padding: '2px 10px', fontWeight: 700, fontSize: '0.82rem' }}>
                       {task.priority}
                     </span>
                   </td>
+                  )}
+                  {colVisible.status !== false && (
                   <td>
                     <select
                       value={task.status}
@@ -358,10 +375,11 @@ export default function TasksPage() {
                       {STATUSES.map(s => <option key={s}>{s}</option>)}
                     </select>
                   </td>
-                  <td style={{ color: '#374151', fontSize: '0.9rem' }}>{task.assigneeName || '-'}</td>
-                  <td style={{ color: isOverdue(task) ? '#dc2626' : '#374151', fontWeight: isOverdue(task) ? 700 : 400, fontSize: '0.9rem' }}>
+                  )}
+                  {colVisible.assignee !== false && <td style={{ color: '#374151', fontSize: '0.9rem' }}>{task.assigneeName || '-'}</td>}
+                  {colVisible.dueDate !== false && <td style={{ color: isOverdue(task) ? '#dc2626' : '#374151', fontWeight: isOverdue(task) ? 700 : 400, fontSize: '0.9rem' }}>
                     {fmt(task.dueDate)}
-                  </td>
+                  </td>}
                   <td>
                     <div style={{ display: 'flex', gap: 4 }}>
                       <button className="secondary-btn" style={{ fontSize: '0.78rem', padding: '3px 10px' }} onClick={() => setDetailTask(task)}>Detay</button>

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/apiClient';
+import { ColumnPicker, useColumnVisibility } from '@/lib/ColumnPicker';
+
 
 const formatNumberString = (val) => {
   if (val === null || val === undefined || val === '') return '';
@@ -438,11 +440,23 @@ export default function BrandsPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  const BRAND_COLS = [
+    { key: 'sector', label: 'Sektör' },
+    { key: 'budget', label: 'Bütçe aralığı' },
+    { key: 'targetCities', label: 'Hedef şehirler' },
+    { key: 'locationType', label: 'Lokasyon tipi' },
+    { key: 'sqm', label: 'm²' },
+    { key: 'agreement', label: 'Anlaşma' },
+    { key: 'active', label: 'Aktif' },
+  ];
+  const [colVisible, toggleCol] = useColumnVisibility('brands', Object.fromEntries(BRAND_COLS.map((c) => [c.key, true])));
+
   return (
     <div className="inv-page brands-page">
       <div className="module-head" style={{ flexWrap: 'wrap', gap: '12px' }}>
         <h2 style={{ margin: 0 }}>Marka Portföy Yönetimi</h2>
         <div className="header-actions" style={{ flexWrap: 'wrap' }}>
+          <ColumnPicker columns={BRAND_COLS} visible={colVisible} onChange={toggleCol} />
           <button type="button" className="secondary-btn" onClick={exportExcel}>
             Excel dışa aktar
           </button>
@@ -872,26 +886,14 @@ export default function BrandsPage() {
               <th style={{ width: 36 }}>
                 <input type="checkbox" checked={items.length > 0 && selectedIds.length === items.length} onChange={toggleSelectAll} />
               </th>
-              <th>
-                <button type="button" className="inv-sort-btn" onClick={() => toggleSort('name')}>
-                  Marka
-                </button>
-              </th>
-              <th>
-                <button type="button" className="inv-sort-btn" onClick={() => toggleSort('sector')}>
-                  Sektör
-                </button>
-              </th>
-              <th>Bütçe aralığı</th>
-              <th>Hedef şehirler</th>
-              <th>Lokasyon tipi</th>
-              <th>m²</th>
-              <th>
-                <button type="button" className="inv-sort-btn" onClick={() => toggleSort('agreement_status')}>
-                  Anlaşma
-                </button>
-              </th>
-              <th>Aktif</th>
+              <th><button type="button" className="inv-sort-btn" onClick={() => toggleSort('name')}>Marka</button></th>
+              {colVisible.sector !== false && <th><button type="button" className="inv-sort-btn" onClick={() => toggleSort('sector')}>Sektör</button></th>}
+              {colVisible.budget !== false && <th>Bütçe aralığı</th>}
+              {colVisible.targetCities !== false && <th>Hedef şehirler</th>}
+              {colVisible.locationType !== false && <th>Lokasyon tipi</th>}
+              {colVisible.sqm !== false && <th>m²</th>}
+              {colVisible.agreement !== false && <th><button type="button" className="inv-sort-btn" onClick={() => toggleSort('agreement_status')}>Anlaşma</button></th>}
+              {colVisible.active !== false && <th>Aktif</th>}
               <th>İşlem</th>
             </tr>
           </thead>
@@ -912,20 +914,16 @@ export default function BrandsPage() {
                   <td>
                     <strong>{b.name}</strong>
                     {b.matchingEligible && (
-                      <span className="badge tag-success" style={{ marginLeft: 6, fontSize: '0.65rem' }}>
-                        Eşleştirmede
-                      </span>
+                      <span className="badge tag-success" style={{ marginLeft: 6, fontSize: '0.65rem' }}>Eşleştirmede</span>
                     )}
                   </td>
-                  <td>{b.sector}</td>
-                  <td>{budgetLabel(b)}</td>
-                  <td style={{ maxWidth: 160, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.targetLocations}</td>
-                  <td>{b.locationType || '—'}</td>
-                  <td>{sqmLabel(b)}</td>
-                  <td>
-                    <span className="badge">{b.agreementStatus || '—'}</span>
-                  </td>
-                  <td>{b.active ? 'Evet' : 'Hayır'}</td>
+                  {colVisible.sector !== false && <td>{b.sector}</td>}
+                  {colVisible.budget !== false && <td>{budgetLabel(b)}</td>}
+                  {colVisible.targetCities !== false && <td style={{ maxWidth: 160, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.targetLocations}</td>}
+                  {colVisible.locationType !== false && <td>{b.locationType || '—'}</td>}
+                  {colVisible.sqm !== false && <td>{sqmLabel(b)}</td>}
+                  {colVisible.agreement !== false && <td><span className="badge">{b.agreementStatus || '—'}</span></td>}
+                  {colVisible.active !== false && <td>{b.active ? 'Evet' : 'Hayır'}</td>}
                   <td>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                       <button type="button" className="edit-btn" onClick={() => editRow(b)}>

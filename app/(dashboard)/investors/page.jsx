@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { useAuth } from '@/lib/AuthContext';
 import citiesData from '@/lib/tr-cities-districts.json';
+import { ColumnPicker, useColumnVisibility } from '@/lib/ColumnPicker';
+
 
 const formatNumberString = (val) => {
   if (val === null || val === undefined || val === '') return '';
@@ -523,11 +525,26 @@ export default function InvestorsPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
+  const INV_COLS = [
+    { key: 'phone', label: 'Telefon' },
+    { key: 'city', label: 'Şehir / İlçe' },
+    { key: 'sector', label: 'Sektör' },
+    { key: 'budget', label: 'Bütçe' },
+    { key: 'investmentType', label: 'Yatırım' },
+    { key: 'pipeline', label: 'Pipeline' },
+    { key: 'priority', label: 'Öncelik' },
+    { key: 'consultant', label: 'Danışman' },
+    { key: 'followUp', label: 'Takip tarihi' },
+    { key: 'lastAction', label: 'Son aksiyon' },
+  ];
+  const [colVisible, toggleCol] = useColumnVisibility('investors', Object.fromEntries(INV_COLS.map((c) => [c.key, true])));
+
   return (
     <section className="card page-section active inv-page">
       <div className="module-head">
         <h2>Yatırımcı Yönetimi</h2>
         <div className="header-actions">
+          <ColumnPicker columns={INV_COLS} visible={colVisible} onChange={toggleCol} />
           <button type="button" className="export-btn" onClick={exportExcel}>
             Excel Dışa Aktar
           </button>
@@ -953,16 +970,16 @@ export default function InvestorsPage() {
                     <input type="checkbox" checked={items.length > 0 && selectedIds.length === items.length} onChange={toggleSelectAll} />
                   </th>
                   <th onClick={() => toggleSort('name')}>Yatırımcı {sort === 'name' ? (order === 'asc' ? '↑' : '↓') : ''}</th>
-                  <th>Telefon</th>
-                  <th onClick={() => toggleSort('city')}>Şehir / İlçe</th>
-                  <th>Sektör</th>
-                  <th onClick={() => toggleSort('budget')}>Bütçe</th>
-                  <th>Yatırım</th>
-                  <th onClick={() => toggleSort('pipeline')}>Pipeline</th>
-                  <th onClick={() => toggleSort('priority')}>Öncelik</th>
-                  <th>Danışman</th>
-                  <th onClick={() => toggleSort('follow_up_date')}>Takip</th>
-                  <th>Son aksiyon</th>
+                  {colVisible.phone !== false && <th>Telefon</th>}
+                  {colVisible.city !== false && <th onClick={() => toggleSort('city')}>Şehir / İlçe</th>}
+                  {colVisible.sector !== false && <th>Sektör</th>}
+                  {colVisible.budget !== false && <th onClick={() => toggleSort('budget')}>Bütçe</th>}
+                  {colVisible.investmentType !== false && <th>Yatırım</th>}
+                  {colVisible.pipeline !== false && <th onClick={() => toggleSort('pipeline')}>Pipeline</th>}
+                  {colVisible.priority !== false && <th onClick={() => toggleSort('priority')}>Öncelik</th>}
+                  {colVisible.consultant !== false && <th>Danışman</th>}
+                  {colVisible.followUp !== false && <th onClick={() => toggleSort('follow_up_date')}>Takip</th>}
+                  {colVisible.lastAction !== false && <th>Son aksiyon</th>}
                   <th>İşlem</th>
                 </tr>
               </thead>
@@ -983,25 +1000,16 @@ export default function InvestorsPage() {
                         <strong>{inv.name}</strong>
                         <div style={{ fontSize: 11, color: '#64748b' }}>{inv.investorType}</div>
                       </td>
-                      <td style={{ fontSize: 13 }}>{inv.phone || '—'}</td>
-                      <td>
-                        {inv.city}
-                        <div style={{ fontSize: 11, color: '#64748b' }}>{inv.district || '—'}</div>
-                      </td>
-                      <td>{inv.sector}</td>
-                      <td style={{ whiteSpace: 'nowrap' }}>{budgetLabel(inv)}</td>
-                      <td style={{ fontSize: 12 }}>{inv.type}</td>
-                      <td>
-                        <span className="badge">{inv.pipeline}</span>
-                      </td>
-                      <td>
-                        <span className={priorityClass(inv.priority)}>{inv.priority}</span>
-                      </td>
-                      <td style={{ fontSize: 12 }}>{inv.assignedMemberName || '—'}</td>
-                      <td style={{ fontSize: 12 }}>{inv.followUpDate || '—'}</td>
-                      <td style={{ fontSize: 12, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {inv.nextAction || inv.meetingNotes?.slice(0, 40) || '—'}
-                      </td>
+                      {colVisible.phone !== false && <td style={{ fontSize: 13 }}>{inv.phone || '—'}</td>}
+                      {colVisible.city !== false && <td>{inv.city}<div style={{ fontSize: 11, color: '#64748b' }}>{inv.district || '—'}</div></td>}
+                      {colVisible.sector !== false && <td>{inv.sector}</td>}
+                      {colVisible.budget !== false && <td style={{ whiteSpace: 'nowrap' }}>{budgetLabel(inv)}</td>}
+                      {colVisible.investmentType !== false && <td style={{ fontSize: 12 }}>{inv.type}</td>}
+                      {colVisible.pipeline !== false && <td><span className="badge">{inv.pipeline}</span></td>}
+                      {colVisible.priority !== false && <td><span className={priorityClass(inv.priority)}>{inv.priority}</span></td>}
+                      {colVisible.consultant !== false && <td style={{ fontSize: 12 }}>{inv.assignedMemberName || '—'}</td>}
+                      {colVisible.followUp !== false && <td style={{ fontSize: 12 }}>{inv.followUpDate || '—'}</td>}
+                      {colVisible.lastAction !== false && <td style={{ fontSize: 12, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.nextAction || inv.meetingNotes?.slice(0, 40) || '—'}</td>}
                       <td>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                           <button type="button" className="edit-btn" onClick={() => editRow(inv)}>
