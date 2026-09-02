@@ -934,7 +934,7 @@ export default function BrandsPage() {
                     <input type="checkbox" checked={selectedIds.includes(b.id)} onChange={() => toggleSelect(b.id)} />
                   </td>
                   <td>
-                    <strong>{b.name}</strong>
+                    <strong onClick={() => openDetail(b)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{b.name}</strong>
                     {b.matchingEligible && (
                       <span className="badge tag-success" style={{ marginLeft: 6, fontSize: '0.65rem' }}>Eşleştirmede</span>
                     )}
