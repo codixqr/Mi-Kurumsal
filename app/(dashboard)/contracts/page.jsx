@@ -70,6 +70,25 @@ export default function SozlesmePage() {
     } finally { setLoading(false); }
   }, [buildQuery]);
 
+    useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      let hasFilters = false;
+      const newFilters = { ...defaultFilters() };
+      const d = defaultFilters();
+      for (const key of Object.keys(d)) {
+        if (sp.has(key)) {
+          newFilters[key] = sp.get(key);
+          hasFilters = true;
+        }
+      }
+      if (hasFilters) {
+        setFilters(newFilters);
+        try { setFilterDraft(newFilters); } catch(e) {}
+      }
+    }
+  }, []);
+
   useEffect(() => { fetchList(); }, [fetchList]);
 
   useEffect(() => {

@@ -61,6 +61,25 @@ export default function LocationsPage() {
     }
   }, [buildQuery]);
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sp = new URLSearchParams(window.location.search);
+      let hasFilters = false;
+      const newFilters = { ...defaultFilters() };
+      const d = defaultFilters();
+      for (const key of Object.keys(d)) {
+        if (sp.has(key)) {
+          newFilters[key] = sp.get(key);
+          hasFilters = true;
+        }
+      }
+      if (hasFilters) {
+        setFilters(newFilters);
+        setFilterDraft(newFilters);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     fetchList();
   }, [fetchList]);
 
