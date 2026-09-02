@@ -350,9 +350,8 @@ export default function LocationsPage() {
                 {colVisible.brands !== false && <td>{(loc.recommendedBrands || []).length}</td>}
                 <td>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    <button className="edit-btn" onClick={() => { setForm({ ...defaultForm(), ...loc, files: loc.files || [] }); setFormOpen(true); }}>Düzenle</button>
-                    <button className="secondary-btn" onClick={() => openDetail(loc)}>Detay</button>
                     {loc.mapsLink && <a className="secondary-btn" href={loc.mapsLink} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Harita</a>}
+                    <button className="secondary-btn" onClick={() => document.getElementById(`loc-file-${loc.id}`)?.click()} style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Görsel Yükle</button>
                     <button className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => { window.location.href = '/matching'; }}>Eşleştir</button>
                     <button className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={async () => { await apiClient.post('/projects', { name: `${loc.name} projesi`, type: 'Kiralama', owner: 'Saha', stage: 'Lead', dueDate: new Date(Date.now() + 864000000).toISOString().split('T')[0], locationId: loc.id, progress: 0, assignees: [], checklist: [] }); fetchList(); }}>Proje oluştur</button>
                     <button className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px', background: '#fef3c7', color: '#92400e' }} onClick={async () => { if (!confirm('Arşivlensin mi?')) return; await apiClient.put(`/locations/${loc.id}`, { ...loc, status: 'Arşiv' }); fetchList(); }}>Arşivle</button>
@@ -369,7 +368,13 @@ export default function LocationsPage() {
       {detail?.location && (
         <div className="inv-modal-overlay" onClick={() => setDetail(null)}>
           <div className="inv-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="inv-modal-head"><h3>{detail.location.name}</h3><button className="secondary-btn" onClick={() => setDetail(null)}>Kapat</button></div>
+            <div className="inv-modal-head">
+              <h3>{detail.location.name}</h3>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="edit-btn" onClick={() => { setDetail(null); setForm({ ...defaultForm(), ...detail.location, id: detail.location.id, lat: String(detail.location.lat || ''), lng: String(detail.location.lng || ''), rent: String(detail.location.rent || ''), size: String(detail.location.size || '') }); setFormOpen(true); }}>Düzenle</button>
+                <button className="secondary-btn" onClick={() => setDetail(null)}>Kapat</button>
+              </div>
+            </div>
             <div className="inv-tabs">{[['genel', 'Genel bilgiler'], ['teknik', 'Teknik bilgiler'], ['finans', 'Finansal bilgiler'], ['gorsel', 'Görseller'], ['marka', 'Uygun markalar'], ['yatirimci', 'Eşleşen yatırımcılar'], ['proje', 'Aktif projeler'], ['gorusme', 'Görüşme geçmişi'], ['not', 'Notlar']].map(([id, l]) => <button key={id} className={`inv-tab ${detailTab === id ? 'active' : ''}`} onClick={() => setDetailTab(id)}>{l}</button>)}</div>
             <div className="inv-modal-body">
               {detailTab === 'genel' && <dl className="inv-dl"><dt>Adres</dt><dd>{detail.location.address || '-'}</dd><dt>Şehir</dt><dd>{detail.location.city || '-'}</dd><dt>Tip</dt><dd>{detail.location.type}</dd><dt>Durum</dt><dd>{detail.location.status}</dd></dl>}

@@ -475,22 +475,6 @@ export default function SozlesmePage() {
                 {colVisible.consultant !== false && <td style={{ fontSize: 12 }}>{item.consultantName || '—'}</td>}
                 <td>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    <button className="edit-btn" onClick={() => {
-                      setForm({
-                        ...defaultForm(), ...item, id: item.id,
-                        investorId: item.investorId ? String(item.investorId) : '',
-                        brandId: item.brandId ? String(item.brandId) : '',
-                        projectId: item.projectId ? String(item.projectId) : '',
-                        locationId: item.locationId ? String(item.locationId) : '',
-                        amount: item.amount ? String(item.amount) : '',
-                        consultingFee: item.consultingFee ? String(item.consultingFee) : '',
-                        franchiseCommission: item.franchiseCommission ? String(item.franchiseCommission) : '',
-                        franchiseCommissionPct: item.franchiseCommissionPct ? String(item.franchiseCommissionPct) : '',
-                        locationCommission: item.locationCommission ? String(item.locationCommission) : '',
-                      });
-                      setFormOpen(true);
-                    }}>Düzenle</button>
-                    <button className="secondary-btn" onClick={() => openDetail(item)} style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Detay</button>
                     <button className="secondary-btn" onClick={() => createFinance(item)} style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Finans oluştur</button>
                     {item.fileUrl && <a className="secondary-btn" href={item.fileUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>PDF</a>}
                     <button className="secondary-btn" onClick={() => yenile(item)} style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Yenile</button>
@@ -518,7 +502,26 @@ export default function SozlesmePage() {
           <div className="inv-modal" onClick={(e) => e.stopPropagation()}>
             <div className="inv-modal-head">
               <h3 style={{ margin: 0 }}>{detail.contract.name}</h3>
-              <button className="secondary-btn" onClick={() => setDetail(null)}>Kapat</button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="edit-btn" onClick={() => {
+                  setDetail(null);
+                  const item = detail.contract;
+                  setForm({
+                    ...defaultForm(), ...item, id: item.id,
+                    investorId: item.investorId ? String(item.investorId) : '',
+                    brandId: item.brandId ? String(item.brandId) : '',
+                    projectId: item.projectId ? String(item.projectId) : '',
+                    locationId: item.locationId ? String(item.locationId) : '',
+                    amount: item.amount ? String(item.amount) : '',
+                    consultingFee: item.consultingFee ? String(item.consultingFee) : '',
+                    franchiseCommission: item.franchiseCommission ? String(item.franchiseCommission) : '',
+                    franchiseCommissionPct: item.franchiseCommissionPct ? String(item.franchiseCommissionPct) : '',
+                    locationCommission: item.locationCommission ? String(item.locationCommission) : '',
+                  });
+                  setFormOpen(true);
+                }}>Düzenle</button>
+                <button className="secondary-btn" onClick={() => setDetail(null)}>Kapat</button>
+              </div>
             </div>
             <div className="inv-tabs">
               {[

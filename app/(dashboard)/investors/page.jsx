@@ -1027,12 +1027,6 @@ export default function InvestorsPage() {
                       {colVisible.lastAction !== false && <td style={{ fontSize: 12, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.nextAction || inv.meetingNotes?.slice(0, 40) || '—'}</td>}
                       <td>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                          <button type="button" className="edit-btn" onClick={() => editRow(inv)}>
-                            Düzenle
-                          </button>
-                          <button type="button" className="secondary-btn" onClick={() => openDetail(inv)}>
-                            Detay
-                          </button>
                           {waLink(inv) && (
                             <a className="success-btn" href={waLink(inv)} target="_blank" rel="noreferrer" style={{ padding: '4px 8px', fontSize: 12 }}>
                               WA
@@ -1128,9 +1122,12 @@ export default function InvestorsPage() {
                 <strong>{detail.investor.name}</strong>
                 <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>#{detail.investor.id}</div>
               </div>
-              <button type="button" className="secondary-btn" onClick={() => setDetailOpen(false)}>
-                Kapat
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="edit-btn" onClick={() => { setDetailOpen(false); editRow(detail.investor); }}>Düzenle</button>
+                <button type="button" className="secondary-btn" onClick={() => setDetailOpen(false)}>
+                  Kapat
+                </button>
+              </div>
             </div>
             <div className="inv-tabs">
               {['genel', 'ihtiyac', 'gorusme', 'markalar', 'lokasyon', 'projeler', 'gorevler', 'dosyalar', 'finans'].map((t) => (

@@ -335,8 +335,6 @@ export default function ProjectsPage() {
                 </td>}
                 {colVisible.priority !== false && <td>{p.priority}</td>}
                 <td>
-                  <button onClick={() => handleEdit(p)} className="edit-btn">Düzenle</button>
-                  <button onClick={() => openDetail(p)} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Detay</button>
                   <button onClick={async () => { 
                     const t = window.prompt('Görev açıklaması:', `Proje: ${p.name}`);
                     if (!t) return;
@@ -367,7 +365,6 @@ export default function ProjectsPage() {
                     <strong onClick={() => openDetail(p)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{p.name}</strong>
                     <div style={{ fontSize: 12, color: '#64748b' }}>%{p.progress} • {p.priority}</div>
                     <div style={{ marginTop: 6, display: 'flex', gap: 4 }}>
-                      <button className="secondary-btn" onClick={() => handleEdit(p)}>Düzenle</button>
                       <button className="secondary-btn" onClick={async () => { const idx = PIPELINES.indexOf(stage); if (idx < PIPELINES.length - 1) { await apiClient.put(`/projects/${p.id}`, { ...p, type: p.type, owner: p.owner, dueDate: p.dueDate, stage: PIPELINES[idx + 1] }); fetchData(); } }}>İleri</button>
                     </div>
                   </div>
@@ -383,7 +380,13 @@ export default function ProjectsPage() {
       {detail?.project && (
         <div className="inv-modal-overlay" onClick={() => setDetail(null)}>
           <div className="inv-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="inv-modal-head"><h3>{detail.project.name}</h3><button className="secondary-btn" onClick={() => setDetail(null)}>Kapat</button></div>
+            <div className="inv-modal-head">
+              <h3>{detail.project.name}</h3>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="edit-btn" onClick={() => { setDetail(null); handleEdit(detail.project); }}>Düzenle</button>
+                <button className="secondary-btn" onClick={() => setDetail(null)}>Kapat</button>
+              </div>
+            </div>
             <div className="inv-tabs">{[['genel', 'Genel bilgiler'], ['surec', 'Süreç / pipeline'], ['gorev', 'Görevler'], ['soz', 'Sözleşmeler'], ['finans', 'Finans'], ['dosya', 'Dosyalar'], ['aktivite', 'Aktivite geçmişi'], ['risk', 'Riskler']].map(([id, l]) => <button key={id} className={`inv-tab ${detailTab === id ? 'active' : ''}`} onClick={() => setDetailTab(id)}>{l}</button>)}</div>
             <div className="inv-modal-body">
               {detailTab === 'genel' && <dl className="inv-dl"><dt>Tip</dt><dd>{detail.project.type}</dd><dt>Sorumlu ekip</dt><dd>{detail.project.owner}</dd><dt>Sorumlu kişi</dt><dd>{detail.project.ownerPerson || '-'}</dd><dt>Yatırım</dt><dd>{detail.project.estimatedInvestment || '-'}</dd><dt>Gelir</dt><dd>{detail.project.estimatedRevenue || '-'}</dd></dl>}

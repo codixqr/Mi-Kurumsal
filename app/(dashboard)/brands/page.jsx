@@ -963,12 +963,6 @@ export default function BrandsPage() {
                   {colVisible.active !== false && <td>{b.active ? 'Evet' : 'Hayır'}</td>}
                   <td>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      <button type="button" className="edit-btn" onClick={() => editRow(b)}>
-                        Düzenle
-                      </button>
-                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => openDetail(b)}>
-                        Detay
-                      </button>
                       <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => openDetail(b, 'yatirimci')}>
                         Yatırımcı
                       </button>
@@ -1017,9 +1011,12 @@ export default function BrandsPage() {
           <div className="inv-modal" role="dialog" onClick={(e) => e.stopPropagation()}>
             <div className="inv-modal-head">
               <h3 style={{ margin: 0 }}>{detail.brand.name}</h3>
-              <button type="button" className="secondary-btn" onClick={() => setDetailOpen(false)}>
-                Kapat
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="edit-btn" onClick={() => { setDetailOpen(false); editRow(detail.brand); }}>Düzenle</button>
+                <button type="button" className="secondary-btn" onClick={() => setDetailOpen(false)}>
+                  Kapat
+                </button>
+              </div>
             </div>
             <div className="inv-tabs">
               {[

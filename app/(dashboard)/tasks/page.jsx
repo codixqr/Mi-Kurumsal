@@ -395,9 +395,8 @@ export default function TasksPage() {
                   </td>}
                   <td>
                     <div style={{ display: 'flex', gap: 4 }}>
-                      <button className="secondary-btn" style={{ fontSize: '0.78rem', padding: '3px 10px' }} onClick={() => setDetailTask(task)}>Detay</button>
-                      <button className="secondary-btn" style={{ fontSize: '0.78rem', padding: '3px 10px' }} onClick={() => openEdit(task)}>Düzenle</button>
-                      {isAdmin && <button className="danger-btn" style={{ fontSize: '0.78rem', padding: '3px 10px' }} onClick={() => handleDelete(task.id)}>Sil</button>}
+                    <button className="primary-btn" onClick={() => handleQuickStatus(task, 'Tamamlandı')}>✔</button>
+                    {isAdmin && <button className="danger-btn" style={{ fontSize: '0.78rem', padding: '3px 10px' }} onClick={() => handleDelete(task.id)}>Sil</button>}
                     </div>
                   </td>
                 </tr>
@@ -562,7 +561,10 @@ export default function TasksPage() {
           <div className="modal" style={{ maxWidth: 560 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Görev Detayı</h3>
-              <button onClick={() => setDetailTask(null)} className="modal-close">X</button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="edit-btn" onClick={() => { openEdit(detailTask); setDetailTask(null); }}>Düzenle</button>
+                <button onClick={() => setDetailTask(null)} className="modal-close">X</button>
+              </div>
             </div>
             <div className="modal-body">
               <h4 style={{ margin: '0 0 12px', color: '#1e293b', fontSize: '1.1rem' }}>{detailTask.title || detailTask.note}</h4>
@@ -605,7 +607,6 @@ export default function TasksPage() {
               )}
             </div>
             <div className="modal-footer">
-              <button className="secondary-btn" onClick={() => { openEdit(detailTask); setDetailTask(null); }}>Düzenle</button>
               {isAdmin && <button className="danger-btn" onClick={() => { handleDelete(detailTask.id); setDetailTask(null); }}>Sil</button>}
               <button className="primary-btn" onClick={() => setDetailTask(null)}>Kapat</button>
             </div>
