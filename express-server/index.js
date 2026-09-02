@@ -7,6 +7,8 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { Pool } = require("pg");
+const { S3Client } = require("@aws-sdk/client-s3");
+const multerS3 = require("multer-s3");
 const xlsx = require("xlsx");
 const nodemailer = require("nodemailer");
 const twilio = require("twilio");
@@ -78,14 +80,49 @@ if (!fs.existsSync(uploadsDir)) {
 }
 app.use("/uploads", express.static(uploadsDir));
 
-const uploadStorage = multer.diskStorage({
-  destination: uploadsDir,
-  filename: (req, file, cb) => {
-    const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname.replace(/[^\w.\-]/g, "_")}`;
-    cb(null, safeName);
-  },
-});
+let uploadStorage;
+const isR2Enabled = process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET_NAME;
+
+if (isR2Enabled) {
+  const s3 = new S3Client({
+    region: "auto",
+    endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: process.env.R2_ACCESS_KEY_ID,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+    },
+  });
+
+  uploadStorage = multerS3({
+    s3: s3,
+    bucket: process.env.R2_BUCKET_NAME,
+    acl: "public-read",
+    contentType: multerS3.AUTO_CONTENT_TYPE,
+    key: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      cb(null, "uploads/" + uniqueSuffix + "-" + file.originalname.replace(/[^\w.\-]/g, "_"));
+    },
+  });
+} else {
+  uploadStorage = multer.diskStorage({
+    destination: uploadsDir,
+    filename: (req, file, cb) => {
+      const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname.replace(/[^\w.\-]/g, "_")}`;
+      cb(null, safeName);
+    },
+  });
+}
 const upload = multer({ storage: uploadStorage, limits: { fileSize: 25 * 1024 * 1024 } });
+const uploadLocal = multer({
+  storage: multer.diskStorage({
+    destination: uploadsDir,
+    filename: (req, file, cb) => {
+      const safeName = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${file.originalname.replace(/[^\w.\-]/g, "_")}`;
+      cb(null, safeName);
+    }
+  }),
+  limits: { fileSize: 25 * 1024 * 1024 }
+});
 
 const pipelineStages = [
   "Yeni Lead",
@@ -1563,7 +1600,10 @@ app.post("/api/uploads", authMiddleware, upload.single("file"), async (req, res)
     return res.status(400).json({ message: "Dosya yüklenemedi." });
   }
   const moduleName = String(req.body.moduleName || "general");
-  const fileUrl = `/uploads/${req.file.filename}`;
+  const storedName = req.file.key || req.file.filename;
+  const fileUrl = isR2Enabled && req.file.key
+    ? `${process.env.R2_PUBLIC_URL || ""}/${req.file.key}`
+    : `/uploads/${req.file.filename}`;
   const inserted = await pool.query(
     `INSERT INTO uploaded_files(module_name,original_name,stored_name,file_url,mime_type,size_bytes,created_by)
      VALUES($1,$2,$3,$4,$5,$6,$7)
@@ -1571,7 +1611,7 @@ app.post("/api/uploads", authMiddleware, upload.single("file"), async (req, res)
     [
       moduleName,
       req.file.originalname,
-      req.file.filename,
+      storedName,
       fileUrl,
       req.file.mimetype,
       req.file.size,
@@ -4318,7 +4358,7 @@ function resolveMapping(header, savedMappings) {
   return null;
 }
 
-app.post("/api/pnl/import-preview", authMiddleware, upload.single("excelFile"), async (req, res) => {
+app.post("/api/pnl/import-preview", authMiddleware, uploadLocal.single("excelFile"), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: "Dosya yüklenmedi." });
   const workbook = xlsx.readFile(req.file.path);
   const savedMappings = (await pool.query("SELECT * FROM pnl_field_mappings")).rows;
@@ -4440,7 +4480,7 @@ app.delete("/api/pnl/:id", authMiddleware, async (req, res) => {
   res.status(204).send();
 });
 
-app.post("/api/investors/import", authMiddleware, upload.single("excelFile"), async (req, res) => {
+app.post("/api/investors/import", authMiddleware, uploadLocal.single("excelFile"), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: "Dosya yüklenmedi." });
   const workbook = xlsx.readFile(req.file.path);
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -4470,7 +4510,7 @@ app.post("/api/investors/import", authMiddleware, upload.single("excelFile"), as
   res.json({ message: `${imported.length} yatırımcı başarıyla aktarıldı.`, imported });
 });
 
-app.post("/api/brands/import", authMiddleware, upload.single("excelFile"), async (req, res) => {
+app.post("/api/brands/import", authMiddleware, uploadLocal.single("excelFile"), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: "Dosya yüklenmedi." });
   const workbook = xlsx.readFile(req.file.path);
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -4498,7 +4538,7 @@ app.post("/api/brands/import", authMiddleware, upload.single("excelFile"), async
   res.json({ message: `${imported.length} marka başarıyla aktarıldı.`, imported });
 });
 
-app.post("/api/pnl/import", authMiddleware, upload.single("excelFile"), async (req, res) => {
+app.post("/api/pnl/import", authMiddleware, uploadLocal.single("excelFile"), async (req, res) => {
   const fallbackPath = "c:/Users/Xezal/Desktop/Kar Zarar Raporu mi kurumsal.xlsx";
   const filePath = req.file ? req.file.path : fallbackPath;
   const workbook = xlsx.readFile(filePath);
@@ -4528,10 +4568,12 @@ app.post("/api/pnl/import", authMiddleware, upload.single("excelFile"), async (r
   }
 
   if (req.file) {
+    const stored = req.file.key || req.file.filename;
+    const fUrl = (isR2Enabled && req.file.key) ? `${process.env.R2_PUBLIC_URL || ""}/${req.file.key}` : `/uploads/${req.file.filename}`;
     await pool.query(
       `INSERT INTO uploaded_files(module_name,original_name,stored_name,file_url,mime_type,size_bytes,created_by)
        VALUES($1,$2,$3,$4,$5,$6,$7)`,
-      ["pnl", req.file.originalname, req.file.filename, `/uploads/${req.file.filename}`, req.file.mimetype, req.file.size, req.user.id],
+      ["pnl", req.file.originalname, stored, fUrl, req.file.mimetype, req.file.size, req.user.id],
     );
   }
 
@@ -4787,7 +4829,7 @@ app.get("/api/pnl/customer/:investorId/monthly-summary", authMiddleware, async (
 });
 
 // Excel İçe Aktar — parse + preview
-app.post("/api/pnl/customer/:investorId/import-excel", authMiddleware, upload.single('file'), async (req, res, next) => {
+app.post("/api/pnl/customer/:investorId/import-excel", authMiddleware, uploadLocal.single('file'), async (req, res, next) => {
   try {
     const XLSX = require("xlsx");
     if (!req.file) return res.status(400).json({ message: 'Dosya gerekli' });
