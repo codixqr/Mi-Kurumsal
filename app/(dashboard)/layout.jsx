@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { MobileTableSetup } from '@/components/MobileTableSetup';
 
 export default function DashboardLayout({ children }) {
   const { user, logout, loading } = useAuth();
@@ -56,6 +57,7 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="app">
+      <MobileTableSetup />
       {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
       
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>

@@ -461,7 +461,7 @@ export default function SozlesmePage() {
 
       {/* TABLO */}
       <div className="inv-table-wrap">
-        <table className="inv-table">
+        <table className="inv-table responsive-cards">
           <thead>
             <tr>
               <th>Sözleşme adı</th>
@@ -482,24 +482,24 @@ export default function SozlesmePage() {
             {!loading && items.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>Kayıt bulunamadı.</td></tr>}
             {!loading && items.map((item) => (
               <tr key={item.id}>
-                <td><strong onClick={() => openDetail(item)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{item.name}</strong></td>
-                {colVisible.investor !== false && <td>{item.investorName || '—'}</td>}
-                {colVisible.brand !== false && <td>{item.brandName || '—'}</td>}
-                {colVisible.location !== false && <td>{item.locationName || '—'}</td>}
-                {colVisible.type !== false && <td>{item.type || '—'}</td>}
-                {colVisible.amount !== false && <td style={{ whiteSpace: 'nowrap' }}>{fmt(item.amount)} {item.currency}</td>}
-                {colVisible.startDate !== false && <td style={{ fontSize: 12 }}>{item.startDate || '—'}</td>}
-                {colVisible.endDate !== false && <td style={{ fontSize: 12 }}>{item.endDate || '—'}</td>}
-                {colVisible.status !== false && <td><span className="badge" style={{ ...Object.fromEntries((durumRengi(item.status)).split(';').filter(Boolean).map((s) => { const [k, v] = s.split(':'); return [k.trim(), v?.trim()]; })) }}>{item.status}</span></td>}
-                {colVisible.consultant !== false && <td style={{ fontSize: 12 }}>{item.consultantName || '—'}</td>}
-                <td>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    <button className="secondary-btn" onClick={() => createFinance(item)} style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Finans oluştur</button>
-                    {item.fileUrl && <a className="secondary-btn" href={item.fileUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>PDF</a>}
-                    <button className="secondary-btn" onClick={() => yenile(item)} style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Yenile</button>
-                    <button className="secondary-btn" onClick={() => feshet(item)} style={{ fontSize: '0.75rem', padding: '4px 8px', background: '#fff1f2', color: '#b91c1c' }}>Feshet</button>
-                    <button className="secondary-btn" onClick={async () => { if (!confirm('Arşivlensin mi?')) return; await apiClient.put(`/contracts/${item.id}`, { ...item, status: 'Arşiv', type: item.type }); fetchList(); }} style={{ fontSize: '0.75rem', padding: '4px 8px', background: '#fef3c7', color: '#92400e' }}>Arşivle</button>
-                    <button className="danger-btn" onClick={async () => { if (!confirm('Silinsin mi?')) return; await apiClient.delete(`/contracts/${item.id}`); fetchList(); }} style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Sil</button>
+                <td data-label="Sözleşme adı"><strong onClick={() => openDetail(item)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{item.name}</strong></td>
+                {colVisible.investor !== false && <td data-label="Yatırımcı">{item.investorName || '—'}</td>}
+                {colVisible.brand !== false && <td data-label="Marka">{item.brandName || '—'}</td>}
+                {colVisible.location !== false && <td data-label="Lokasyon">{item.locationName || '—'}</td>}
+                {colVisible.type !== false && <td data-label="Tip">{item.type || '—'}</td>}
+                {colVisible.amount !== false && <td data-label="Tutar" style={{ whiteSpace: 'nowrap' }}>{fmt(item.amount)} {item.currency}</td>}
+                {colVisible.startDate !== false && <td data-label="Başlangıç" style={{ fontSize: 12 }}>{item.startDate || '—'}</td>}
+                {colVisible.endDate !== false && <td data-label="Bitiş" style={{ fontSize: 12 }}>{item.endDate || '—'}</td>}
+                {colVisible.status !== false && <td data-label="Durum"><span className="badge" style={{ ...Object.fromEntries((durumRengi(item.status)).split(';').filter(Boolean).map((s) => { const [k, v] = s.split(':'); return [k.trim(), v?.trim()]; })) }}>{item.status}</span></td>}
+                {colVisible.consultant !== false && <td data-label="Danışman" style={{ fontSize: 12 }}>{item.consultantName || '—'}</td>}
+                <td data-label="İşlem">
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+                    <button className="secondary-btn" onClick={() => createFinance(item)} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px' }}>Finans oluştur</button>
+                    {item.fileUrl && <a className="secondary-btn" href={item.fileUrl} target="_blank" rel="noreferrer" style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px', textAlign: 'center' }}>PDF</a>}
+                    <button className="secondary-btn" onClick={() => yenile(item)} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px' }}>Yenile</button>
+                    <button className="secondary-btn" onClick={() => feshet(item)} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px', background: '#fff1f2', color: '#b91c1c' }}>Feshet</button>
+                    <button className="secondary-btn" onClick={async () => { if (!confirm('Arşivlensin mi?')) return; await apiClient.put(`/contracts/${item.id}`, { ...item, status: 'Arşiv', type: item.type }); fetchList(); }} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px', background: '#fef3c7', color: '#92400e' }}>Arşivle</button>
+                    <button className="danger-btn" onClick={async () => { if (!confirm('Silinsin mi?')) return; await apiClient.delete(`/contracts/${item.id}`); fetchList(); }} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px' }}>Sil</button>
                   </div>
                 </td>
               </tr>
