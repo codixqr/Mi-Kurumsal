@@ -130,6 +130,25 @@ export default function InvestorsPage() {
   const [teamOptions, setTeamOptions] = useState([]);
   const [form, setForm] = useState(defaultForm());
   const [formOpen, setFormOpen] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [viewMode, setViewMode] = useState('auto');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const activeFilterCount = useMemo(() => {
+    let cnt = 0;
+    const def = defaultFilters();
+    Object.keys(def).forEach((k) => {
+      if (k !== 'q' && filterDraft[k] && filterDraft[k] !== def[k]) cnt++;
+    });
+    return cnt;
+  }, [filterDraft]);
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailTab, setDetailTab] = useState('genel');
@@ -625,132 +644,176 @@ export default function InvestorsPage() {
         </div>
       )}
 
-      <div className="inv-filters">
-        <div className="field" style={{ margin: 0 }}>
-          <label>Genel arama</label>
-          <input value={filterDraft.q} onChange={(e) => setFilterDraft({ ...filterDraft, q: e.target.value })} placeholder="Ad, e-posta, telefon, şehir" />
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Ad / Şirket</label>
-          <input value={filterDraft.name} onChange={(e) => setFilterDraft({ ...filterDraft, name: e.target.value })} />
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Telefon</label>
-          <input value={filterDraft.phone} onChange={(e) => setFilterDraft({ ...filterDraft, phone: e.target.value })} />
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>E-posta</label>
-          <input value={filterDraft.email} onChange={(e) => setFilterDraft({ ...filterDraft, email: e.target.value })} />
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Şehir</label>
-          <select value={filterDraft.city ? filterDraft.city.toUpperCase() : ''} onChange={(e) => setFilterDraft({ ...filterDraft, city: e.target.value, district: '' })}>
-            <option value="">Tümü</option>
-            {citiesData.city.map((c) => (
-              <option key={c.name} value={c.name}>{c.name}</option>
-            ))}
-          </select>
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>İlçe</label>
-          <select value={filterDraft.district ? filterDraft.district.toUpperCase() : ''} onChange={(e) => setFilterDraft({ ...filterDraft, district: e.target.value })} disabled={!filterDraft.city}>
-            <option value="">Tümü</option>
-            {citiesData.city.find((c) => c.name.toLowerCase() === (filterDraft.city || '').toLowerCase())?.discrits.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Sektör</label>
-          <input list="inv-sector-filter" value={filterDraft.sector} onChange={(e) => setFilterDraft({ ...filterDraft, sector: e.target.value })} />
-          <datalist id="inv-sector-filter">{SECTORS.map((s) => <option key={s} value={s} />)}</datalist>
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Bütçe min</label>
-          <input type="number" value={filterDraft.budgetMin} onChange={(e) => setFilterDraft({ ...filterDraft, budgetMin: e.target.value })} />
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Bütçe max</label>
-          <input type="number" value={filterDraft.budgetMax} onChange={(e) => setFilterDraft({ ...filterDraft, budgetMax: e.target.value })} />
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Para birimi</label>
-          <select value={filterDraft.currency} onChange={(e) => setFilterDraft({ ...filterDraft, currency: e.target.value })}>
-            <option value="">Tümü</option>
-            <option value="TRY">TL</option>
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-          </select>
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Pipeline</label>
-          <select value={filterDraft.pipeline} onChange={(e) => setFilterDraft({ ...filterDraft, pipeline: e.target.value })}>
-            <option value="">Tümü</option>
-            {PIPELINES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Yatırım tipi</label>
-          <select value={filterDraft.investmentType} onChange={(e) => setFilterDraft({ ...filterDraft, investmentType: e.target.value })}>
-            <option value="">Tümü</option>
-            {INVESTMENT_TYPES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Öncelik</label>
-          <select value={filterDraft.priority} onChange={(e) => setFilterDraft({ ...filterDraft, priority: e.target.value })}>
-            <option value="">Tümü</option>
-            {PRIORITIES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Atanan danışman</label>
-          <select value={filterDraft.assignedMemberId} onChange={(e) => setFilterDraft({ ...filterDraft, assignedMemberId: e.target.value })}>
-            <option value="">Tümü</option>
-            {teamOptions.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Takip tarihi (başlangıç)</label>
-          <input type="date" value={filterDraft.followUpFrom} onChange={(e) => setFilterDraft({ ...filterDraft, followUpFrom: e.target.value })} />
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Takip tarihi (bitiş)</label>
-          <input type="date" value={filterDraft.followUpTo} onChange={(e) => setFilterDraft({ ...filterDraft, followUpTo: e.target.value })} />
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Kayıt başlangıç</label>
-          <input type="date" value={filterDraft.createdFrom} onChange={(e) => setFilterDraft({ ...filterDraft, createdFrom: e.target.value })} />
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Kayıt bitiş</label>
-          <input type="date" value={filterDraft.createdTo} onChange={(e) => setFilterDraft({ ...filterDraft, createdTo: e.target.value })} />
-        </div>
-        <div className="field" style={{ margin: 0, gridColumn: '1 / -1', display: 'flex', gap: 8 }}>
+      {/* Responsive Controls & Quick Search */}
+      <div className="inv-controls-bar">
+        <div className="inv-quick-search-wrap">
+          <input
+            type="text"
+            value={filterDraft.q}
+            onChange={(e) => setFilterDraft({ ...filterDraft, q: e.target.value })}
+            onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
+            placeholder="🔍 Hızlı arama (Ad, tel, e-posta, şehir...)"
+          />
           <button type="button" className="primary-btn" onClick={applyFilters}>
-            Filtrele
+            Ara
           </button>
-          <button type="button" className="secondary-btn" onClick={resetFilters}>
-            Sıfırla
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          >
+            Filtreler {activeFilterCount > 0 && <span className="filter-badge">{activeFilterCount}</span>}
+            {showAdvancedFilters ? ' ▲' : ' ▼'}
+          </button>
+          {activeFilterCount > 0 && (
+            <button type="button" className="secondary-btn" onClick={resetFilters} title="Filtreleri Temizle">
+              ✕
+            </button>
+          )}
+        </div>
+
+        <div className="inv-view-toggle">
+          <button
+            type="button"
+            className={`inv-view-btn ${viewMode === 'cards' || (viewMode === 'auto' && isMobile) ? 'active' : ''}`}
+            onClick={() => setViewMode('cards')}
+          >
+            🗂️ Kartlar
+          </button>
+          <button
+            type="button"
+            className={`inv-view-btn ${viewMode === 'table' || (viewMode === 'auto' && !isMobile) ? 'active' : ''}`}
+            onClick={() => setViewMode('table')}
+          >
+            📋 Tablo
           </button>
         </div>
       </div>
+
+      {showAdvancedFilters && (
+        <div className="inv-filters">
+          <div className="field" style={{ margin: 0 }}>
+            <label>Ad / Şirket</label>
+            <input value={filterDraft.name} onChange={(e) => setFilterDraft({ ...filterDraft, name: e.target.value })} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Telefon</label>
+            <input value={filterDraft.phone} onChange={(e) => setFilterDraft({ ...filterDraft, phone: e.target.value })} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>E-posta</label>
+            <input value={filterDraft.email} onChange={(e) => setFilterDraft({ ...filterDraft, email: e.target.value })} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Şehir</label>
+            <select value={filterDraft.city ? filterDraft.city.toUpperCase() : ''} onChange={(e) => setFilterDraft({ ...filterDraft, city: e.target.value, district: '' })}>
+              <option value="">Tümü</option>
+              {citiesData.city.map((c) => (
+                <option key={c.name} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>İlçe</label>
+            <select value={filterDraft.district ? filterDraft.district.toUpperCase() : ''} onChange={(e) => setFilterDraft({ ...filterDraft, district: e.target.value })} disabled={!filterDraft.city}>
+              <option value="">Tümü</option>
+              {citiesData.city.find((c) => c.name.toLowerCase() === (filterDraft.city || '').toLowerCase())?.discrits.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Sektör</label>
+            <input list="inv-sector-filter" value={filterDraft.sector} onChange={(e) => setFilterDraft({ ...filterDraft, sector: e.target.value })} />
+            <datalist id="inv-sector-filter">{SECTORS.map((s) => <option key={s} value={s} />)}</datalist>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Bütçe min</label>
+            <input type="number" value={filterDraft.budgetMin} onChange={(e) => setFilterDraft({ ...filterDraft, budgetMin: e.target.value })} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Bütçe max</label>
+            <input type="number" value={filterDraft.budgetMax} onChange={(e) => setFilterDraft({ ...filterDraft, budgetMax: e.target.value })} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Para birimi</label>
+            <select value={filterDraft.currency} onChange={(e) => setFilterDraft({ ...filterDraft, currency: e.target.value })}>
+              <option value="">Tümü</option>
+              <option value="TRY">TL</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Pipeline</label>
+            <select value={filterDraft.pipeline} onChange={(e) => setFilterDraft({ ...filterDraft, pipeline: e.target.value })}>
+              <option value="">Tümü</option>
+              {PIPELINES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Yatırım tipi</label>
+            <select value={filterDraft.investmentType} onChange={(e) => setFilterDraft({ ...filterDraft, investmentType: e.target.value })}>
+              <option value="">Tümü</option>
+              {INVESTMENT_TYPES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Öncelik</label>
+            <select value={filterDraft.priority} onChange={(e) => setFilterDraft({ ...filterDraft, priority: e.target.value })}>
+              <option value="">Tümü</option>
+              {PRIORITIES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Atanan danışman</label>
+            <select value={filterDraft.assignedMemberId} onChange={(e) => setFilterDraft({ ...filterDraft, assignedMemberId: e.target.value })}>
+              <option value="">Tümü</option>
+              {teamOptions.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Takip tarihi (başlangıç)</label>
+            <input type="date" value={filterDraft.followUpFrom} onChange={(e) => setFilterDraft({ ...filterDraft, followUpFrom: e.target.value })} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Takip tarihi (bitiş)</label>
+            <input type="date" value={filterDraft.followUpTo} onChange={(e) => setFilterDraft({ ...filterDraft, followUpTo: e.target.value })} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Kayıt başlangıç</label>
+            <input type="date" value={filterDraft.createdFrom} onChange={(e) => setFilterDraft({ ...filterDraft, createdFrom: e.target.value })} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Kayıt bitiş</label>
+            <input type="date" value={filterDraft.createdTo} onChange={(e) => setFilterDraft({ ...filterDraft, createdTo: e.target.value })} />
+          </div>
+          <div className="field" style={{ margin: 0, gridColumn: '1 / -1', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button type="button" className="secondary-btn" onClick={resetFilters}>
+              Sıfırla
+            </button>
+            <button type="button" className="primary-btn" onClick={() => { applyFilters(); setShowAdvancedFilters(false); }}>
+              Filtreleri Uygula
+            </button>
+          </div>
+        </div>
+      )}
 
       {selectedIds.length > 0 && (
         <div className="inv-bulk-bar">
@@ -997,7 +1060,7 @@ export default function InvestorsPage() {
                 )}
               </div>
             </div>
-            <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
+              <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
               <button type="submit" className="primary-btn">
                 {form.id ? 'Güncelle' : 'Kaydet'}
               </button>
@@ -1015,87 +1078,181 @@ export default function InvestorsPage() {
         <div className="card">Yükleniyor…</div>
       ) : (
         <>
-          <div className="inv-table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th style={{ width: 36 }}>
-                    <input type="checkbox" checked={items.length > 0 && selectedIds.length === items.length} onChange={toggleSelectAll} />
-                  </th>
-                  <th onClick={() => toggleSort('name')}>Yatırımcı {sort === 'name' ? (order === 'asc' ? '↑' : '↓') : ''}</th>
-                  {colVisible.phone !== false && <th>Telefon</th>}
-                  {colVisible.city !== false && <th onClick={() => toggleSort('city')}>Şehir / İlçe</th>}
-                  {colVisible.sector !== false && <th>Sektör</th>}
-                  {colVisible.budget !== false && <th onClick={() => toggleSort('budget')}>Bütçe</th>}
-                  {colVisible.investmentType !== false && <th>Yatırım</th>}
-                  {colVisible.pipeline !== false && <th onClick={() => toggleSort('pipeline')}>Pipeline</th>}
-                  {colVisible.priority !== false && <th onClick={() => toggleSort('priority')}>Öncelik</th>}
-                  {colVisible.consultant !== false && <th>Danışman</th>}
-                  {colVisible.followUp !== false && <th onClick={() => toggleSort('follow_up_date')}>Takip</th>}
-                  {colVisible.lastAction !== false && <th>Son aksiyon</th>}
-                  <th>İşlem</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.length === 0 ? (
-                  <tr>
-                    <td colSpan={13} style={{ textAlign: 'center', padding: 24, color: '#64748b' }}>
-                      Kayıt bulunamadı.
-                    </td>
-                  </tr>
-                ) : (
-                  items.map((inv) => (
-                    <tr key={inv.id} className={selectedIds.includes(inv.id) ? 'selected-row' : ''}>
-                      <td>
-                        <input type="checkbox" checked={selectedIds.includes(inv.id)} onChange={() => toggleSelect(inv.id)} />
-                      </td>
-                      <td>
-                        <strong onClick={() => openDetail(inv)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{inv.name}</strong>
-                        <div style={{ fontSize: 11, color: '#64748b' }}>{inv.investorType}</div>
-                      </td>
-                      {colVisible.phone !== false && <td style={{ fontSize: 13 }}>{inv.phone || '—'}</td>}
-                      {colVisible.city !== false && <td>{inv.city}<div style={{ fontSize: 11, color: '#64748b' }}>{inv.district || '—'}</div></td>}
-                      {colVisible.sector !== false && <td>{inv.sector}</td>}
-                      {colVisible.budget !== false && <td style={{ whiteSpace: 'nowrap' }}>{budgetLabel(inv)}</td>}
-                      {colVisible.investmentType !== false && <td style={{ fontSize: 12 }}>{inv.type}</td>}
-                      {colVisible.pipeline !== false && <td><span className="badge">{inv.pipeline}</span></td>}
-                      {colVisible.priority !== false && <td><span className={priorityClass(inv.priority)}>{inv.priority}</span></td>}
-                      {colVisible.consultant !== false && <td style={{ fontSize: 12 }}>{inv.assignedMemberName || '—'}</td>}
-                      {colVisible.followUp !== false && <td style={{ fontSize: 12 }}>{inv.followUpDate || '—'}</td>}
-                      {colVisible.lastAction !== false && <td style={{ fontSize: 12, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.nextAction || inv.meetingNotes?.slice(0, 40) || '—'}</td>}
-                      <td>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                          {waLink(inv) && (
-                            <a className="success-btn" href={waLink(inv)} target="_blank" rel="noreferrer" style={{ padding: '4px 8px', fontSize: 12 }}>
-                              WA
-                            </a>
-                          )}
-                          <button type="button" className="secondary-btn" style={{ fontSize: 11 }} onClick={() => openMatch(inv)}>
-                            Marka
-                          </button>
-                          <button type="button" className="secondary-btn" style={{ fontSize: 11 }} onClick={() => locSuggest(inv)}>
-                            Lokasyon
-                          </button>
-                          <button type="button" className="secondary-btn" style={{ fontSize: 11 }} onClick={() => createProject(inv)}>
-                            Proje
-                          </button>
-                          <button type="button" className="secondary-btn" style={{ fontSize: 11 }} onClick={() => createTask(inv)}>
-                            Görev
-                          </button>
-                          <button type="button" className="secondary-btn" style={{ fontSize: 11, background: '#fef3c7', color: '#92400e' }} onClick={async () => { if (!confirm('Arşivlensin mi?')) return; await apiClient.put(`/investors/${inv.id}`, { ...inv, pipeline: 'Arşiv' }); fetchList(); }}>
-                            Arşivle
-                          </button>
-                          <button type="button" className="danger-btn" style={{ fontSize: 11 }} onClick={() => deleteRow(inv)}>
-                            Sil
-                          </button>
+          {(viewMode === 'cards' || (viewMode === 'auto' && isMobile)) ? (
+            <div className="inv-mobile-cards">
+              {items.length === 0 ? (
+                <div className="card" style={{ textAlign: 'center', padding: 24, color: '#64748b' }}>
+                  Kayıt bulunamadı.
+                </div>
+              ) : (
+                items.map((inv) => (
+                  <div key={inv.id} className={`inv-card ${selectedIds.includes(inv.id) ? 'selected' : ''}`}>
+                    <div className="inv-card-header">
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flex: 1, minWidth: 0 }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(inv.id)}
+                          onChange={() => toggleSelect(inv.id)}
+                          style={{ marginTop: 4 }}
+                        />
+                        <div style={{ minWidth: 0 }}>
+                          <div className="inv-card-title" onClick={() => openDetail(inv)}>
+                            {inv.name}
+                          </div>
+                          <div className="inv-card-meta">
+                            {inv.city}{inv.district ? ` / ${inv.district}` : ''} • {inv.sector} • #{inv.id}
+                          </div>
                         </div>
+                      </div>
+                      <span className={priorityClass(inv.priority)}>{inv.priority}</span>
+                    </div>
+
+                    <div className="inv-card-grid">
+                      <div className="inv-card-row">
+                        <span className="inv-card-label">Bütçe</span>
+                        <span className="inv-card-val">{budgetLabel(inv)}</span>
+                      </div>
+                      <div className="inv-card-row">
+                        <span className="inv-card-label">Pipeline</span>
+                        <span className="badge" style={{ alignSelf: 'flex-start' }}>{inv.pipeline}</span>
+                      </div>
+                      <div className="inv-card-row">
+                        <span className="inv-card-label">Telefon</span>
+                        <span className="inv-card-val">
+                          {inv.phone ? (
+                            <a href={`tel:${inv.phone}`} style={{ color: '#1a5c38', textDecoration: 'none' }}>
+                              {inv.phone}
+                            </a>
+                          ) : '—'}
+                        </span>
+                      </div>
+                      <div className="inv-card-row">
+                        <span className="inv-card-label">Danışman</span>
+                        <span className="inv-card-val">{inv.assignedMemberName || '—'}</span>
+                      </div>
+                      {inv.followUpDate && (
+                        <div className="inv-card-row">
+                          <span className="inv-card-label">Takip Tarihi</span>
+                          <span className="inv-card-val">{inv.followUpDate}</span>
+                        </div>
+                      )}
+                      {inv.nextAction && (
+                        <div className="inv-card-row" style={{ gridColumn: 'span 2' }}>
+                          <span className="inv-card-label">Son Aksiyon</span>
+                          <span className="inv-card-val" style={{ fontSize: '0.8rem', color: '#475569' }}>{inv.nextAction}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="inv-card-actions">
+                      {waLink(inv) && (
+                        <a className="success-btn" href={waLink(inv)} target="_blank" rel="noreferrer" style={{ padding: '6px 10px', fontSize: '0.78rem' }}>
+                          💬 WA
+                        </a>
+                      )}
+                      <button type="button" className="secondary-btn" onClick={() => openDetail(inv)}>
+                        Detay
+                      </button>
+                      <button type="button" className="secondary-btn" onClick={() => openMatch(inv)}>
+                        Marka
+                      </button>
+                      <button type="button" className="secondary-btn" onClick={() => locSuggest(inv)}>
+                        Lokasyon
+                      </button>
+                      <button type="button" className="secondary-btn" onClick={() => createProject(inv)}>
+                        Proje
+                      </button>
+                      <button type="button" className="danger-btn" onClick={() => deleteRow(inv)}>
+                        Sil
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : (
+            <div className="inv-table-wrap">
+              <table className="inv-table no-responsive">
+                <thead>
+                  <tr>
+                    <th style={{ width: 36 }}>
+                      <input type="checkbox" checked={items.length > 0 && selectedIds.length === items.length} onChange={toggleSelectAll} />
+                    </th>
+                    <th onClick={() => toggleSort('name')}>Yatırımcı {sort === 'name' ? (order === 'asc' ? '↑' : '↓') : ''}</th>
+                    {colVisible.phone !== false && <th>Telefon</th>}
+                    {colVisible.city !== false && <th onClick={() => toggleSort('city')}>Şehir / İlçe</th>}
+                    {colVisible.sector !== false && <th>Sektör</th>}
+                    {colVisible.budget !== false && <th onClick={() => toggleSort('budget')}>Bütçe</th>}
+                    {colVisible.investmentType !== false && <th>Yatırım</th>}
+                    {colVisible.pipeline !== false && <th>Pipeline</th>}
+                    {colVisible.priority !== false && <th>Öncelik</th>}
+                    {colVisible.consultant !== false && <th>Danışman</th>}
+                    {colVisible.followUp !== false && <th onClick={() => toggleSort('follow_up_date')}>Takip</th>}
+                    {colVisible.lastAction !== false && <th>Son aksiyon</th>}
+                    <th>İşlem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.length === 0 ? (
+                    <tr>
+                      <td colSpan={13} style={{ textAlign: 'center', padding: 24, color: '#64748b' }}>
+                        Kayıt bulunamadı.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    items.map((inv) => (
+                      <tr key={inv.id} className={selectedIds.includes(inv.id) ? 'selected-row' : ''}>
+                        <td>
+                          <input type="checkbox" checked={selectedIds.includes(inv.id)} onChange={() => toggleSelect(inv.id)} />
+                        </td>
+                        <td>
+                          <strong onClick={() => openDetail(inv)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{inv.name}</strong>
+                          <div style={{ fontSize: 11, color: '#64748b' }}>{inv.investorType}</div>
+                        </td>
+                        {colVisible.phone !== false && <td style={{ fontSize: 13 }}>{inv.phone || '—'}</td>}
+                        {colVisible.city !== false && <td>{inv.city}<div style={{ fontSize: 11, color: '#64748b' }}>{inv.district || '—'}</div></td>}
+                        {colVisible.sector !== false && <td>{inv.sector}</td>}
+                        {colVisible.budget !== false && <td style={{ whiteSpace: 'nowrap' }}>{budgetLabel(inv)}</td>}
+                        {colVisible.investmentType !== false && <td style={{ fontSize: 12 }}>{inv.type}</td>}
+                        {colVisible.pipeline !== false && <td><span className="badge">{inv.pipeline}</span></td>}
+                        {colVisible.priority !== false && <td><span className={priorityClass(inv.priority)}>{inv.priority}</span></td>}
+                        {colVisible.consultant !== false && <td style={{ fontSize: 12 }}>{inv.assignedMemberName || '—'}</td>}
+                        {colVisible.followUp !== false && <td style={{ fontSize: 12 }}>{inv.followUpDate || '—'}</td>}
+                        {colVisible.lastAction !== false && <td style={{ fontSize: 12, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{inv.nextAction || inv.meetingNotes?.slice(0, 40) || '—'}</td>}
+                        <td>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                            {waLink(inv) && (
+                              <a className="success-btn" href={waLink(inv)} target="_blank" rel="noreferrer" style={{ padding: '4px 8px', fontSize: 12 }}>
+                                WA
+                              </a>
+                            )}
+                            <button type="button" className="secondary-btn" style={{ fontSize: 11 }} onClick={() => openMatch(inv)}>
+                              Marka
+                            </button>
+                            <button type="button" className="secondary-btn" style={{ fontSize: 11 }} onClick={() => locSuggest(inv)}>
+                              Lokasyon
+                            </button>
+                            <button type="button" className="secondary-btn" style={{ fontSize: 11 }} onClick={() => createProject(inv)}>
+                              Proje
+                            </button>
+                            <button type="button" className="secondary-btn" style={{ fontSize: 11 }} onClick={() => createTask(inv)}>
+                              Görev
+                            </button>
+                            <button type="button" className="secondary-btn" style={{ fontSize: 11, background: '#fef3c7', color: '#92400e' }} onClick={async () => { if (!confirm('Arşivlensin mi?')) return; await apiClient.put(`/investors/${inv.id}`, { ...inv, pipeline: 'Arşiv' }); fetchList(); }}>
+                              Arşivle
+                            </button>
+                            <button type="button" className="danger-btn" style={{ fontSize: 11 }} onClick={() => deleteRow(inv)}>
+                              Sil
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
           <div className="inv-pagination">
             <span>
               Toplam {total} kayıt — Sayfa {page}/{totalPages}

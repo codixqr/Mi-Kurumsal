@@ -2,16 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/apiClient';
+import { KpiCard, SectionCard, ListRow } from '@/components/ui';
 
 const fmt = (n) => Number(n || 0).toLocaleString('tr-TR');
 const fmtTL = (n) => fmt(n) + ' ₺';
-
-const PRIO_COLORS = {
-  'Çok Yüksek': { bg: '#fef2f2', text: '#dc2626', dot: '#dc2626' },
-  'Yüksek':     { bg: '#fff7ed', text: '#ea580c', dot: '#ea580c' },
-  'Orta':       { bg: '#eff6ff', text: '#2563eb', dot: '#2563eb' },
-  'Düşük':      { bg: '#f0fdf4', text: '#16a34a', dot: '#16a34a' },
-};
 
 const STATUS_COLORS = {
   'Devam Ediyor': '#2563eb',
@@ -19,93 +13,6 @@ const STATUS_COLORS = {
   'Tamamlandı':   '#16a34a',
   'Gecikti':      '#dc2626',
 };
-
-function PrioBadge({ p }) {
-  const c = PRIO_COLORS[p] || PRIO_COLORS['Düşük'];
-  return (
-    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: c.text, background: c.bg, borderRadius: 5, padding: '2px 7px', whiteSpace: 'nowrap' }}>
-      {p}
-    </span>
-  );
-}
-
-function KpiCard({ label, value, sub, accent, href }) {
-  const inner = (
-    <div style={{
-      background: '#fff',
-      border: `1px solid ${accent ? accent + '33' : '#e2e8f0'}`,
-      borderLeft: `4px solid ${accent || '#1a5c38'}`,
-      borderRadius: 12,
-      padding: '18px 20px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 4,
-      cursor: href ? 'pointer' : 'default',
-    }}>
-      <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
-      <div style={{ fontSize: '1.8rem', fontWeight: 800, color: accent || '#1a5c38', lineHeight: 1.1 }}>{value}</div>
-      {sub && <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{sub}</div>}
-    </div>
-  );
-  if (href) return <a href={href} style={{ textDecoration: 'none' }}>{inner}</a>;
-  return inner;
-}
-
-function SectionCard({ title, children, href, accent }) {
-  return (
-    <div style={{
-      background: '#fff',
-      border: '1px solid #e2e8f0',
-      borderRadius: 14,
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      <div style={{
-        padding: '14px 18px',
-        borderBottom: '1px solid #f1f5f9',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        background: accent ? `${accent}08` : '#fafafa',
-      }}>
-        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: accent || '#1e293b' }}>{title}</span>
-        {href && <a href={href} style={{ fontSize: '0.75rem', color: '#1a5c38', textDecoration: 'none', fontWeight: 600 }}>Tümü →</a>}
-      </div>
-      <div style={{ padding: '6px 0', flex: 1 }}>{children}</div>
-    </div>
-  );
-}
-
-function ListRow({ left, right, sub, badge, accent, href, onAction }) {
-  const content = (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '10px 18px',
-      borderBottom: '1px solid #f8fafc',
-      gap: 8,
-      cursor: href ? 'pointer' : 'default',
-    }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, color: href ? '#1a5c38' : '#334155', fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{left}</div>
-        {sub && <div style={{ fontSize: '0.76rem', color: '#94a3b8', marginTop: 2 }}>{sub}</div>}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-        {badge && <PrioBadge p={badge} />}
-        {right && <span style={{ fontSize: '0.8rem', color: accent || '#64748b', fontWeight: 500 }}>{right}</span>}
-        {onAction && (
-          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAction(); }} style={{ marginLeft: 8, fontSize: '0.75rem', padding: '4px 8px', background: '#16a34a', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
-            Tamamla
-          </button>
-        )}
-      </div>
-    </div>
-  );
-  if (href) return <a href={href} style={{ textDecoration: 'none', display: 'block' }}>{content}</a>;
-  return content;
-}
 
 function EmptyRow({ text }) {
   return <div style={{ padding: '20px 18px', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>{text}</div>;

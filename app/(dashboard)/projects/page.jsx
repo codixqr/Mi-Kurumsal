@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { ColumnPicker, useColumnVisibility } from '@/lib/ColumnPicker';
+import { useTableFilters } from '@/lib/useTableFilters';
 
 
 const PIPELINES = ['Lead', 'Analiz', 'Marka eşleşmesi', 'Lokasyon çalışması', 'Teklif', 'Sözleşme', 'İnşaat / kurulum', 'Açılış', 'Kapanış'];
@@ -24,7 +25,7 @@ export default function ProjectsPage() {
   const [bulkPriority, setBulkPriority] = useState('');
   const [lookups, setLookups] = useState({ investors: [], brands: [], locations: [] });
   const defaultFilters = () => ({ name: '', investorId: '', brandId: '', locationId: '', type: '', stage: '', priority: '', startFrom: '', closeTo: '' });
-  const [filters, setFilters] = useState(defaultFilters());
+  const { filters, setFilters } = useTableFilters(defaultFilters);
   const [form, setForm] = useState({
     id: null,
     name: '', type: 'Franchise', investorId: '', brandId: '', locationId: '', estimatedInvestment: '', estimatedRevenue: '',
@@ -51,25 +52,6 @@ export default function ProjectsPage() {
       setLoading(false);
     }
   }, [filters, page, pageSize]);
-
-    useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const sp = new URLSearchParams(window.location.search);
-      let hasFilters = false;
-      const newFilters = { ...defaultFilters() };
-      const d = defaultFilters();
-      for (const key of Object.keys(d)) {
-        if (sp.has(key)) {
-          newFilters[key] = sp.get(key);
-          hasFilters = true;
-        }
-      }
-      if (hasFilters) {
-        setFilters(newFilters);
-        try { setFilterDraft(newFilters); } catch(e) {}
-      }
-    }
-  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => {
