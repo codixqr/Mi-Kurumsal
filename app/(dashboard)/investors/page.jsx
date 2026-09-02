@@ -997,7 +997,7 @@ export default function InvestorsPage() {
                         <input type="checkbox" checked={selectedIds.includes(inv.id)} onChange={() => toggleSelect(inv.id)} />
                       </td>
                       <td>
-                        <strong>{inv.name}</strong>
+                        <strong onClick={() => openDetail(inv)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{inv.name}</strong>
                         <div style={{ fontSize: 11, color: '#64748b' }}>{inv.investorType}</div>
                       </td>
                       {colVisible.phone !== false && <td style={{ fontSize: 13 }}>{inv.phone || '—'}</td>}
