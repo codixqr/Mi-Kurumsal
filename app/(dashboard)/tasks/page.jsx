@@ -340,7 +340,7 @@ export default function TasksPage() {
                   <td>
                     <div style={{ fontWeight: 600, color: '#1e293b', marginBottom: 2 }}>
                       {isOverdue(task) && <span style={{ color: '#dc2626', marginRight: 4, fontSize: '0.8rem' }}>GECİKMİŞ</span>}
-                      {task.title || task.note}
+                      <span onClick={() => setDetailTask(task)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{task.title || task.note}</span>
                     </div>
                     {task.description && <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{task.description.substring(0, 60)}{task.description.length > 60 ? '...' : ''}</div>}
                     {task.tags?.length > 0 && (
