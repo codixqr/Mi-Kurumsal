@@ -3,6 +3,9 @@ const router = express.Router();
 const pool = require('../config/db');
 const { authMiddleware, requireAdmin, requirePermission } = require('../middlewares/auth');
 const jwt = require("jsonwebtoken");
+const xlsx = require('xlsx');
+const PDFDocument = require('pdfkit');
+const { upload, uploadLocal } = require('../middlewares/upload');
 const jwtSecret = process.env.JWT_SECRET || "crm_dev_secret_change_me";
 // Add other common imports here if they are missing
 

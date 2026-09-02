@@ -3115,6 +3115,11 @@ const MONTHS_TR = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temm
 // Excel Export
 
 // ─── Global Error Handler ─────────────────────────────────────────────────────
+
+// Inject helpers into global scope so separated route files can access them
+// TODO: Refactor these into a separate utils/helpers.js file later
+Object.assign(global, { fetchFont, getRobotoRegular, getRobotoBold, pipelineStages, scoreWeights, cityFitMap, ENTITY_CONFIG, signToken, fillTemplate, logAutomation, logActivity, sendMailNotification, sendMailToRecipient, sendWhatsAppNotification, triggerAutomation, mapInvestor, mapBrand, mapLocation, mapProject, mapTask, mapTeamMember, mapContract, mapFinanceRecord, mapPaymentPlan, mapExpense, scoreBudget, scoreCity, scoreSector, scoreSqm, initDb, seedDefaultDataIfNeeded, normalizeMonthName, pickNumeric, extractMonthlyPnL, extractPnLDetailLines, investorDateOrNull, investorRowFromBody, computeInvestorKpis, investorReminders, brandOnboardingFromBody, brandWriteValues, computeBrandKpis, locationRowFromBody, computeLocationKpis, projectRowFromBody, computeProjectKpis, computeContractKpis, computeFinanceKpis, TASK_BASE_SELECT, resolveMapping, start });
+
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({
