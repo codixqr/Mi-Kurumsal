@@ -838,7 +838,26 @@ export default function InvestorsPage() {
               </div>
               <div className="field field-wide" style={{ margin: 0, gridColumn: 'span 2' }}>
                 <label>Hedef şehirler</label>
-                <input value={form.targetCities} onChange={(e) => setForm({ ...form, targetCities: e.target.value })} placeholder="Virgülle ayırın" />
+                <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ddd', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8, borderRadius: 6 }}>
+                  {citiesData.city.map(c => {
+                    const isSelected = form.targetCities?.includes(c.name);
+                    return (
+                      <label key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.85rem', cursor: 'pointer', margin: 0, fontWeight: 'normal' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={isSelected}
+                          onChange={(e) => {
+                            let arr = form.targetCities ? form.targetCities.split(',').map(s=>s.trim()).filter(Boolean) : [];
+                            if (e.target.checked) arr.push(c.name);
+                            else arr = arr.filter(x => x !== c.name);
+                            setForm({ ...form, targetCities: arr.join(', ') });
+                          }}
+                        />
+                        {c.name}
+                      </label>
+                    )
+                  })}
+                </div>
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label>Hedef lokasyon tipi</label>
@@ -1216,7 +1235,26 @@ export default function InvestorsPage() {
               </div>
               <div className="field field-wide" style={{ margin: 0, gridColumn: 'span 2' }}>
                 <label>Hedef şehirler</label>
-                <input value={form.targetCities} onChange={(e) => setForm({ ...form, targetCities: e.target.value })} placeholder="Virgülle ayırın" />
+                <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ddd', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8, borderRadius: 6 }}>
+                  {citiesData.city.map(c => {
+                    const isSelected = form.targetCities?.includes(c.name);
+                    return (
+                      <label key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.85rem', cursor: 'pointer', margin: 0, fontWeight: 'normal' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={isSelected}
+                          onChange={(e) => {
+                            let arr = form.targetCities ? form.targetCities.split(',').map(s=>s.trim()).filter(Boolean) : [];
+                            if (e.target.checked) arr.push(c.name);
+                            else arr = arr.filter(x => x !== c.name);
+                            setForm({ ...form, targetCities: arr.join(', ') });
+                          }}
+                        />
+                        {c.name}
+                      </label>
+                    )
+                  })}
+                </div>
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label>Hedef lokasyon tipi</label>

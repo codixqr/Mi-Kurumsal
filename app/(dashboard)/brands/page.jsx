@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { ColumnPicker, useColumnVisibility } from '@/lib/ColumnPicker';
+import citiesData from '@/lib/tr-cities-districts.json';
 
 
 const formatNumberString = (val) => {
@@ -579,7 +580,10 @@ export default function BrandsPage() {
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label>Hedef şehir</label>
-          <input value={filterDraft.targetCity} onChange={(e) => setFilterDraft({ ...filterDraft, targetCity: e.target.value })} />
+          <select value={filterDraft.targetCity} onChange={(e) => setFilterDraft({ ...filterDraft, targetCity: e.target.value })}>
+            <option value="">Tümü</option>
+            {citiesData.city.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+          </select>
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label>Min bütçe</label>
@@ -750,7 +754,26 @@ export default function BrandsPage() {
             </div>
             <div className="field" style={{ gridColumn: '1 / -1' }}>
               <label>Hedef şehirler</label>
-              <input value={form.targetLocations} onChange={(e) => setForm({ ...form, targetLocations: e.target.value })} placeholder="İstanbul, Ankara..." />
+              <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ddd', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8, borderRadius: 6 }}>
+                {citiesData.city.map(c => {
+                  const isSelected = form.targetLocations?.includes(c.name);
+                  return (
+                    <label key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.85rem', cursor: 'pointer', margin: 0, fontWeight: 'normal' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={isSelected}
+                        onChange={(e) => {
+                          let arr = form.targetLocations ? form.targetLocations.split(',').map(s=>s.trim()).filter(Boolean) : [];
+                          if (e.target.checked) arr.push(c.name);
+                          else arr = arr.filter(x => x !== c.name);
+                          setForm({ ...form, targetLocations: arr.join(', ') });
+                        }}
+                      />
+                      {c.name}
+                    </label>
+                  )
+                })}
+              </div>
             </div>
             <div className="field" style={{ gridColumn: '1 / -1' }}>
               <label>Hedef bölgeler</label>
