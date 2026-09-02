@@ -512,6 +512,7 @@ function mapProject(row) {
     investorId: row.investor_id || null,
     brandId: row.brand_id || null,
     locationId: row.location_id || null,
+    assignedMemberId: row.assigned_member_id || null,
     estimatedInvestment: row.estimated_investment != null ? Number(row.estimated_investment) : null,
     estimatedRevenue: row.estimated_revenue != null ? Number(row.estimated_revenue) : null,
     ownerPerson: row.owner_person || "",
@@ -595,6 +596,7 @@ function mapContract(row) {
     brandId: row.brand_id || null,
     projectId: row.project_id || null,
     locationId: row.location_id || null,
+    assignedMemberId: row.assigned_member_id || null,
     consultantName: row.consultant_name || "",
     legalPerson: row.legal_person || "",
     financePerson: row.finance_person || "",
@@ -619,6 +621,7 @@ function mapFinanceRecord(row) {
     projectId: row.project_id || null,
     investorId: row.investor_id || null,
     brandId: row.brand_id || null,
+    locationId: row.location_id || null,
     incomeType: row.income_type || "Danışmanlık",
     amount: Number(row.amount || 0),
     vatPct: Number(row.vat_pct || 0),
@@ -638,6 +641,7 @@ function mapFinanceRecord(row) {
     contractName: row.contract_name || "",
     investorName: row.investor_name || "",
     brandName: row.brand_name || "",
+    locationName: row.location_name || "",
   };
 }
 
@@ -815,8 +819,10 @@ async function initDb() {
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS risk_note TEXT");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS notes TEXT");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS name TEXT");
-  await pool.query("UPDATE contracts SET name=COALESCE(note,'Sözleşme '||id::text) WHERE name IS NULL");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS created_by INTEGER REFERENCES users(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS assigned_member_id INTEGER REFERENCES team_members(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS assigned_member_id INTEGER REFERENCES team_members(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE finance_records ADD COLUMN IF NOT EXISTS location_id INTEGER REFERENCES locations(id) ON DELETE SET NULL");
   await pool.query(`CREATE TABLE IF NOT EXISTS finance_records (
     id SERIAL PRIMARY KEY,
     contract_id INTEGER REFERENCES contracts(id) ON DELETE SET NULL,
@@ -3237,12 +3243,14 @@ app.get("/api/contracts", authMiddleware, async (req, res, next) => {
   const whereSql = conds.join(" AND ");
   const totalR = await pool.query(`SELECT COUNT(*)::int AS c FROM contracts c WHERE ${whereSql}`, params);
   const rows = await pool.query(
-    `SELECT c.*, i.name AS investor_name, b.name AS brand_name, p.name AS project_name, l.name AS location_name
+    `SELECT c.*, i.name AS investor_name, b.name AS brand_name, p.name AS project_name, l.name AS location_name,
+            COALESCE(tm.name, c.consultant_name) AS consultant_name
      FROM contracts c
      LEFT JOIN investors i ON i.id = c.investor_id
      LEFT JOIN brands b ON b.id = c.brand_id
      LEFT JOIN projects p ON p.id = c.project_id
      LEFT JOIN locations l ON l.id = c.location_id
+     LEFT JOIN team_members tm ON tm.id = c.assigned_member_id
      WHERE ${whereSql}
      ORDER BY c.created_at DESC
      LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
@@ -3267,12 +3275,14 @@ app.get("/api/contracts", authMiddleware, async (req, res, next) => {
 app.get("/api/contracts/:id/detail", authMiddleware, async (req, res) => {
   const id = Number(req.params.id);
   const row = await pool.query(
-    `SELECT c.*, i.name AS investor_name, b.name AS brand_name, p.name AS project_name, l.name AS location_name
+    `SELECT c.*, i.name AS investor_name, b.name AS brand_name, p.name AS project_name, l.name AS location_name,
+            COALESCE(tm.name, c.consultant_name) AS consultant_name
      FROM contracts c
      LEFT JOIN investors i ON i.id = c.investor_id
      LEFT JOIN brands b ON b.id = c.brand_id
      LEFT JOIN projects p ON p.id = c.project_id
      LEFT JOIN locations l ON l.id = c.location_id
+     LEFT JOIN team_members tm ON tm.id = c.assigned_member_id
      WHERE c.id=$1`, [id],
   );
   if (row.rowCount === 0) return res.status(404).json({ message: "Bulunamadı." });
@@ -3295,10 +3305,10 @@ app.post("/api/contracts", authMiddleware, async (req, res) => {
       name, note, contract_type, status, counterparty, start_date, end_date, sign_date, renewal_date,
       amount, consulting_fee, franchise_commission, franchise_commission_pct, location_commission, extra_income,
       currency, file_url, docs_urls,
-      investor_id, brand_id, project_id, location_id,
+      investor_id, brand_id, project_id, location_id, assigned_member_id,
       consultant_name, legal_person, finance_person, risk_level, risk_note, notes, created_by
     ) VALUES(
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30
     ) RETURNING *`,
     [
       b.name || b.note || "Yeni sözleşme",
@@ -3320,6 +3330,7 @@ app.post("/api/contracts", authMiddleware, async (req, res) => {
       b.brandId || b.brand_id || null,
       b.projectId || b.project_id || null,
       b.locationId || b.location_id || null,
+      b.assignedMemberId || b.assigned_member_id || null,
       b.consultantName || null, b.legalPerson || null, b.financePerson || null,
       b.riskLevel || null, b.riskNote || null, b.notes || null,
       req.user.id,
@@ -3327,13 +3338,25 @@ app.post("/api/contracts", authMiddleware, async (req, res) => {
   );
   const item = mapContract(inserted.rows[0]);
   await logActivity({ userId: req.user.id, moduleName: "contracts", actionType: "create", recordId: item.id, summary: `${item.name} oluşturuldu`, afterData: item });
-  // Otomasyon: İmzalandı → finans kaydı oluştur
-  if (item.status === "İmzalandı" && item.amount) {
-    await pool.query(
-      `INSERT INTO finance_records(contract_id,investor_id,brand_id,income_type,amount,net_amount,currency,description,created_by)
-       VALUES($1,$2,$3,'Danışmanlık',$4,$4,$5,$6,$7)`,
-      [item.id, item.investorId, item.brandId, Number(item.amount), item.currency, `${item.name} – otomatik finans kaydı`, req.user.id],
-    );
+
+  // Otomasyon: İmzalandı veya Aktif → Lokasyonu "Kiralandı", Yatırımcıyı "Kazanıldı", Projeyi "Kapanış" yap
+  if (item.status === "İmzalandı" || item.status === "Aktif") {
+    if (item.locationId) {
+      await pool.query(`UPDATE locations SET status='Kiralandı' WHERE id=$1 AND status='Boş'`, [item.locationId]);
+    }
+    if (item.investorId) {
+      await pool.query(`UPDATE investors SET pipeline_stage='Kazanıldı' WHERE id=$1 AND pipeline_stage <> 'Kazanıldı'`, [item.investorId]);
+    }
+    if (item.projectId) {
+      await pool.query(`UPDATE projects SET stage='Kapanış', pipeline_stage='Kapanış', progress=100 WHERE id=$1 AND stage <> 'Kapanış'`, [item.projectId]);
+    }
+    if (item.amount) {
+      await pool.query(
+        `INSERT INTO finance_records(contract_id,investor_id,brand_id,location_id,project_id,income_type,amount,net_amount,currency,description,created_by)
+         VALUES($1,$2,$3,$4,$5,'Danışmanlık',$6,$6,$7,$8,$9)`,
+        [item.id, item.investorId, item.brandId, item.locationId, item.projectId, Number(item.amount), item.currency, `${item.name} – otomatik finans kaydı`, req.user.id],
+      );
+    }
   }
   res.status(201).json(item);
 });
@@ -3346,9 +3369,9 @@ app.put("/api/contracts/:id", authMiddleware, async (req, res) => {
       name=$1, note=$2, contract_type=$3, status=$4, counterparty=$5, start_date=$6, end_date=$7, sign_date=$8, renewal_date=$9,
       amount=$10, consulting_fee=$11, franchise_commission=$12, franchise_commission_pct=$13, location_commission=$14, extra_income=$15,
       currency=$16, file_url=$17, docs_urls=$18,
-      investor_id=$19, brand_id=$20, project_id=$21, location_id=$22,
-      consultant_name=$23, legal_person=$24, finance_person=$25, risk_level=$26, risk_note=$27, notes=$28, updated_at=NOW()
-     WHERE id=$29 RETURNING *`,
+      investor_id=$19, brand_id=$20, project_id=$21, location_id=$22, assigned_member_id=$23,
+      consultant_name=$24, legal_person=$25, finance_person=$26, risk_level=$27, risk_note=$28, notes=$29, updated_at=NOW()
+     WHERE id=$30 RETURNING *`,
     [
       b.name || before.rows[0]?.name,
       b.note || null,
@@ -3369,6 +3392,7 @@ app.put("/api/contracts/:id", authMiddleware, async (req, res) => {
       b.brandId ?? before.rows[0]?.brand_id ?? null,
       b.projectId ?? before.rows[0]?.project_id ?? null,
       b.locationId ?? before.rows[0]?.location_id ?? null,
+      b.assignedMemberId ?? before.rows[0]?.assigned_member_id ?? null,
       b.consultantName || null, b.legalPerson || null, b.financePerson || null,
       b.riskLevel || null, b.riskNote || null, b.notes || null,
       req.params.id,
@@ -3377,20 +3401,36 @@ app.put("/api/contracts/:id", authMiddleware, async (req, res) => {
   if (updated.rowCount === 0) return res.status(404).json({ message: "Kayıt bulunamadı." });
   const item = mapContract(updated.rows[0]);
   const prevStatus = before.rows[0]?.status || "";
-  // Otomasyon: Yeni İmzalandı → finans kaydı
-  if (prevStatus !== "İmzalandı" && item.status === "İmzalandı" && item.amount) {
-    const existing = await pool.query("SELECT id FROM finance_records WHERE contract_id=$1 LIMIT 1", [item.id]);
-    if (existing.rowCount === 0) {
-      await pool.query(
-        `INSERT INTO finance_records(contract_id,investor_id,brand_id,income_type,amount,net_amount,currency,description,created_by)
-         VALUES($1,$2,$3,'Danışmanlık',$4,$4,$5,$6,$7)`,
-        [item.id, item.investorId, item.brandId, Number(item.amount), item.currency, `${item.name} – otomatik finans kaydı`, req.user.id],
-      );
+
+  // Otomasyon: İmzalandı veya Aktif → Lokasyonu "Kiralandı", Yatırımcıyı "Kazanıldı", Projeyi "Kapanış" yap
+  if (item.status === "İmzalandı" || item.status === "Aktif") {
+    if (item.locationId) {
+      await pool.query(`UPDATE locations SET status='Kiralandı' WHERE id=$1 AND status='Boş'`, [item.locationId]);
+    }
+    if (item.investorId) {
+      await pool.query(`UPDATE investors SET pipeline_stage='Kazanıldı' WHERE id=$1 AND pipeline_stage <> 'Kazanıldı'`, [item.investorId]);
+    }
+    if (item.projectId) {
+      await pool.query(`UPDATE projects SET stage='Kapanış', pipeline_stage='Kapanış', progress=100 WHERE id=$1 AND stage <> 'Kapanış'`, [item.projectId]);
+    }
+    if (prevStatus !== "İmzalandı" && prevStatus !== "Aktif" && item.amount) {
+      const existing = await pool.query("SELECT id FROM finance_records WHERE contract_id=$1 LIMIT 1", [item.id]);
+      if (existing.rowCount === 0) {
+        await pool.query(
+          `INSERT INTO finance_records(contract_id,investor_id,brand_id,location_id,project_id,income_type,amount,net_amount,currency,description,created_by)
+           VALUES($1,$2,$3,$4,$5,'Danışmanlık',$6,$6,$7,$8,$9)`,
+          [item.id, item.investorId, item.brandId, item.locationId, item.projectId, Number(item.amount), item.currency, `${item.name} – otomatik finans kaydı`, req.user.id],
+        );
+      }
     }
   }
-  // Otomasyon: Feshedildi → finans iptal
+
+  // Otomasyon: Feshedildi → finans iptal ve Lokasyon boşalt
   if (item.status === "Feshedildi") {
     await pool.query(`UPDATE finance_records SET status='İptal', updated_at=NOW() WHERE contract_id=$1 AND status='Açık'`, [item.id]);
+    if (item.locationId) {
+      await pool.query(`UPDATE locations SET status='Boş' WHERE id=$1 AND status='Kiralandı'`, [item.locationId]);
+    }
   }
   await logActivity({ userId: req.user.id, moduleName: "contracts", actionType: "update", recordId: item.id, summary: `${item.name} güncellendi`, beforeData: before.rows[0] || null, afterData: item });
   res.json(item);
@@ -3457,6 +3497,7 @@ app.get("/api/finance", authMiddleware, async (req, res, next) => {
   if (q.investorId) add("fr.investor_id = ", Number(q.investorId));
   if (q.brandId) add("fr.brand_id = ", Number(q.brandId));
   if (q.projectId) add("fr.project_id = ", Number(q.projectId));
+  if (q.locationId) add("fr.location_id = ", Number(q.locationId));
   if (q.incomeType) add("fr.income_type = ", q.incomeType);
   if (q.status) add("fr.status = ", q.status);
   if (q.dateFrom) add("fr.created_at::date >= ", q.dateFrom);
@@ -3464,11 +3505,12 @@ app.get("/api/finance", authMiddleware, async (req, res, next) => {
   const where = conds.join(" AND ");
   const totalR = await pool.query(`SELECT COUNT(*)::int AS c FROM finance_records fr WHERE ${where}`, params);
   const rows = await pool.query(
-    `SELECT fr.*, c.name AS contract_name, i.name AS investor_name, b.name AS brand_name
+    `SELECT fr.*, c.name AS contract_name, i.name AS investor_name, b.name AS brand_name, l.name AS location_name
      FROM finance_records fr
      LEFT JOIN contracts c ON c.id = fr.contract_id
      LEFT JOIN investors i ON i.id = fr.investor_id
      LEFT JOIN brands b ON b.id = fr.brand_id
+     LEFT JOIN locations l ON l.id = fr.location_id
      WHERE ${where}
      ORDER BY fr.created_at DESC
      LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
@@ -3492,11 +3534,12 @@ app.get("/api/finance", authMiddleware, async (req, res, next) => {
 app.get("/api/finance/:id", authMiddleware, async (req, res) => {
   const id = Number(req.params.id);
   const row = await pool.query(
-    `SELECT fr.*, c.name AS contract_name, i.name AS investor_name, b.name AS brand_name
+    `SELECT fr.*, c.name AS contract_name, i.name AS investor_name, b.name AS brand_name, l.name AS location_name
      FROM finance_records fr
      LEFT JOIN contracts c ON c.id=fr.contract_id
      LEFT JOIN investors i ON i.id=fr.investor_id
      LEFT JOIN brands b ON b.id=fr.brand_id
+     LEFT JOIN locations l ON l.id=fr.location_id
      WHERE fr.id=$1`, [id],
   );
   if (row.rowCount === 0) return res.status(404).json({ message: "Bulunamadı." });
@@ -3511,10 +3554,10 @@ app.post("/api/finance", authMiddleware, async (req, res) => {
   const vatAmount = Math.round(amount * vatPct / 100 * 100) / 100;
   const netAmount = amount + vatAmount;
   const inserted = await pool.query(
-    `INSERT INTO finance_records(contract_id,project_id,investor_id,brand_id,income_type,amount,vat_pct,vat_amount,net_amount,currency,description,payment_type,status,consultant_commission_pct,company_share_pct,due_date,payment_method,created_by)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18) RETURNING *`,
+    `INSERT INTO finance_records(contract_id,project_id,investor_id,brand_id,location_id,income_type,amount,vat_pct,vat_amount,net_amount,currency,description,payment_type,status,consultant_commission_pct,company_share_pct,due_date,payment_method,created_by)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) RETURNING *`,
     [
-      b.contractId || null, b.projectId || null, b.investorId || null, b.brandId || null,
+      b.contractId || null, b.projectId || null, b.investorId || null, b.brandId || null, b.locationId || null,
       b.incomeType || "Danışmanlık",
       amount, vatPct, vatAmount, netAmount,
       b.currency || "TRY",
@@ -3549,10 +3592,10 @@ app.put("/api/finance/:id", authMiddleware, async (req, res) => {
   const vatAmount = Math.round(amount * vatPct / 100 * 100) / 100;
   const netAmount = amount + vatAmount;
   const updated = await pool.query(
-    `UPDATE finance_records SET contract_id=$1,project_id=$2,investor_id=$3,brand_id=$4,income_type=$5,amount=$6,vat_pct=$7,vat_amount=$8,net_amount=$9,currency=$10,description=$11,payment_type=$12,status=$13,consultant_commission_pct=$14,company_share_pct=$15,due_date=$16,paid_date=$17,payment_method=$18,updated_at=NOW()
-     WHERE id=$19 RETURNING *`,
+    `UPDATE finance_records SET contract_id=$1,project_id=$2,investor_id=$3,brand_id=$4,location_id=$5,income_type=$6,amount=$7,vat_pct=$8,vat_amount=$9,net_amount=$10,currency=$11,description=$12,payment_type=$13,status=$14,consultant_commission_pct=$15,company_share_pct=$16,due_date=$17,paid_date=$18,payment_method=$19,updated_at=NOW()
+     WHERE id=$20 RETURNING *`,
     [
-      b.contractId || null, b.projectId || null, b.investorId || null, b.brandId || null,
+      b.contractId || null, b.projectId || null, b.investorId || null, b.brandId || null, b.locationId || null,
       b.incomeType || "Danışmanlık",
       amount, vatPct, vatAmount, netAmount,
       b.currency || "TRY", b.description || null, b.paymentType || "Peşin", b.status || "Açık",

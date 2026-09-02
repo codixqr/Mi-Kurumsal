@@ -21,7 +21,7 @@ const defaultForm = () => ({
   signDate: '', startDate: '', endDate: '', renewalDate: '',
   amount: '', consultingFee: '', franchiseCommission: '', franchiseCommissionPct: '',
   locationCommission: '', extraIncome: '', currency: 'TRY',
-  investorId: '', brandId: '', projectId: '', locationId: '',
+  investorId: '', brandId: '', projectId: '', locationId: '', assignedMemberId: '',
   consultantName: '', legalPerson: '', financePerson: '',
   riskLevel: 'Düşük', riskNote: '', notes: '', docsUrls: [], fileUrl: '',
 });
@@ -50,7 +50,7 @@ export default function SozlesmePage() {
   const [formOpen, setFormOpen] = useState(false);
   const [detail, setDetail] = useState(null);
   const [detailTab, setDetailTab] = useState('genel');
-  const [lookups, setLookups] = useState({ investors: [], brands: [], projects: [], locations: [] });
+  const [lookups, setLookups] = useState({ investors: [], brands: [], projects: [], locations: [], teamMembers: [] });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [viewMode, setViewMode] = useState('auto');
   const [isMobile, setIsMobile] = useState(false);
@@ -131,12 +131,14 @@ export default function SozlesmePage() {
       apiClient.get('/brands?page=1&pageSize=300'),
       apiClient.get('/projects?page=1&pageSize=300'),
       apiClient.get('/locations?page=1&pageSize=300'),
-    ]).then(([i, b, pr, l]) => {
+      apiClient.get('/team-members/options'),
+    ]).then(([i, b, pr, l, tm]) => {
       setLookups({
         investors: Array.isArray(i) ? i : i.items || [],
         brands: Array.isArray(b) ? b : b.items || [],
         projects: Array.isArray(pr) ? pr : pr.items || [],
         locations: Array.isArray(l) ? l : l.items || [],
+        teamMembers: Array.isArray(tm) ? tm : [],
       });
     }).catch(() => {});
   }, []);
@@ -150,6 +152,7 @@ export default function SozlesmePage() {
         brandId: form.brandId ? Number(form.brandId) : null,
         projectId: form.projectId ? Number(form.projectId) : null,
         locationId: form.locationId ? Number(form.locationId) : null,
+        assignedMemberId: form.assignedMemberId ? Number(form.assignedMemberId) : null,
         amount: form.amount ? Number(form.amount) : null,
         consultingFee: form.consultingFee ? Number(form.consultingFee) : null,
         franchiseCommission: form.franchiseCommission ? Number(form.franchiseCommission) : null,
@@ -211,9 +214,17 @@ export default function SozlesmePage() {
     if (!item.amount) { alert('Tutar girilmemiş. Önce sözleşmeyi güncelleyin.'); return; }
     try {
       await apiClient.post('/finance', {
-        contractId: item.id, investorId: item.investorId, brandId: item.brandId,
-        incomeType: item.type || 'Danışmanlık', amount: item.amount, currency: item.currency,
-        description: `${item.name} finans kaydı`, paymentType: 'Peşin', status: 'Açık',
+        contractId: item.id,
+        investorId: item.investorId,
+        brandId: item.brandId,
+        locationId: item.locationId,
+        projectId: item.projectId,
+        incomeType: item.type || 'Danışmanlık',
+        amount: item.amount,
+        currency: item.currency,
+        description: `${item.name} finans kaydı`,
+        paymentType: 'Peşin',
+        status: 'Açık',
       });
       alert('Finans kaydı oluşturuldu.');
     } catch (err) { alert(err.message || 'Hata'); }
@@ -437,7 +448,22 @@ export default function SozlesmePage() {
             </div>
             <div className="field">
               <label>Sorumlu danışman</label>
-              <input value={form.consultantName} onChange={(e) => setForm({ ...form, consultantName: e.target.value })} />
+              <select
+                value={form.assignedMemberId || ''}
+                onChange={(e) => {
+                  const tm = (lookups.teamMembers || []).find((m) => String(m.id) === e.target.value);
+                  setForm({
+                    ...form,
+                    assignedMemberId: e.target.value,
+                    consultantName: tm ? tm.name : '',
+                  });
+                }}
+              >
+                <option value="">Seçiniz</option>
+                {(lookups.teamMembers || []).map((m) => (
+                  <option key={m.id} value={m.id}>{m.name} ({m.roleName || 'Temsilci'})</option>
+                ))}
+              </select>
             </div>
             <div className="field">
               <label>Hukuk sorumlusu</label>
@@ -676,6 +702,7 @@ export default function SozlesmePage() {
                     brandId: item.brandId ? String(item.brandId) : '',
                     projectId: item.projectId ? String(item.projectId) : '',
                     locationId: item.locationId ? String(item.locationId) : '',
+                    assignedMemberId: item.assignedMemberId ? String(item.assignedMemberId) : '',
                     amount: item.amount ? String(item.amount) : '',
                     consultingFee: item.consultingFee ? String(item.consultingFee) : '',
                     franchiseCommission: item.franchiseCommission ? String(item.franchiseCommission) : '',
