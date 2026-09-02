@@ -39,7 +39,8 @@ export default function TasksPage() {
   const [page, setPage] = useState(1);
   const pageSize = 50;
 
-  const [filters, setFilters] = useState({ q: '', status: '', priority: '', moduleType: '', assigneeName: '', dateFrom: '', dateTo: '', overdue: '' });
+  const defaultFilters = () => ({ q: '', status: '', priority: '', moduleType: '', assigneeName: '', dateFrom: '', dateTo: '', overdue: '' });
+  const [filters, setFilters] = useState(defaultFilters());
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);

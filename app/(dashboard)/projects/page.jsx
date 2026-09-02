@@ -23,7 +23,8 @@ export default function ProjectsPage() {
   const [bulkStage, setBulkStage] = useState('');
   const [bulkPriority, setBulkPriority] = useState('');
   const [lookups, setLookups] = useState({ investors: [], brands: [], locations: [] });
-  const [filters, setFilters] = useState({ name: '', investorId: '', brandId: '', locationId: '', type: '', stage: '', priority: '', startFrom: '', closeTo: '' });
+  const defaultFilters = () => ({ name: '', investorId: '', brandId: '', locationId: '', type: '', stage: '', priority: '', startFrom: '', closeTo: '' });
+  const [filters, setFilters] = useState(defaultFilters());
   const [form, setForm] = useState({
     id: null,
     name: '', type: 'Franchise', investorId: '', brandId: '', locationId: '', estimatedInvestment: '', estimatedRevenue: '',
