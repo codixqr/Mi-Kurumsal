@@ -1123,7 +1123,8 @@ export default function InvestorsPage() {
                 <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>#{detail.investor.id}</div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" className="edit-btn" onClick={() => { setDetailOpen(false); editRow(detail.investor); }}>Düzenle</button>
+                <button type="button" className="danger-btn" onClick={() => { setDetailOpen(false); deleteRow(detail.investor); }}>Sil</button>
+                <button type="button" className="edit-btn" onClick={() => { editRow(detail.investor); setDetailTab('edit'); setDetailOpen(true); }}>Düzenle</button>
                 <button type="button" className="secondary-btn" onClick={() => setDetailOpen(false)}>
                   Kapat
                 </button>
@@ -1131,7 +1132,7 @@ export default function InvestorsPage() {
             </div>
             <div className="inv-tabs">
               {['genel', 'ihtiyac', 'gorusme', 'markalar', 'lokasyon', 'projeler', 'gorevler', 'dosyalar', 'finans'].map((t) => (
-                <button key={t} type="button" className={`inv-tab ${detailTab === t ? 'active' : ''}`} onClick={() => setDetailTab(t)}>
+                <button key={t} type="button" className={`inv-tab ${detailTab === t ? 'active' : ''}`} onClick={() => setDetailTab(t)} style={t === 'edit' ? { display: 'none' } : {}}>
                   {t === 'genel' && 'Genel'}
                   {t === 'ihtiyac' && 'İhtiyaç'}
                   {t === 'gorusme' && 'Görüşmeler'}
@@ -1145,6 +1146,209 @@ export default function InvestorsPage() {
               ))}
             </div>
             <div className="inv-modal-body">
+              {detailTab === 'edit' && (
+                <form onSubmit={(e) => { e.preventDefault(); saveInvestor(e).then(() => { setDetail({ ...detail, investor: { ...detail.investor, ...form } }); setDetailTab('genel'); }); }}>
+            <div className="inv-form-grid">
+              <div className="field" style={{ margin: 0 }}>
+                <label>Yatırımcı tipi</label>
+                <select value={form.investorType} onChange={(e) => setForm({ ...form, investorType: e.target.value })}>
+                  {INVESTOR_TYPES.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field field-wide" style={{ margin: 0, gridColumn: 'span 2' }}>
+                <label>Ad Soyad / Şirket adı *</label>
+                <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Yetkili kişi</label>
+                <input value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Telefon</label>
+                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>WhatsApp</label>
+                <input value={form.whatsappPhone} onChange={(e) => setForm({ ...form, whatsappPhone: e.target.value })} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>E-posta</label>
+                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Şehir *</label>
+                <select required value={form.city ? form.city.toUpperCase() : ''} onChange={(e) => setForm({ ...form, city: e.target.value, district: '' })}>
+                  <option value="">Seçin</option>
+                  {citiesData.city.map((c) => (
+                    <option key={c.name} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>İlçe</label>
+                <select value={form.district ? form.district.toUpperCase() : ''} onChange={(e) => setForm({ ...form, district: e.target.value })} disabled={!form.city}>
+                  <option value="">{form.city ? 'Seçin' : 'Önce il seçin'}</option>
+                  {citiesData.city.find((c) => c.name.toLowerCase() === (form.city || '').toLowerCase())?.discrits.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field field-wide" style={{ margin: 0, gridColumn: 'span 2' }}>
+                <label>Hedef şehirler</label>
+                <input value={form.targetCities} onChange={(e) => setForm({ ...form, targetCities: e.target.value })} placeholder="Virgülle ayırın" />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Hedef lokasyon tipi</label>
+                <select value={form.targetLocationType} onChange={(e) => setForm({ ...form, targetLocationType: e.target.value })}>
+                  {LOC_TYPES.map((l) => (
+                    <option key={l}>{l}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Sektör *</label>
+                <input required list="inv-sector-form" value={form.sector} onChange={(e) => setForm({ ...form, sector: e.target.value })} />
+                <datalist id="inv-sector-form">{SECTORS.map((s) => <option key={s} value={s} />)}</datalist>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Alt sektör</label>
+                <input value={form.subSector} onChange={(e) => setForm({ ...form, subSector: e.target.value })} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Bütçe min *</label>
+                <input required type="text" value={formatNumberString(form.budgetMin)} onChange={(e) => setForm({ ...form, budgetMin: parseFormattedString(e.target.value) })} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Bütçe max *</label>
+                <input required type="text" value={formatNumberString(form.budgetMax)} onChange={(e) => setForm({ ...form, budgetMax: parseFormattedString(e.target.value) })} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Para birimi</label>
+                <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })}>
+                  <option value="TRY">TL</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Yatırım tipi</label>
+                <select value={form.investmentType} onChange={(e) => setForm({ ...form, investmentType: e.target.value })}>
+                  {INVESTMENT_TYPES.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Yatırım zamanı</label>
+                <select value={form.investmentTiming} onChange={(e) => setForm({ ...form, investmentTiming: e.target.value })}>
+                  {TIMING.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Finansman</label>
+                <select value={form.financingStatus} onChange={(e) => setForm({ ...form, financingStatus: e.target.value })}>
+                  {FINANCING.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Öncelik</label>
+                <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+                  {PRIORITIES.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Pipeline</label>
+                <select value={form.pipeline} onChange={(e) => setForm({ ...form, pipeline: e.target.value })}>
+                  {PIPELINES.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Lead kaynağı</label>
+                <select value={form.leadSource} onChange={(e) => setForm({ ...form, leadSource: e.target.value })}>
+                  {LEAD_SOURCES.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Atanan danışman</label>
+                <select value={form.assignedMemberId} onChange={(e) => setForm({ ...form, assignedMemberId: e.target.value })}>
+                  <option value="">—</option>
+                  {teamOptions.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Takip tarihi</label>
+                <input type="date" value={form.followUpDate} onChange={(e) => setForm({ ...form, followUpDate: e.target.value })} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>Son görüşme</label>
+                <input type="date" value={form.lastMeetingDate} onChange={(e) => setForm({ ...form, lastMeetingDate: e.target.value })} />
+              </div>
+              <div className="field field-wide" style={{ margin: 0, gridColumn: 'span 2' }}>
+                <label>Sonraki aksiyon</label>
+                <input value={form.nextAction} onChange={(e) => setForm({ ...form, nextAction: e.target.value })} />
+              </div>
+              <div className="field field-wide" style={{ margin: 0, gridColumn: '1 / -1' }}>
+                <label>Notlar</label>
+                <textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              </div>
+              <div className="field field-wide" style={{ margin: 0, gridColumn: '1 / -1' }}>
+                <label>Görüşme / CRM notları</label>
+                <textarea rows={2} value={form.meetingNotes} onChange={(e) => setForm({ ...form, meetingNotes: e.target.value })} />
+              </div>
+              <div className="field field-wide" style={{ margin: 0, gridColumn: '1 / -1' }}>
+                <label>Dosya yükle</label>
+                <input
+                  type="file"
+                  multiple
+                  onChange={async (e) => {
+                    const files = e.target.files;
+                    if (!files?.length) return;
+                    const urls = await uploadFiles(Array.from(files));
+                    setForm((f) => ({ ...f, documents: [...(f.documents || []), ...urls] }));
+                    e.target.value = '';
+                  }}
+                />
+                {!!form.documents?.length && (
+                  <div style={{ fontSize: 12, marginTop: 6 }}>
+                    {form.documents.map((u) => (
+                      <div key={u}>
+                        <a href={u} target="_blank" rel="noreferrer">
+                          {u.split('/').pop()}
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
+              <button type="submit" className="primary-btn">
+                {form.id ? 'Güncelle' : 'Kaydet'}
+              </button>
+              {form.id && (
+                <button type="button" className="danger-btn" onClick={() => deleteRow({ id: form.id, name: form.name })}>
+                  Sil
+                </button>
+              )}
+            </div>
+          </form>
+              )}
               {detailLoading ? (
                 <p>Yükleniyor…</p>
               ) : (

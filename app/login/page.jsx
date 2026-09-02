@@ -98,7 +98,7 @@ export default function LoginPage() {
       <div style={{
         flex: '2',
         position: 'relative',
-        background: `url('https://images.unsplash.com/photo-1527838832700-5059252407fa?q=80&w=2000&auto=format&fit=crop') center/cover no-repeat`,
+        background: `url('/istanbul_bg.jpg') center/cover no-repeat`,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-end',
