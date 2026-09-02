@@ -73,6 +73,21 @@ export default function SozlesmePage() {
   useEffect(() => { fetchList(); }, [fetchList]);
 
   useEffect(() => {
+    if (items.length > 0) {
+      const detailId = new URLSearchParams(window.location.search).get('detailId');
+      if (detailId) {
+        const item = items.find(x => String(x.id) === detailId);
+        if (item) {
+          openDetail(item);
+          const url = new URL(window.location);
+          url.searchParams.delete('detailId');
+          window.history.replaceState(null, '', url);
+        }
+      }
+    }
+  }, [items]);
+
+  useEffect(() => {
     Promise.all([
       apiClient.get('/investors?page=1&pageSize=300'),
       apiClient.get('/brands?page=1&pageSize=300'),

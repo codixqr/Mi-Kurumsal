@@ -98,6 +98,19 @@ export default function TasksPage() {
   }, [buildQuery]);
 
   useEffect(() => { fetchList(); }, [fetchList]);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      const detailId = new URLSearchParams(window.location.search).get('detailId');
+      if (detailId) {
+        const item = items.find(x => String(x.id) === detailId);
+        if (item) {
+          setDetailTask(item);
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      }
+    }
+  }, [items]);
   useEffect(() => { loadLinkedData(); }, [loadLinkedData]);
 
   const openNew = () => { setForm(emptyForm()); setShowForm(true); };

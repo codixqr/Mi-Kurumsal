@@ -64,6 +64,21 @@ export default function LocationsPage() {
     fetchList();
   }, [fetchList]);
 
+  useEffect(() => {
+    if (items.length > 0) {
+      const detailId = new URLSearchParams(window.location.search).get('detailId');
+      if (detailId) {
+        const item = items.find(x => String(x.id) === detailId);
+        if (item) {
+          openDetail(item);
+          const url = new URL(window.location);
+          url.searchParams.delete('detailId');
+          window.history.replaceState(null, '', url);
+        }
+      }
+    }
+  }, [items]);
+
   const saveForm = async (e) => {
     e.preventDefault();
     if (form.id) await apiClient.put(`/locations/${form.id}`, form);

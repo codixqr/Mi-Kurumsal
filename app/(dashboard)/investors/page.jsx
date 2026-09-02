@@ -205,6 +205,21 @@ export default function InvestorsPage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (items.length > 0) {
+      const detailId = new URLSearchParams(window.location.search).get('detailId');
+      if (detailId) {
+        const item = items.find(x => String(x.id) === detailId);
+        if (item) {
+          openDetail(item);
+          const url = new URL(window.location);
+          url.searchParams.delete('detailId');
+          window.history.replaceState(null, '', url);
+        }
+      }
+    }
+  }, [items]);
+
   const toggleSort = (col) => {
     if (sort === col) setOrder(order === 'asc' ? 'desc' : 'asc');
     else {
