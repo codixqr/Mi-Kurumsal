@@ -324,7 +324,7 @@ export default function LocationsPage() {
             {!loading && items.map((loc) => (
               <tr key={loc.id}>
                 <td><input type="checkbox" checked={selectedIds.includes(loc.id)} onChange={() => setSelectedIds((p) => p.includes(loc.id) ? p.filter((x) => x !== loc.id) : [...p, loc.id])} /></td>
-                <td>{loc.name}</td>
+                <td><strong onClick={() => openDetail(loc)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{loc.name}</strong></td>
                 {colVisible.cityDistrict !== false && <td>{loc.city || '-'} / {loc.district || '-'}</td>}
                 {colVisible.type !== false && <td>{loc.type}</td>}
                 {colVisible.sqm !== false && <td>{loc.sqm}</td>}
