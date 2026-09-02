@@ -320,7 +320,7 @@ export default function ProjectsPage() {
             {projects.map(p => (
               <tr key={p.id}>
                 <td><input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => setSelectedIds((prev) => prev.includes(p.id) ? prev.filter((x) => x !== p.id) : [...prev, p.id])} /></td>
-                <td><strong>{p.name}</strong><br/><small>{p.dueDate ? new Date(p.dueDate).toLocaleDateString('tr-TR') : ''}</small></td>
+                <td><strong onClick={() => openDetail(p)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{p.name}</strong><br/><small>{p.dueDate ? new Date(p.dueDate).toLocaleDateString('tr-TR') : ''}</small></td>
                 {colVisible.investor !== false && <td>{p.investorName || '-'}</td>}
                 {colVisible.brand !== false && <td>{p.brandName || '-'}</td>}
                 {colVisible.location !== false && <td>{p.locationName || '-'}</td>}
@@ -359,7 +359,7 @@ export default function ProjectsPage() {
               <div style={{ display: 'grid', gap: 8 }}>
                 {(kanban[stage] || []).map((p) => (
                   <div key={p.id} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 8 }}>
-                    <strong>{p.name}</strong>
+                    <strong onClick={() => openDetail(p)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{p.name}</strong>
                     <div style={{ fontSize: 12, color: '#64748b' }}>%{p.progress} • {p.priority}</div>
                     <div style={{ marginTop: 6, display: 'flex', gap: 4 }}>
                       <button className="secondary-btn" onClick={() => handleEdit(p)}>Düzenle</button>
