@@ -448,7 +448,7 @@ export default function SozlesmePage() {
             {!loading && items.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>Kayıt bulunamadı.</td></tr>}
             {!loading && items.map((item) => (
               <tr key={item.id}>
-                <td><strong>{item.name}</strong></td>
+                <td><strong onClick={() => openDetail(item)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{item.name}</strong></td>
                 {colVisible.investor !== false && <td>{item.investorName || '—'}</td>}
                 {colVisible.brand !== false && <td>{item.brandName || '—'}</td>}
                 {colVisible.location !== false && <td>{item.locationName || '—'}</td>}
