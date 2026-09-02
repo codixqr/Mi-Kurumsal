@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import { ColumnPicker, useColumnVisibility } from '@/lib/ColumnPicker';
 
@@ -51,6 +51,25 @@ export default function SozlesmePage() {
   const [detail, setDetail] = useState(null);
   const [detailTab, setDetailTab] = useState('genel');
   const [lookups, setLookups] = useState({ investors: [], brands: [], projects: [], locations: [] });
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [viewMode, setViewMode] = useState('auto');
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const activeFilterCount = useMemo(() => {
+    let cnt = 0;
+    const def = defaultFilters();
+    Object.keys(def).forEach((k) => {
+      if (k !== 'name' && filterDraft[k] && filterDraft[k] !== def[k]) cnt++;
+    });
+    return cnt;
+  }, [filterDraft]);
 
   const buildQuery = useCallback(() => {
     const p = new URLSearchParams();
@@ -257,56 +276,108 @@ export default function SozlesmePage() {
         </div>
       )}
 
-      {/* FİLTRELER */}
-      <div className="inv-filters">
-        {[
-          ['name', 'Sözleşme adı'],
-          ['consultant', 'Danışman'],
-          ['amountMin', 'Tutar min'],
-          ['amountMax', 'Tutar max'],
-          ['startFrom', 'Başlangıç (dan)'],
-          ['startTo', 'Başlangıç (a)'],
-          ['endFrom', 'Bitiş (dan)'],
-          ['endTo', 'Bitiş (a)'],
-        ].map(([k, lbl]) => (
-          <div key={k} className="field" style={{ margin: 0 }}>
-            <label>{lbl}</label>
-            <input value={filterDraft[k] || ''} onChange={(e) => setFilterDraft({ ...filterDraft, [k]: e.target.value })} />
-          </div>
-        ))}
-        <div className="field" style={{ margin: 0 }}>
-          <label>Sözleşme tipi</label>
-          <select value={filterDraft.type} onChange={(e) => setFilterDraft({ ...filterDraft, type: e.target.value })}>
-            <option value="">Tümü</option>
-            {SOZLESME_TIPLERI.map((t) => <option key={t}>{t}</option>)}
-          </select>
+      {/* Responsive Controls & Quick Search */}
+      <div className="inv-controls-bar">
+        <div className="inv-quick-search-wrap">
+          <input
+            type="text"
+            value={filterDraft.name || ''}
+            onChange={(e) => setFilterDraft({ ...filterDraft, name: e.target.value })}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setFilters({ ...filterDraft }); setPage(1); } }}
+            placeholder="🔍 Hızlı arama (Sözleşme adı...)"
+          />
+          <button type="button" className="primary-btn" onClick={() => { setFilters({ ...filterDraft }); setPage(1); }}>
+            Ara
+          </button>
+          <button
+            type="button"
+            className="secondary-btn"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          >
+            Filtreler {activeFilterCount > 0 && <span className="filter-badge">{activeFilterCount}</span>}
+            {showAdvancedFilters ? ' ▲' : ' ▼'}
+          </button>
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              className="secondary-btn"
+              onClick={() => { const d = defaultFilters(); setFilters(d); setFilterDraft(d); setPage(1); }}
+              title="Filtreleri Temizle"
+            >
+              ✕
+            </button>
+          )}
         </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Durum</label>
-          <select value={filterDraft.status} onChange={(e) => setFilterDraft({ ...filterDraft, status: e.target.value })}>
-            <option value="">Tümü</option>
-            {DURUMLAR.map((t) => <option key={t}>{t}</option>)}
-          </select>
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Yatırımcı</label>
-          <select value={filterDraft.investorId} onChange={(e) => setFilterDraft({ ...filterDraft, investorId: e.target.value })}>
-            <option value="">Tümü</option>
-            {lookups.investors.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-          </select>
-        </div>
-        <div className="field" style={{ margin: 0 }}>
-          <label>Marka</label>
-          <select value={filterDraft.brandId} onChange={(e) => setFilterDraft({ ...filterDraft, brandId: e.target.value })}>
-            <option value="">Tümü</option>
-            {lookups.brands.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-          </select>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-          <button className="primary-btn" onClick={() => { setFilters({ ...filterDraft }); setPage(1); }}>Filtrele</button>
-          <button className="secondary-btn" onClick={() => { const d = defaultFilters(); setFilters(d); setFilterDraft(d); setPage(1); }}>Sıfırla</button>
+
+        <div className="inv-view-toggle">
+          <button
+            type="button"
+            className={`inv-view-btn ${viewMode === 'cards' || (viewMode === 'auto' && isMobile) ? 'active' : ''}`}
+            onClick={() => setViewMode('cards')}
+          >
+            🗂️ Kartlar
+          </button>
+          <button
+            type="button"
+            className={`inv-view-btn ${viewMode === 'table' || (viewMode === 'auto' && !isMobile) ? 'active' : ''}`}
+            onClick={() => setViewMode('table')}
+          >
+            📋 Tablo
+          </button>
         </div>
       </div>
+
+      {/* FİLTRELER */}
+      {showAdvancedFilters && (
+        <div className="inv-filters">
+          {[
+            ['consultant', 'Danışman'],
+            ['amountMin', 'Tutar min'],
+            ['amountMax', 'Tutar max'],
+            ['startFrom', 'Başlangıç (dan)'],
+            ['startTo', 'Başlangıç (a)'],
+            ['endFrom', 'Bitiş (dan)'],
+            ['endTo', 'Bitiş (a)'],
+          ].map(([k, lbl]) => (
+            <div key={k} className="field" style={{ margin: 0 }}>
+              <label>{lbl}</label>
+              <input value={filterDraft[k] || ''} onChange={(e) => setFilterDraft({ ...filterDraft, [k]: e.target.value })} />
+            </div>
+          ))}
+          <div className="field" style={{ margin: 0 }}>
+            <label>Sözleşme tipi</label>
+            <select value={filterDraft.type} onChange={(e) => setFilterDraft({ ...filterDraft, type: e.target.value })}>
+              <option value="">Tümü</option>
+              {SOZLESME_TIPLERI.map((t) => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Durum</label>
+            <select value={filterDraft.status} onChange={(e) => setFilterDraft({ ...filterDraft, status: e.target.value })}>
+              <option value="">Tümü</option>
+              {DURUMLAR.map((t) => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Yatırımcı</label>
+            <select value={filterDraft.investorId} onChange={(e) => setFilterDraft({ ...filterDraft, investorId: e.target.value })}>
+              <option value="">Tümü</option>
+              {lookups.investors.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Marka</label>
+            <select value={filterDraft.brandId} onChange={(e) => setFilterDraft({ ...filterDraft, brandId: e.target.value })}>
+              <option value="">Tümü</option>
+              {lookups.brands.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', justifyContent: 'flex-end', gridColumn: '1 / -1' }}>
+            <button className="secondary-btn" onClick={() => { const d = defaultFilters(); setFilters(d); setFilterDraft(d); setPage(1); }}>Sıfırla</button>
+            <button className="primary-btn" onClick={() => { setFilters({ ...filterDraft }); setPage(1); setShowAdvancedFilters(false); }}>Filtreleri Uygula</button>
+          </div>
+        </div>
+      )}
 
       {/* FORM ÇEKMECESI */}
       {formOpen && (
@@ -459,54 +530,128 @@ export default function SozlesmePage() {
         </div>
       )}
 
-      {/* TABLO */}
-      <div className="inv-table-wrap">
-        <table className="inv-table responsive-cards">
-          <thead>
-            <tr>
-              <th>Sözleşme adı</th>
-              {colVisible.investor !== false && <th>Yatırımcı</th>}
-              {colVisible.brand !== false && <th>Marka</th>}
-              {colVisible.location !== false && <th>Lokasyon</th>}
-              {colVisible.type !== false && <th>Tip</th>}
-              {colVisible.amount !== false && <th>Tutar</th>}
-              {colVisible.startDate !== false && <th>Başlangıç</th>}
-              {colVisible.endDate !== false && <th>Bitiş</th>}
-              {colVisible.status !== false && <th>Durum</th>}
-              {colVisible.consultant !== false && <th>Danışman</th>}
-              <th>İşlem</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center' }}>Yükleniyor…</td></tr>}
-            {!loading && items.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>Kayıt bulunamadı.</td></tr>}
-            {!loading && items.map((item) => (
-              <tr key={item.id}>
-                <td data-label="Sözleşme adı"><strong onClick={() => openDetail(item)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{item.name}</strong></td>
-                {colVisible.investor !== false && <td data-label="Yatırımcı">{item.investorName || '—'}</td>}
-                {colVisible.brand !== false && <td data-label="Marka">{item.brandName || '—'}</td>}
-                {colVisible.location !== false && <td data-label="Lokasyon">{item.locationName || '—'}</td>}
-                {colVisible.type !== false && <td data-label="Tip">{item.type || '—'}</td>}
-                {colVisible.amount !== false && <td data-label="Tutar" style={{ whiteSpace: 'nowrap' }}>{fmt(item.amount)} {item.currency}</td>}
-                {colVisible.startDate !== false && <td data-label="Başlangıç" style={{ fontSize: 12 }}>{item.startDate || '—'}</td>}
-                {colVisible.endDate !== false && <td data-label="Bitiş" style={{ fontSize: 12 }}>{item.endDate || '—'}</td>}
-                {colVisible.status !== false && <td data-label="Durum"><span className="badge" style={{ ...Object.fromEntries((durumRengi(item.status)).split(';').filter(Boolean).map((s) => { const [k, v] = s.split(':'); return [k.trim(), v?.trim()]; })) }}>{item.status}</span></td>}
-                {colVisible.consultant !== false && <td data-label="Danışman" style={{ fontSize: 12 }}>{item.consultantName || '—'}</td>}
-                <td data-label="İşlem">
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
-                    <button className="secondary-btn" onClick={() => createFinance(item)} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px' }}>Finans oluştur</button>
-                    {item.fileUrl && <a className="secondary-btn" href={item.fileUrl} target="_blank" rel="noreferrer" style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px', textAlign: 'center' }}>PDF</a>}
-                    <button className="secondary-btn" onClick={() => yenile(item)} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px' }}>Yenile</button>
-                    <button className="secondary-btn" onClick={() => feshet(item)} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px', background: '#fff1f2', color: '#b91c1c' }}>Feshet</button>
-                    <button className="secondary-btn" onClick={async () => { if (!confirm('Arşivlensin mi?')) return; await apiClient.put(`/contracts/${item.id}`, { ...item, status: 'Arşiv', type: item.type }); fetchList(); }} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px', background: '#fef3c7', color: '#92400e' }}>Arşivle</button>
-                    <button className="danger-btn" onClick={async () => { if (!confirm('Silinsin mi?')) return; await apiClient.delete(`/contracts/${item.id}`); fetchList(); }} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px' }}>Sil</button>
+      {/* İÇERİK: MOBİL KARTLAR VEYA TABLO */}
+      {(viewMode === 'cards' || (viewMode === 'auto' && isMobile)) ? (
+        <div className="inv-mobile-cards">
+          {loading && <div className="card" style={{ padding: 24, textAlign: 'center' }}>Yükleniyor…</div>}
+          {!loading && items.length === 0 && <div className="card" style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>Kayıt bulunamadı.</div>}
+          {!loading && items.map((item) => (
+            <div key={item.id} className="inv-card">
+              <div className="inv-card-header">
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div className="inv-card-title" onClick={() => openDetail(item)}>
+                    {item.name}
                   </div>
-                </td>
+                  <div className="inv-card-meta">
+                    {item.type || 'Sözleşme'} {item.counterparty ? `• ${item.counterparty}` : ''} • #{item.id}
+                  </div>
+                </div>
+                <span className="badge" style={{ ...Object.fromEntries((durumRengi(item.status)).split(';').filter(Boolean).map((s) => { const [k, v] = s.split(':'); return [k.trim(), v?.trim()]; })) }}>
+                  {item.status}
+                </span>
+              </div>
+
+              <div className="inv-card-grid">
+                <div className="inv-card-row">
+                  <span className="inv-card-label">Tutar</span>
+                  <span className="inv-card-val">{fmt(item.amount)} {item.currency}</span>
+                </div>
+                <div className="inv-card-row">
+                  <span className="inv-card-label">Danışman</span>
+                  <span className="inv-card-val">{item.consultantName || '—'}</span>
+                </div>
+                <div className="inv-card-row">
+                  <span className="inv-card-label">Yatırımcı</span>
+                  <span className="inv-card-val">{item.investorName || '—'}</span>
+                </div>
+                <div className="inv-card-row">
+                  <span className="inv-card-label">Marka</span>
+                  <span className="inv-card-val">{item.brandName || '—'}</span>
+                </div>
+                <div className="inv-card-row">
+                  <span className="inv-card-label">Başlangıç</span>
+                  <span className="inv-card-val">{item.startDate || '—'}</span>
+                </div>
+                <div className="inv-card-row">
+                  <span className="inv-card-label">Bitiş</span>
+                  <span className="inv-card-val">{item.endDate || '—'}</span>
+                </div>
+              </div>
+
+              <div className="inv-card-actions">
+                <button type="button" className="secondary-btn" onClick={() => openDetail(item)}>
+                  Detay
+                </button>
+                <button type="button" className="secondary-btn" onClick={() => createFinance(item)}>
+                  Finans Oluştur
+                </button>
+                {item.fileUrl && (
+                  <a className="secondary-btn" href={item.fileUrl} target="_blank" rel="noreferrer">
+                    PDF
+                  </a>
+                )}
+                <button type="button" className="secondary-btn" onClick={() => yenile(item)}>
+                  Yenile
+                </button>
+                <button type="button" className="secondary-btn" onClick={() => feshet(item)} style={{ background: '#fff1f2', color: '#b91c1c' }}>
+                  Feshet
+                </button>
+                <button type="button" className="danger-btn" onClick={async () => { if (!confirm('Silinsin mi?')) return; await apiClient.delete(`/contracts/${item.id}`); fetchList(); }}>
+                  Sil
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="inv-table-wrap">
+          <table className="inv-table no-responsive">
+            <thead>
+              <tr>
+                <th>Sözleşme adı</th>
+                {colVisible.investor !== false && <th>Yatırımcı</th>}
+                {colVisible.brand !== false && <th>Marka</th>}
+                {colVisible.location !== false && <th>Lokasyon</th>}
+                {colVisible.type !== false && <th>Tip</th>}
+                {colVisible.amount !== false && <th>Tutar</th>}
+                {colVisible.startDate !== false && <th>Başlangıç</th>}
+                {colVisible.endDate !== false && <th>Bitiş</th>}
+                {colVisible.status !== false && <th>Durum</th>}
+                {colVisible.consultant !== false && <th>Danışman</th>}
+                <th>İşlem</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {loading && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center' }}>Yükleniyor…</td></tr>}
+              {!loading && items.length === 0 && <tr><td colSpan={11} style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>Kayıt bulunamadı.</td></tr>}
+              {!loading && items.map((item) => (
+                <tr key={item.id}>
+                  <td><strong onClick={() => openDetail(item)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{item.name}</strong></td>
+                  {colVisible.investor !== false && <td>{item.investorName || '—'}</td>}
+                  {colVisible.brand !== false && <td>{item.brandName || '—'}</td>}
+                  {colVisible.location !== false && <td>{item.locationName || '—'}</td>}
+                  {colVisible.type !== false && <td>{item.type || '—'}</td>}
+                  {colVisible.amount !== false && <td style={{ whiteSpace: 'nowrap' }}>{fmt(item.amount)} {item.currency}</td>}
+                  {colVisible.startDate !== false && <td style={{ fontSize: 12 }}>{item.startDate || '—'}</td>}
+                  {colVisible.endDate !== false && <td style={{ fontSize: 12 }}>{item.endDate || '—'}</td>}
+                  {colVisible.status !== false && <td><span className="badge" style={{ ...Object.fromEntries((durumRengi(item.status)).split(';').filter(Boolean).map((s) => { const [k, v] = s.split(':'); return [k.trim(), v?.trim()]; })) }}>{item.status}</span></td>}
+                  {colVisible.consultant !== false && <td style={{ fontSize: 12 }}>{item.consultantName || '—'}</td>}
+                  <td>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+                      <button className="secondary-btn" onClick={() => createFinance(item)} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px' }}>Finans oluştur</button>
+                      {item.fileUrl && <a className="secondary-btn" href={item.fileUrl} target="_blank" rel="noreferrer" style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px', textAlign: 'center' }}>PDF</a>}
+                      <button className="secondary-btn" onClick={() => yenile(item)} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px' }}>Yenile</button>
+                      <button className="secondary-btn" onClick={() => feshet(item)} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px', background: '#fff1f2', color: '#b91c1c' }}>Feshet</button>
+                      <button className="secondary-btn" onClick={async () => { if (!confirm('Arşivlensin mi?')) return; await apiClient.put(`/contracts/${item.id}`, { ...item, status: 'Arşiv', type: item.type }); fetchList(); }} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px', background: '#fef3c7', color: '#92400e' }}>Arşivle</button>
+                      <button className="danger-btn" onClick={async () => { if (!confirm('Silinsin mi?')) return; await apiClient.delete(`/contracts/${item.id}`); fetchList(); }} style={{ flex: '1 1 auto', fontSize: '0.75rem', padding: '6px 8px' }}>Sil</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* SAYFALAMA */}
       <div className="inv-pagination">

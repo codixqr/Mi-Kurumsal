@@ -1552,8 +1552,12 @@ tbody td {
 }
 
 @media (max-width: 768px) {
-  .inv-page .inv-table {
+  .inv-page .inv-table:not(.responsive-cards) {
     min-width: 960px !important;
+  }
+  table.responsive-cards {
+    min-width: 0 !important;
+    width: 100% !important;
   }
   .inv-page .inv-table-wrap {
     overflow-x: auto !important;
