@@ -337,7 +337,12 @@ export default function ProjectsPage() {
                 <td>
                   <button onClick={() => handleEdit(p)} className="edit-btn">Düzenle</button>
                   <button onClick={() => openDetail(p)} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Detay</button>
-                  <button onClick={async () => { await apiClient.post('/tasks', { note: `Proje görevi: ${p.name}`, status: 'Açık', priority: p.priority || 'Orta', dueDate: p.dueDate || null }); alert('Görev eklendi'); }} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Görev ekle</button>
+                  <button onClick={async () => { 
+                    const t = window.prompt('Görev açıklaması:', `Proje: ${p.name}`);
+                    if (!t) return;
+                    await apiClient.post('/tasks', { title: t, status: 'Açık', priority: p.priority || 'Orta', dueDate: p.dueDate || null, projectId: p.id }); 
+                    alert('Görev eklendi'); 
+                  }} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Görev ekle</button>
                   <button onClick={async () => { await apiClient.post('/contracts', { name: `Sözleşme: ${p.name}`, note: '', type: 'Proje', status: 'Taslak', projectId: p.id, brandId: p.brandId || null, investorId: p.investorId || null }); alert('Sözleşme oluşturuldu'); }} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Sözleşme oluştur</button>
                   <button onClick={() => document.getElementById(`project-file-${p.id}`)?.click()} className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }}>Dosya yükle</button>
                   <input id={`project-file-${p.id}`} type="file" multiple accept="image/*,.pdf,.doc,.docx" style={{ display: 'none' }} onChange={async (e) => { const urls = await uploadFiles(e.target.files); const updated = [...(p.files || []), ...urls]; await apiClient.put(`/projects/${p.id}`, { ...p, files: updated, type: p.type, owner: p.owner, dueDate: p.dueDate }); fetchData(); }} />
