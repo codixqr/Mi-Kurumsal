@@ -1335,3 +1335,18 @@ tbody td {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* --- MODERN MODAL REFRESH --- */
+.inv-page .inv-modal, .modal { border-radius: 20px !important; box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15) !important; border: 1px solid rgba(0,0,0,0.05) !important; background: #ffffff !important; }
+.inv-page .inv-modal-head, .modal-header { border-bottom: 1px solid #f1f5f9 !important; background: #ffffff !important; padding: 20px 24px !important; display: flex !important; align-items: center !important; justify-content: space-between !important; }
+.inv-page .inv-modal-head h3, .modal-header h3 { font-size: 1.3rem !important; font-weight: 700 !important; color: #0f172a !important; }
+
+.edit-btn, .secondary-btn, .danger-btn, .primary-btn { border-radius: 8px !important; padding: 8px 16px !important; font-weight: 600 !important; font-size: 0.85rem !important; cursor: pointer !important; transition: all 0.2s ease !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; border: none !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
+.edit-btn { background: #eff6ff !important; color: #1d4ed8 !important; }
+.edit-btn:hover { background: #dbeafe !important; color: #1e3a8a !important; }
+.secondary-btn { background: #ffffff !important; color: #475569 !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important; }
+.secondary-btn:hover { background: #f8fafc !important; border-color: #cbd5e1 !important; color: #0f172a !important; }
+.danger-btn { background: #fee2e2 !important; color: #b91c1c !important; }
+.danger-btn:hover { background: #fecaca !important; color: #991b1b !important; }
+.primary-btn { background: #1a5c38 !important; color: #ffffff !important; }
+.primary-btn:hover { background: #14462a !important; }

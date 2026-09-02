@@ -371,11 +371,12 @@ export default function LocationsPage() {
             <div className="inv-modal-head">
               <h3>{detail.location.name}</h3>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="edit-btn" onClick={() => { setDetail(null); setForm({ ...defaultForm(), ...detail.location, id: detail.location.id, lat: String(detail.location.lat || ''), lng: String(detail.location.lng || ''), rent: String(detail.location.rent || ''), size: String(detail.location.size || '') }); setFormOpen(true); }}>Düzenle</button>
+                <button className="danger-btn" onClick={async () => { if (!confirm('Silinsin mi?')) return; await apiClient.delete(`/locations/${detail.location.id}`); setDetail(null); fetchList(); }}>Sil</button>
+                <button className="edit-btn" onClick={() => { setDetailTab('edit'); setForm({ ...defaultForm(), ...detail.location, id: detail.location.id, lat: String(detail.location.lat || ''), lng: String(detail.location.lng || ''), rent: String(detail.location.rent || ''), size: String(detail.location.size || '') }); }}>Düzenle</button>
                 <button className="secondary-btn" onClick={() => setDetail(null)}>Kapat</button>
               </div>
             </div>
-            <div className="inv-tabs">{[['genel', 'Genel bilgiler'], ['teknik', 'Teknik bilgiler'], ['finans', 'Finansal bilgiler'], ['gorsel', 'Görseller'], ['marka', 'Uygun markalar'], ['yatirimci', 'Eşleşen yatırımcılar'], ['proje', 'Aktif projeler'], ['gorusme', 'Görüşme geçmişi'], ['not', 'Notlar']].map(([id, l]) => <button key={id} className={`inv-tab ${detailTab === id ? 'active' : ''}`} onClick={() => setDetailTab(id)}>{l}</button>)}</div>
+            <div className="inv-tabs">{[['genel', 'Genel bilgiler'], ['teknik', 'Teknik bilgiler'], ['finans', 'Finansal bilgiler'], ['gorsel', 'Görseller'], ['marka', 'Uygun markalar'], ['yatirimci', 'Eşleşen yatırımcılar'], ['proje', 'Aktif projeler'], ['gorusme', 'Görüşme geçmişi'], ['not', 'Notlar'], ['edit', 'Düzenle']].map(([id, l]) => <button key={id} className={`inv-tab ${detailTab === id ? 'active' : ''}`} style={id === 'edit' ? { display: 'none' } : {}} onClick={() => setDetailTab(id)}>{l}</button>)}</div>
             <div className="inv-modal-body">
               {detailTab === 'genel' && <dl className="inv-dl"><dt>Adres</dt><dd>{detail.location.address || '-'}</dd><dt>Şehir</dt><dd>{detail.location.city || '-'}</dd><dt>Tip</dt><dd>{detail.location.type}</dd><dt>Durum</dt><dd>{detail.location.status}</dd></dl>}
               {detailTab === 'teknik' && <dl className="inv-dl"><dt>m²</dt><dd>{detail.location.sqm}</dd><dt>Cephe</dt><dd>{detail.location.storefrontLength || '-'}</dd><dt>Kat</dt><dd>{detail.location.floorInfo || '-'}</dd><dt>Baca</dt><dd>{detail.location.chimneyStatus || '-'}</dd><dt>Altyapı</dt><dd>{detail.location.infrastructureStatus || '-'}</dd></dl>}
@@ -386,6 +387,31 @@ export default function LocationsPage() {
               {detailTab === 'proje' && <ul>{(detail.projects || []).map((p) => <li key={p.id}>{p.name} - {p.stage}</li>)}</ul>}
               {detailTab === 'gorusme' && <p>Lokasyon görüşme geçmişi için Timeline modülü ile entegre edilebilir.</p>}
               {detailTab === 'not' && <p>{detail.location.notes || 'Not yok.'}</p>}
+              
+              {detailTab === 'edit' && (
+                <form className="inv-form-grid" onSubmit={(e) => {
+                  e.preventDefault();
+                  saveForm(e).then(() => {
+                    setDetail({ ...detail, location: { ...detail.location, ...form } });
+                    setDetailTab('genel');
+                  });
+                }}>
+                  <div className="field"><label>Lokasyon adı</label><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
+                  <div className="field"><label>AVM/Cadde adı</label><input value={form.avenueName} onChange={(e) => setForm({ ...form, avenueName: e.target.value })} /></div>
+                  <div className="field" style={{ gridColumn: '1 / -1' }}><label>Açık adres</label><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+                  <div className="field"><label>Google Maps</label><input value={form.mapsLink} onChange={(e) => setForm({ ...form, mapsLink: e.target.value })} /></div>
+                  <div className="field"><label>Tip</label><select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>{LOCATION_TYPES.map((s) => <option key={s}>{s}</option>)}</select></div>
+                  <div className="field"><label>Segment</label><select value={form.segment} onChange={(e) => setForm({ ...form, segment: e.target.value })}>{SEGMENTS.map((s) => <option key={s}>{s}</option>)}</select></div>
+                  <div className="field"><label>m²</label><input type="number" value={form.sqm} onChange={(e) => setForm({ ...form, sqm: e.target.value })} /></div>
+                  <div className="field"><label>Kira</label><input type="number" value={form.rent} onChange={(e) => setForm({ ...form, rent: e.target.value })} /></div>
+                  <div className="field"><label>Durum</label><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select></div>
+                  <div className="field" style={{ gridColumn: '1 / -1' }}><label>Notlar</label><textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, marginTop: 12 }}>
+                    <button className="primary-btn" type="submit">Güncelle</button>
+                    <button className="secondary-btn" type="button" onClick={() => setDetailTab('genel')}>İptal</button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
