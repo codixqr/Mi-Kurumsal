@@ -661,18 +661,27 @@ function scoreSqm(sqm, brand) {
 
 async function initDb() {
   const schemaPath = path.join(__dirname, "..", "schema.sql");
-  if (!fs.existsSync(schemaPath)) {
-    console.log("schema.sql bulunamadı, initDb atlanıyor.");
-    return;
+  if (fs.existsSync(schemaPath)) {
+    try {
+      const schema = fs.readFileSync(schemaPath, "utf8");
+      await pool.query(schema);
+    } catch (e) {
+      console.log("schema.sql çalıştırılırken hata:", e.message);
+    }
+  } else {
+    console.log("schema.sql bulunamadı, mevcut tablolara ALTER uygulanacak.");
   }
-  const schema = fs.readFileSync(schemaPath, "utf8");
-  await pool.query(schema);
   await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
   await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
   await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
   await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP");
+  
+  await pool.query("ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS record_id INTEGER");
+  await pool.query("ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS before_data JSONB");
+  await pool.query("ALTER TABLE activity_logs ADD COLUMN IF NOT EXISTS after_data JSONB");
+
   await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'");
   await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'");
   await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS agreement_status TEXT");

@@ -379,9 +379,9 @@ export default function BrandsPage() {
     }
   };
 
-  const openDetail = async (b) => {
+  const openDetail = async (b, tab = 'genel') => {
     setDetailOpen(true);
-    setDetailTab('genel');
+    setDetailTab(tab);
     setDetail({ brand: b });
     setDetailLoading(true);
     try {
@@ -391,6 +391,28 @@ export default function BrandsPage() {
       setDetail({ brand: b, error: true });
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const createTask = async (b) => {
+    const note = window.prompt('Görev açıklaması:', `${b.name} markası için yeni görev`);
+    if (!note) return;
+    const due = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+    try {
+      await apiClient.post('/tasks', {
+        note,
+        status: 'Açık',
+        priority: 'Orta',
+        dueDate: due,
+        brandId: b.id,
+      });
+      alert('Görev oluşturuldu.');
+      if (detail?.brand?.id === b.id) {
+        const d = await apiClient.get(`/brands/${b.id}/detail`);
+        setDetail(d);
+      }
+    } catch (e) {
+      alert(e.message || 'Hata');
     }
   };
 
@@ -932,16 +954,16 @@ export default function BrandsPage() {
                       <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => openDetail(b)}>
                         Detay
                       </button>
-                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => { window.location.href = '/matching'; }}>
+                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => openDetail(b, 'yatirimci')}>
                         Yatırımcı
                       </button>
-                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => { window.location.href = '/locations'; }}>
+                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => openDetail(b, 'lok')}>
                         Lokasyon
                       </button>
                       <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => createProject(b)}>
                         Proje
                       </button>
-                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => { window.location.href = '/tasks'; }}>
+                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => createTask(b)}>
                         Görev
                       </button>
                       {b.presentationUrl && (

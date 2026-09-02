@@ -149,8 +149,6 @@ export default function ProjectsPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (loading) return <div className="card">Yükleniyor...</div>;
-
   const PROJ_COLS = [
     { key: 'investor', label: 'Yatırımcı' },
     { key: 'brand', label: 'Marka' },
@@ -162,6 +160,8 @@ export default function ProjectsPage() {
     { key: 'priority', label: 'Öncelik' },
   ];
   const [colVisible, toggleCol] = useColumnVisibility('projects', Object.fromEntries(PROJ_COLS.map((c) => [c.key, true])));
+
+  if (loading) return <div className="card">Yükleniyor...</div>;
 
   return (
     <section className="card page-section active inv-page">
