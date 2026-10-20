@@ -8,7 +8,7 @@ const pool = require('../config/db');
 const DEFAULT_CONFIG = {
   apiUrl: process.env.WAHA_API_URL || '',
   apiKey: process.env.WAHA_API_KEY || '',
-  session: process.env.WAHA_SESSION || 'default',
+  session: process.env.WAHA_SESSION || 'micore',
   countryCode: process.env.WAHA_COUNTRY_CODE || '90',
   enabled: process.env.WAHA_ENABLED === 'true' || false,
 };

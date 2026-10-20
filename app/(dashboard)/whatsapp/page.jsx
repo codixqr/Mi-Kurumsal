@@ -10,7 +10,7 @@ export default function WhatsAppPage() {
   const [config, setConfig] = useState({
     apiUrl: '',
     apiKey: '',
-    session: 'default',
+    session: 'micore',
     countryCode: '90',
     enabled: false,
   });
