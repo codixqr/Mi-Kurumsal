@@ -6,7 +6,7 @@ const pool = require('../config/db');
  */
 
 const DEFAULT_CONFIG = {
-  apiUrl: process.env.WAHA_API_URL || 'https://waha.aifgenclik.at',
+  apiUrl: process.env.WAHA_API_URL || '',
   apiKey: process.env.WAHA_API_KEY || '',
   session: process.env.WAHA_SESSION || 'default',
   countryCode: process.env.WAHA_COUNTRY_CODE || '90',
@@ -223,11 +223,31 @@ async function checkStatus(customPool) {
   const config = await getWahaConfig(customPool);
   const sessionName = config.session || 'default';
 
+  if (!config.apiUrl) {
+    return {
+      connected: false,
+      status: 'NOT_CONFIGURED',
+      message: 'WAHA API URL tanımlanmamış. Lütfen aşağıdaki ayarlardan sunucu adresini girin.',
+      session: sessionName,
+      apiUrl: '',
+    };
+  }
+
   const res = await requestWaha(`api/sessions/${encodeURIComponent(sessionName)}`, {}, 'GET', customPool);
 
   if (!res.success) {
     const code = res.code || 0;
     const errMsg = String(res.error || '').toLowerCase();
+    if (code === 401 || errMsg.includes('unauthorized') || errMsg.includes('api key')) {
+      return {
+        connected: false,
+        status: 'UNAUTHORIZED',
+        code: 401,
+        message: 'Yetkilendirme hatası (Unauthorized): WAHA API Key girilmemiş veya geçersiz.',
+        session: sessionName,
+        apiUrl: config.apiUrl,
+      };
+    }
     if (code === 404 || errMsg.includes('not found')) {
       // Session does not exist yet, attempt to start it
       await requestWaha('api/sessions/start', { name: sessionName }, 'POST', customPool);

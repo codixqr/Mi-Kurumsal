@@ -8,11 +8,11 @@ export default function WhatsAppPage() {
   const [statusLoading, setStatusLoading] = useState(false);
   const [status, setStatus] = useState(null);
   const [config, setConfig] = useState({
-    apiUrl: 'https://waha.aifgenclik.at',
+    apiUrl: '',
     apiKey: '',
     session: 'default',
     countryCode: '90',
-    enabled: true,
+    enabled: false,
   });
   const [showApiKey, setShowApiKey] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState(null);
@@ -278,9 +278,16 @@ export default function WhatsAppPage() {
                 {status?.message || (isConnected ? 'Bağlantı Aktif' : 'Bağlantı Yok')}
               </span>
             </div>
-            <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 2 }}>
-              Sunucu: <code>{config.apiUrl}</code> | Oturum: <code>{config.session}</code>
-              {status?.me?.id && <span> | Bağlı Hat: <b>{status.me.id.split('@')[0]}</b> ({status.me.pushName || ''})</span>}
+            <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: 3 }}>
+              {isConnected ? (
+                status?.me?.id ? (
+                  <span>Bağlı WhatsApp Hattı: <b style={{ color: '#166534' }}>+{status.me.id.split('@')[0]}</b> {status.me.pushName ? `(${status.me.pushName})` : ''}</span>
+                ) : 'WhatsApp servisi aktif ve mesaj gönderimine hazır.'
+              ) : isQrWaiting ? (
+                'Oturum hazır, WhatsApp mobil uygulamasından QR kodu taratmanız bekleniyor.'
+              ) : (
+                'Mesaj gönderimi yapabilmek için aşağıdaki API ayarlarını kaydedip oturumu başlatın.'
+              )}
             </div>
           </div>
         </div>
@@ -348,11 +355,11 @@ export default function WhatsAppPage() {
                 type="url"
                 value={config.apiUrl}
                 onChange={e => setConfig({ ...config, apiUrl: e.target.value })}
-                placeholder="https://waha.aifgenclik.at"
+                placeholder="https://waha.siteniz.com"
                 required
                 style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
               />
-              <small style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Örn: https://waha.aifgenclik.at veya http://localhost:3000</small>
+              <small style={{ color: '#94a3b8', fontSize: '0.75rem' }}>Örn: https://waha.alanadiniz.com veya http://localhost:3000</small>
             </div>
 
             <div>
