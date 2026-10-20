@@ -80,6 +80,7 @@ app.use('/api/export', require('./routes/export'));
 app.use('/api/export-pdf', require('./routes/export-pdf'));
 app.use('/api/recycle-bin', require('./routes/recycle-bin'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/whatsapp', require('./routes/whatsapp'));
 app.use('/api/health', require('./routes/health'));
 
 const uploadsDir = process.env.VERCEL ? path.join("/tmp", "uploads") : path.join(__dirname, "..", "uploads");
@@ -277,13 +278,35 @@ async function sendMailToRecipient(to, subject, text) {
     text
   });
 }
-async function sendWhatsAppNotification(message) {
+async function sendWhatsAppNotification(message, recipientPhone = null) {
+  try {
+    const wahaService = require("./services/waha");
+    const wahaConfig = await wahaService.getWahaConfig(pool);
+    if (wahaConfig.enabled) {
+      const targetPhone = recipientPhone || process.env.TWILIO_WHATSAPP_TO || process.env.NOTIFY_WHATSAPP_TO;
+      if (targetPhone) {
+        const res = await wahaService.sendText({
+          phone: targetPhone,
+          message,
+          recipientName: "Otomasyon Bildirimi",
+          customPool: pool,
+        });
+        if (res.success) {
+          return res;
+        }
+        console.warn("WAHA üzerinden gönderilemedi, varsa Twilio denenecek:", res.error);
+      }
+    }
+  } catch (err) {
+    console.warn("WAHA kontrolü sırasında hata:", err.message);
+  }
+
   const sid = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
   const from = process.env.TWILIO_WHATSAPP_FROM;
-  const to = process.env.TWILIO_WHATSAPP_TO;
+  const to = recipientPhone || process.env.TWILIO_WHATSAPP_TO;
   if (!sid || !token || !from || !to) {
-    throw new Error("Twilio WhatsApp bilgileri eksik.");
+    throw new Error("WhatsApp servisi (WAHA veya Twilio) aktif değil veya alıcı numarası bulunamadı.");
   }
   const client = twilio(sid, token);
   await client.messages.create({
@@ -941,6 +964,16 @@ async function initDb() {
     amount NUMERIC(14,2) NOT NULL DEFAULT 0,
     note TEXT,
     created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+  )`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS whatsapp_logs (
+    id SERIAL PRIMARY KEY,
+    phone VARCHAR(50) NOT NULL,
+    recipient_name VARCHAR(150),
+    message_type VARCHAR(50) DEFAULT 'text',
+    content TEXT,
+    status VARCHAR(20) DEFAULT 'success',
+    error_message TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
   )`);
 }

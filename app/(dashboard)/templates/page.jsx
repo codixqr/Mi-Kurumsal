@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/apiClient';
@@ -109,7 +109,17 @@ export default function TemplatesPage() {
       const msg = preview(activeTemplate.body, inv.name);
       const phone = (inv.phone || '').replace(/\D/g, '');
       let url = '';
-      if (sendChannel === 'WhatsApp') url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+      if (sendChannel === 'WhatsApp') {
+        try {
+          const res = await apiClient.post('/whatsapp/send-message', { phone, message: msg, recipientName: inv.name });
+          if (res.success) {
+            log.push({ name: inv.name, channel: 'WAHA (WhatsApp)', status: '✓ Gönderildi' });
+            await new Promise(r => setTimeout(r, 200));
+            continue;
+          }
+        } catch (e) {}
+        url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+      }
       else if (sendChannel === 'Email') url = `mailto:${inv.email}?subject=${encodeURIComponent(activeTemplate.title)}&body=${encodeURIComponent(msg)}`;
       else if (sendChannel === 'SMS') url = `sms:${phone}?body=${encodeURIComponent(msg)}`;
 

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
@@ -20,6 +20,7 @@ const CRM_PERMISSION_OPTIONS = [
   { key: 'tasks', label: 'Görev Yönetimi' },
   { key: 'reports', label: 'Raporlar' },
   { key: 'templates', label: 'Mesaj Şablonları' },
+  { key: 'whatsapp', label: 'WhatsApp (WAHA)' },
   { key: 'matching', label: 'Eşleştirme Motoru' },
   { key: 'pnl', label: 'Kar / Zarar' },
   { key: 'timeline', label: 'Activity Timeline' },

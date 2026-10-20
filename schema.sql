@@ -501,3 +501,14 @@ CREATE TABLE IF NOT EXISTS message_templates (
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS whatsapp_logs (
+  id SERIAL PRIMARY KEY,
+  phone VARCHAR(50) NOT NULL,
+  recipient_name VARCHAR(150),
+  message_type VARCHAR(50) DEFAULT 'text',
+  content TEXT,
+  status VARCHAR(20) DEFAULT 'success',
+  error_message TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);

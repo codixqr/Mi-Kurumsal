@@ -22,6 +22,7 @@ export default function DashboardLayout({ children }) {
     { name: 'Finans & Kar/Zarar', path: '/pnl', id: 'pnl' },
     { name: 'Raporlar', path: '/reports', id: 'reports' },
     { name: 'Şablonlar', path: '/templates', id: 'templates' },
+    { name: 'WhatsApp (WAHA)', path: '/whatsapp', id: 'whatsapp' },
     { name: 'Akıllı Eşleştirme', path: '/matching', id: 'matching' },
     { name: 'İşlem Geçmişi', path: '/timeline', id: 'timeline' },
   ];
