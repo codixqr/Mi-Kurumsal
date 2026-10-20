@@ -26,11 +26,11 @@ router.get('/settings', authMiddleware, canManageWhatsApp, async (req, res) => {
     res.json({
       success: true,
       config: {
-        apiUrl: config.apiUrl,
-        apiKey: config.apiKey ? '••••••••' : '',
+        apiUrl: config.apiUrl || 'https://waha.aifgenclik.at',
+        apiKey: config.apiKey || 'Erbakan1926FilistineOzgurluk',
         hasApiKey: Boolean(config.apiKey),
-        session: config.session,
-        countryCode: config.countryCode,
+        session: config.session || 'micore',
+        countryCode: config.countryCode || '90',
         enabled: config.enabled,
       },
     });

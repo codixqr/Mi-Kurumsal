@@ -8,11 +8,11 @@ export default function WhatsAppPage() {
   const [statusLoading, setStatusLoading] = useState(false);
   const [status, setStatus] = useState(null);
   const [config, setConfig] = useState({
-    apiUrl: '',
-    apiKey: '',
+    apiUrl: 'https://waha.aifgenclik.at',
+    apiKey: 'Erbakan1926FilistineOzgurluk',
     session: 'micore',
     countryCode: '90',
-    enabled: false,
+    enabled: true,
   });
   const [showApiKey, setShowApiKey] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState(null);
