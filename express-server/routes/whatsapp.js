@@ -89,6 +89,32 @@ router.post('/start-session', authMiddleware, canManageWhatsApp, async (req, res
   }
 });
 
+// 4.1 Get live QR image
+router.get('/qr', authMiddleware, canManageWhatsApp, async (req, res) => {
+  try {
+    const config = await waha.getWahaConfig(pool);
+    const session = config.session || 'micore';
+    const url = `${config.apiUrl}/api/${encodeURIComponent(session)}/auth/qr`;
+
+    const r = await fetch(url, {
+      headers: {
+        'X-Api-Key': config.apiKey,
+      },
+    });
+
+    if (!r.ok) {
+      return res.status(r.status).json({ success: false, error: 'QR kod henüz hazır değil veya oturum zaten bağlı.' });
+    }
+
+    const buffer = Buffer.from(await r.arrayBuffer());
+    res.setHeader('Content-Type', r.headers.get('content-type') || 'image/png');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.send(buffer);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // 5. Send single test message
 router.post('/send-test', authMiddleware, canManageWhatsApp, async (req, res) => {
   try {

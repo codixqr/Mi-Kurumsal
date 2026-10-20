@@ -17,6 +17,7 @@ export default function WhatsAppPage() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState(null);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [qrKey, setQrKey] = useState(Date.now());
 
   // Test Mesajı State
   const [testPhone, setTestPhone] = useState('');
@@ -296,23 +297,74 @@ export default function WhatsAppPage() {
           {isQrWaiting && (
             <button
               type="button"
-              onClick={() => window.open(`${config.apiUrl.replace(/\/+$/, '')}/dashboard/`, '_blank')}
+              onClick={() => { setQrKey(Date.now()); checkStatus(); }}
+              className="primary-btn"
               style={{
                 background: '#ca8a04',
-                color: '#fff',
-                border: 'none',
-                padding: '8px 14px',
-                borderRadius: 8,
                 fontSize: '0.85rem',
-                fontWeight: 600,
-                cursor: 'pointer',
+                padding: '8px 14px',
               }}
             >
-              📲 QR Kodu WAHA Panelinde Oku
+              🔄 QR Kodunu Yenile
             </button>
           )}
         </div>
       </div>
+
+      {/* ── Canlı QR Kod Okuma Alanı (Oturum QR Bekliyorsa) ── */}
+      {isQrWaiting && (
+        <div style={{
+          background: '#fff',
+          border: '2px dashed #eab308',
+          borderRadius: 14,
+          padding: 24,
+          textAlign: 'center',
+          boxShadow: '0 4px 12px rgba(234, 179, 8, 0.1)',
+        }}>
+          <h3 style={{ margin: '0 0 6px 0', fontSize: '1.15rem', color: '#854d0e', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            📲 WhatsApp Web QR Kodu
+          </h3>
+          <p style={{ margin: '0 0 16px 0', color: '#64748b', fontSize: '0.875rem' }}>
+            Telefonunuzdan <b>WhatsApp &gt; Bağlı Cihazlar &gt; Cihaz Bağla</b> seçeneğini açıp aşağıdaki QR kodunu okutun:
+          </p>
+          <div style={{ display: 'inline-block', padding: 12, background: '#f8fafc', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+            <img
+              src={`/api/whatsapp/qr?t=${qrKey}`}
+              alt="WhatsApp QR Kodu"
+              style={{ width: 240, height: 240, objectFit: 'contain', display: 'block' }}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                const el = document.getElementById('qr-error-fallback');
+                if (el) el.style.display = 'block';
+              }}
+            />
+            <div id="qr-error-fallback" style={{ display: 'none', padding: 20, color: '#ef4444', fontSize: '0.85rem' }}>
+              QR kod yüklenemedi. WAHA Dashboard üzerinden okutmayı deneyebilirsiniz.
+            </div>
+          </div>
+          <div style={{ marginTop: 14, display: 'flex', justifyContent: 'center', gap: 10 }}>
+            <button
+              type="button"
+              onClick={() => { setQrKey(Date.now()); checkStatus(); }}
+              className="secondary-btn"
+              style={{ fontSize: '0.85rem' }}
+            >
+              🔄 Kodu Yenile
+            </button>
+            {config.apiUrl && (
+              <a
+                href={`${config.apiUrl.replace(/\/+$/, '')}/dashboard/`}
+                target="_blank"
+                rel="noreferrer"
+                className="secondary-btn"
+                style={{ fontSize: '0.85rem', textDecoration: 'none' }}
+              >
+                ↗ WAHA Dashboard'da Aç
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── 2 Sütunlu Ana İçerik Grid ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>

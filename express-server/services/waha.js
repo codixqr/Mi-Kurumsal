@@ -6,11 +6,11 @@ const pool = require('../config/db');
  */
 
 const DEFAULT_CONFIG = {
-  apiUrl: process.env.WAHA_API_URL || '',
-  apiKey: process.env.WAHA_API_KEY || '',
+  apiUrl: process.env.WAHA_API_URL || 'https://waha.aifgenclik.at',
+  apiKey: process.env.WAHA_API_KEY || 'Erbakan1926FilistineOzgurluk',
   session: process.env.WAHA_SESSION || 'micore',
   countryCode: process.env.WAHA_COUNTRY_CODE || '90',
-  enabled: process.env.WAHA_ENABLED === 'true' || false,
+  enabled: process.env.WAHA_ENABLED === 'false' ? false : true,
 };
 
 async function getWahaConfig(customPool) {
@@ -72,7 +72,6 @@ async function requestWaha(endpoint, data = {}, method = 'POST', customPool) {
 
   if (config.apiKey) {
     headers['X-Api-Key'] = config.apiKey;
-    headers['Authorization'] = `Bearer ${config.apiKey}`;
   }
 
   const controller = new AbortController();
