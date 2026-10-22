@@ -212,6 +212,13 @@ export default function BrandsPage() {
     setPage(1);
   };
 
+  const filterByKpi = (partial) => {
+    const updated = { ...defaultFilters(), ...partial };
+    setFilterDraft(updated);
+    setFilters(updated);
+    setPage(1);
+  };
+
   const resetFilters = () => {
     const d = defaultFilters();
     setFilterDraft(d);
@@ -524,20 +531,40 @@ export default function BrandsPage() {
       </div>
 
       <section className="inv-kpi-grid">
-        <article className="inv-kpi-card">
-          <div className="inv-kpi-label">Toplam marka</div>
+        <article 
+          className="inv-kpi-card" 
+          onClick={() => filterByKpi({})} 
+          style={{ cursor: 'pointer' }} 
+          title="Tüm markaları listelemek için tıklayın"
+        >
+          <div className="inv-kpi-label">Toplam marka ↗</div>
           <div className="inv-kpi-value">{kpis?.total ?? '—'}</div>
         </article>
-        <article className="inv-kpi-card">
-          <div className="inv-kpi-label">Aktif anlaşmalı</div>
+        <article 
+          className="inv-kpi-card" 
+          onClick={() => filterByKpi({ agreementStatus: 'Anlaşmalı', active: 'true' })} 
+          style={{ cursor: 'pointer' }} 
+          title="Aktif anlaşmalı markaları filtrelemek için tıklayın"
+        >
+          <div className="inv-kpi-label">Aktif anlaşmalı ↗</div>
           <div className="inv-kpi-value">{kpis?.activeAgreed ?? '—'}</div>
         </article>
-        <article className="inv-kpi-card">
-          <div className="inv-kpi-label">Görüşülen</div>
+        <article 
+          className="inv-kpi-card" 
+          onClick={() => filterByKpi({ agreementStatus: 'Görüşülüyor' })} 
+          style={{ cursor: 'pointer' }} 
+          title="Görüşülen markaları filtrelemek için tıklayın"
+        >
+          <div className="inv-kpi-label">Görüşülen ↗</div>
           <div className="inv-kpi-value">{kpis?.inDiscussion ?? '—'}</div>
         </article>
-        <article className="inv-kpi-card">
-          <div className="inv-kpi-label">Pasif / Red</div>
+        <article 
+          className="inv-kpi-card" 
+          onClick={() => filterByKpi({ agreementStatus: 'Reddedildi' })} 
+          style={{ cursor: 'pointer' }} 
+          title="Pasif / Reddedilen markaları filtrelemek için tıklayın"
+        >
+          <div className="inv-kpi-label">Pasif / Red ↗</div>
           <div className="inv-kpi-value">{kpis?.passive ?? '—'}</div>
         </article>
         <article className="inv-kpi-card">
@@ -986,46 +1013,56 @@ export default function BrandsPage() {
             )}
             {!loading &&
               items.map((b) => (
-                <tr key={b.id} className={selectedIds.includes(b.id) ? 'selected-row' : ''}>
-                  <td>
-                    <input type="checkbox" checked={selectedIds.includes(b.id)} onChange={() => toggleSelect(b.id)} />
+                <tr 
+                  key={b.id} 
+                  className={`brand-table-row ${selectedIds.includes(b.id) ? 'selected-row' : ''}`}
+                  style={{ cursor: 'pointer' }}
+                  title={`${b.name} detaylarını açmak için tıklayın`}
+                >
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.includes(b.id)} 
+                      onChange={() => toggleSelect(b.id)} 
+                      style={{ cursor: 'pointer' }}
+                    />
                   </td>
-                  <td>
-                    <strong onClick={() => openDetail(b)} style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{b.name}</strong>
+                  <td onClick={() => openDetail(b)}>
+                    <strong style={{ cursor: 'pointer', color: '#1a5c38', textDecoration: 'underline' }}>{b.name}</strong>
                     {b.matchingEligible && (
                       <span className="badge tag-success" style={{ marginLeft: 6, fontSize: '0.65rem' }}>Eşleştirmede</span>
                     )}
                   </td>
-                  {colVisible.sector !== false && <td>{b.sector}</td>}
-                  {colVisible.budget !== false && <td>{budgetLabel(b)}</td>}
-                  {colVisible.targetCities !== false && <td style={{ maxWidth: 160, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.targetLocations}</td>}
-                  {colVisible.locationType !== false && <td>{b.locationType || '—'}</td>}
-                  {colVisible.sqm !== false && <td>{sqmLabel(b)}</td>}
-                  {colVisible.agreement !== false && <td><span className="badge">{b.agreementStatus || '—'}</span></td>}
-                  {colVisible.active !== false && <td>{b.active ? 'Evet' : 'Hayır'}</td>}
-                  <td>
+                  <td onClick={() => openDetail(b)}>{b.sector}</td>
+                  <td onClick={() => openDetail(b)}>{budgetLabel(b)}</td>
+                  <td onClick={() => openDetail(b)} style={{ maxWidth: 160, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.targetLocations}</td>
+                  <td onClick={() => openDetail(b)}>{b.locationType || '—'}</td>
+                  <td onClick={() => openDetail(b)}>{sqmLabel(b)}</td>
+                  <td onClick={() => openDetail(b)}><span className="badge">{b.agreementStatus || '—'}</span></td>
+                  <td onClick={() => openDetail(b)}>{b.active ? 'Evet' : 'Hayır'}</td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => openDetail(b, 'yatirimci')}>
+                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px', cursor: 'pointer' }} onClick={() => openDetail(b, 'yatirimci')}>
                         Yatırımcı
                       </button>
-                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => openDetail(b, 'lok')}>
+                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px', cursor: 'pointer' }} onClick={() => openDetail(b, 'lok')}>
                         Lokasyon
                       </button>
-                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => createProject(b)}>
+                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px', cursor: 'pointer' }} onClick={() => createProject(b)}>
                         Proje
                       </button>
-                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => createTask(b)}>
+                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px', cursor: 'pointer' }} onClick={() => createTask(b)}>
                         Görev
                       </button>
                       {b.presentationUrl && (
-                        <a className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px', display: 'inline-block' }} href={b.presentationUrl} target="_blank" rel="noreferrer">
+                        <a className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px', display: 'inline-block', cursor: 'pointer' }} href={b.presentationUrl} target="_blank" rel="noreferrer">
                           Sunum
                         </a>
                       )}
-                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => createContract(b)}>
+                      <button type="button" className="secondary-btn" style={{ fontSize: '0.75rem', padding: '4px 8px', cursor: 'pointer' }} onClick={() => createContract(b)}>
                         Sözleşme
                       </button>
-                      <button type="button" className="danger-btn" style={{ fontSize: '0.75rem', padding: '4px 8px' }} onClick={() => deleteRow(b)}>
+                      <button type="button" className="danger-btn" style={{ fontSize: '0.75rem', padding: '4px 8px', cursor: 'pointer' }} onClick={() => deleteRow(b)}>
                         Sil
                       </button>
                     </div>

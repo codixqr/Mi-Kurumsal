@@ -1595,3 +1595,88 @@ tbody td {
   }
 }
 
+
+/* ==================================================================== */
+/* INTERACTIVE POINTER CURSOR & HOVER FEEDBACK                          */
+/* ==================================================================== */
+button,
+a,
+select,
+input[type="checkbox"],
+input[type="radio"],
+input[type="submit"],
+input[type="button"],
+.primary-btn,
+.secondary-btn,
+.danger-btn,
+.edit-btn,
+.modal-close,
+.inv-tab,
+.inv-sort-btn,
+.inv-pagination button,
+.inv-kpi-card,
+.brand-table-row,
+.clickable {
+  cursor: pointer !important;
+}
+
+/* KPI Card Interactive Hover Effect */
+.inv-page .inv-kpi-card[onClick],
+.inv-page .inv-kpi-card[title] {
+  cursor: pointer !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.inv-page .inv-kpi-card[onClick]:hover,
+.inv-page .inv-kpi-card[title]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 92, 56, 0.15) !important;
+  border-color: #1a5c38 !important;
+}
+
+/* Table Row Pointer and Hover Highlight */
+.inv-table tbody tr.brand-table-row {
+  cursor: pointer !important;
+  transition: background-color 0.15s ease;
+}
+
+.inv-table tbody tr.brand-table-row:hover {
+  background-color: #f1f8f4 !important;
+}
+
+.inv-table tbody tr.brand-table-row td strong {
+  cursor: pointer !important;
+  color: #1a5c38;
+}
+
+.inv-table tbody tr.brand-table-row td strong:hover {
+  color: #14462a;
+  text-decoration: underline;
+}
+
+/* Sort button header pointer */
+.inv-page .inv-sort-btn {
+  cursor: pointer !important;
+  transition: color 0.15s ease;
+}
+
+.inv-page .inv-sort-btn:hover {
+  color: #1a5c38 !important;
+  text-decoration: underline;
+}
+
+/* Tab button pointer */
+.inv-page .inv-tab {
+  cursor: pointer !important;
+}
+
+/* Column picker and modal overlays */
+.column-picker-btn,
+.modal-overlay,
+.inv-modal-overlay {
+  cursor: pointer;
+}
+.modal,
+.inv-modal {
+  cursor: default;
+}
