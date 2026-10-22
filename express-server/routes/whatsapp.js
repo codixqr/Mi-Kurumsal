@@ -13,7 +13,12 @@ function canManageWhatsApp(req, res, next) {
     return next();
   }
   const permissions = req.user.permissions || [];
-  if (permissions.includes('whatsapp') || permissions.includes('settings')) {
+  if (
+    permissions.includes('whatsapp') ||
+    permissions.includes('settings') ||
+    permissions.includes('investors') ||
+    permissions.includes('brands')
+  ) {
     return next();
   }
   return res.status(403).json({ message: 'WhatsApp yönetimi için yetkiniz bulunmuyor.' });
@@ -171,37 +176,94 @@ router.post('/send-message', authMiddleware, canManageWhatsApp, async (req, res)
   }
 });
 
-// 7. Bulk / Broadcast Send
+// 7. Bulk / Broadcast Send (Supports text, files, and all entities)
 router.post('/broadcast', authMiddleware, canManageWhatsApp, async (req, res) => {
   try {
-    const { targetType, targetId, message, delayMs = 250 } = req.body;
-    if (!message || !message.trim()) {
-      return res.status(400).json({ success: false, error: 'Duyuru mesajı boş olamaz.' });
+    const { targetType, targetId, message, fileUrl, filename, customPhone, customName, delayMs = 250 } = req.body;
+    if ((!message || !message.trim()) && !fileUrl) {
+      return res.status(400).json({ success: false, error: 'Mesaj metni veya ek dosya gereklidir.' });
     }
 
     let recipients = [];
 
-    if (targetType === 'single_investor' && targetId) {
+    if (targetType === 'single_custom' && customPhone) {
+      recipients = [{
+        name: customName || 'Alıcı',
+        phone: customPhone,
+        city: '',
+        sector: '',
+        brand: '',
+      }];
+    } else if (targetType === 'single_investor' && targetId) {
       const r = await pool.query(
-        'SELECT id, name, phone, whatsapp_phone, city, email FROM investors WHERE id = $1 AND deleted_at IS NULL',
+        'SELECT id, name, phone, whatsapp_phone, city, sector FROM investors WHERE id = $1 AND deleted_at IS NULL',
         [targetId]
       );
       recipients = r.rows;
     } else if (targetType === 'investors_stage' && targetId) {
       const r = await pool.query(
-        'SELECT id, name, phone, whatsapp_phone, city, email FROM investors WHERE pipeline_stage = $1 AND deleted_at IS NULL',
+        'SELECT id, name, phone, whatsapp_phone, city, sector FROM investors WHERE pipeline_stage = $1 AND deleted_at IS NULL',
         [targetId]
       );
       recipients = r.rows;
-    } else if (targetType === 'all_team') {
+    } else if (targetType === 'all_investors') {
       const r = await pool.query(
-        'SELECT id, name, phone, email FROM team_members WHERE phone IS NOT NULL AND phone != \'\''
+        `SELECT id, name, phone, whatsapp_phone, city, sector 
+         FROM investors 
+         WHERE deleted_at IS NULL 
+           AND ((whatsapp_phone IS NOT NULL AND whatsapp_phone != '') OR (phone IS NOT NULL AND phone != ''))`
       );
       recipients = r.rows;
+    } else if (targetType === 'single_brand' && targetId) {
+      const r = await pool.query(
+        `SELECT id, name, contact_person, COALESCE(NULLIF(whatsapp_phone, ''), contact_phone) as phone, sector 
+         FROM brands WHERE id = $1 AND deleted_at IS NULL`,
+        [targetId]
+      );
+      recipients = r.rows.map(b => ({
+        ...b,
+        name: b.contact_person || b.name,
+        brand: b.name,
+        city: '',
+      }));
+    } else if (targetType === 'all_brands') {
+      const r = await pool.query(
+        `SELECT id, name, contact_person, COALESCE(NULLIF(whatsapp_phone, ''), contact_phone) as phone, sector 
+         FROM brands 
+         WHERE deleted_at IS NULL 
+           AND ((whatsapp_phone IS NOT NULL AND whatsapp_phone != '') OR (contact_phone IS NOT NULL AND contact_phone != ''))`
+      );
+      recipients = r.rows.map(b => ({
+        ...b,
+        name: b.contact_person || b.name,
+        brand: b.name,
+        city: '',
+      }));
+    } else if (targetType === 'single_team' && targetId) {
+      const r = await pool.query(
+        'SELECT id, name, phone, email, department FROM team_members WHERE id = $1',
+        [targetId]
+      );
+      recipients = r.rows.map(t => ({
+        ...t,
+        city: '',
+        sector: t.department || '',
+        brand: '',
+      }));
+    } else if (targetType === 'all_team') {
+      const r = await pool.query(
+        'SELECT id, name, phone, email, department FROM team_members WHERE phone IS NOT NULL AND phone != \'\''
+      );
+      recipients = r.rows.map(t => ({
+        ...t,
+        city: '',
+        sector: t.department || '',
+        brand: '',
+      }));
     } else {
       // Default: all investors with phone
       const r = await pool.query(
-        `SELECT id, name, phone, whatsapp_phone, city, email 
+        `SELECT id, name, phone, whatsapp_phone, city, sector 
          FROM investors 
          WHERE deleted_at IS NULL 
            AND ((whatsapp_phone IS NOT NULL AND whatsapp_phone != '') OR (phone IS NOT NULL AND phone != ''))`
@@ -210,7 +272,7 @@ router.post('/broadcast', authMiddleware, canManageWhatsApp, async (req, res) =>
     }
 
     if (recipients.length === 0) {
-      return res.status(404).json({ success: false, error: 'Telefonu kayıtlı alıcı bulunamadı.' });
+      return res.status(404).json({ success: false, error: 'Telefon numarası kayıtlı alıcı bulunamadı.' });
     }
 
     let sentCount = 0;
@@ -225,18 +287,34 @@ router.post('/broadcast', authMiddleware, canManageWhatsApp, async (req, res) =>
       }
 
       // Variable substitution
-      let personalized = message
+      let personalized = (message || '')
         .replace(/\{\{name\}\}/gi, rec.name || 'Müşteri')
         .replace(/\{\{ad_soyad\}\}/gi, rec.name || 'Müşteri')
         .replace(/\{\{phone\}\}/gi, phone)
-        .replace(/\{\{city\}\}/gi, rec.city || '');
+        .replace(/\{\{city\}\}/gi, rec.city || '')
+        .replace(/\{\{sehir\}\}/gi, rec.city || '')
+        .replace(/\{\{sector\}\}/gi, rec.sector || '')
+        .replace(/\{\{sektor\}\}/gi, rec.sector || '')
+        .replace(/\{\{brand\}\}/gi, rec.brand || '');
 
-      const result = await waha.sendText({
-        phone,
-        message: personalized,
-        recipientName: rec.name || null,
-        customPool: pool,
-      });
+      let result;
+      if (fileUrl) {
+        result = await waha.sendFile({
+          phone,
+          fileUrl,
+          filename: filename || 'dosya',
+          caption: personalized,
+          recipientName: rec.name || null,
+          customPool: pool,
+        });
+      } else {
+        result = await waha.sendText({
+          phone,
+          message: personalized,
+          recipientName: rec.name || null,
+          customPool: pool,
+        });
+      }
 
       if (result.success) {
         sentCount++;
@@ -245,7 +323,7 @@ router.post('/broadcast', authMiddleware, canManageWhatsApp, async (req, res) =>
         errors.push(`${rec.name || phone}: ${result.error || 'Bilinmeyen hata'}`);
       }
 
-      if (delayMs > 0) {
+      if (delayMs > 0 && recipients.length > 1) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }

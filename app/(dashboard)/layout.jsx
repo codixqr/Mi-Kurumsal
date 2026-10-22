@@ -19,6 +19,7 @@ export default function DashboardLayout({ children }) {
     { name: 'Proje & Süreç Takibi', path: '/projects', id: 'projects' },
     { name: 'Sözleşme Yönetimi', path: '/contracts', id: 'contracts' },
     { name: 'Görev Yönetimi', path: '/tasks', id: 'tasks' },
+    { name: 'WhatsApp Mesaj Gönder', path: '/whatsapp', id: 'whatsapp' },
     { name: 'Finans & Kar/Zarar', path: '/pnl', id: 'pnl' },
     { name: 'Raporlar', path: '/reports', id: 'reports' },
     { name: 'Şablonlar', path: '/templates', id: 'templates' },
