@@ -8,6 +8,7 @@ import { useTableFilters } from '@/lib/useTableFilters';
 
 const PIPELINES = ['Lead', 'Analiz', 'Marka eşleşmesi', 'Lokasyon çalışması', 'Teklif', 'Sözleşme', 'İnşaat / kurulum', 'Açılış', 'Kapanış'];
 const PRIORITIES = ['Düşük', 'Orta', 'Yüksek', 'Kritik'];
+const DEFAULT_PROJECT_FILTERS = { name: '', investorId: '', brandId: '', locationId: '', type: '', stage: '', priority: '', startFrom: '', closeTo: '' };
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
@@ -15,7 +16,8 @@ export default function ProjectsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(12);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [view, setView] = useState('list');
   const [kanban, setKanban] = useState({});
   const [detail, setDetail] = useState(null);
@@ -24,8 +26,7 @@ export default function ProjectsPage() {
   const [bulkStage, setBulkStage] = useState('');
   const [bulkPriority, setBulkPriority] = useState('');
   const [lookups, setLookups] = useState({ investors: [], brands: [], locations: [] });
-  const defaultFilters = () => ({ name: '', investorId: '', brandId: '', locationId: '', type: '', stage: '', priority: '', startFrom: '', closeTo: '' });
-  const { filters, setFilters } = useTableFilters(defaultFilters);
+  const { filters, setFilters } = useTableFilters(DEFAULT_PROJECT_FILTERS);
   const [form, setForm] = useState({
     id: null,
     name: '', type: 'Franchise', investorId: '', brandId: '', locationId: '', estimatedInvestment: '', estimatedRevenue: '',
@@ -50,6 +51,7 @@ export default function ProjectsPage() {
       console.error(err);
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   }, [filters, page, pageSize]);
 
@@ -163,7 +165,7 @@ export default function ProjectsPage() {
   ];
   const [colVisible, toggleCol] = useColumnVisibility('projects', Object.fromEntries(PROJ_COLS.map((c) => [c.key, true])));
 
-  if (loading) return <div className="card">Yükleniyor...</div>;
+  if (initialLoading) return <div className="card" style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>Yükleniyor...</div>;
 
   return (
     <section className="card page-section active inv-page">
@@ -318,7 +320,14 @@ export default function ProjectsPage() {
               <th>İşlem</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+            {projects.length === 0 && (
+              <tr>
+                <td colSpan={11} style={{ textAlign: 'center', padding: 24, color: '#64748b' }}>
+                  {loading ? 'Yükleniyor...' : 'Kayıt bulunamadı.'}
+                </td>
+              </tr>
+            )}
             {projects.map(p => (
               <tr key={p.id}>
                 <td><input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => setSelectedIds((prev) => prev.includes(p.id) ? prev.filter((x) => x !== p.id) : [...prev, p.id])} /></td>
