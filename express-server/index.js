@@ -3164,7 +3164,11 @@ async function start() {
   try {
     console.log("Veritabanı başlatılıyor...");
     await initDb();
-    await seedDefaultDataIfNeeded();
+    if (process.env.AUTO_SEED === "true") {
+      await seedDefaultDataIfNeeded();
+    } else {
+      console.log("Auto-seed pasif (AUTO_SEED!=true). Demo veriler otomatik eklenmeyecek.");
+    }
     console.log("Veritabanı hazır.");
   } catch (error) {
     console.error("Veritabanı başlatılırken hata oluştu:", error);

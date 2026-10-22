@@ -56,7 +56,25 @@ export default function SettingsPage() {
     permissions: ['tasks', 'projects'],
   });
 
+  const [cleaningDemo, setCleaningDemo] = useState(false);
+
   const isAdmin = user?.role === 'admin';
+
+  const handleCleanDemo = async () => {
+    if (!confirm('DİKKAT: Sistemdeki tüm demo marka, yatırımcı, lokasyon, proje, sözleşme, görev ve demo finans kayıtları silinecektir. Gerçek kayıtlarınız ve kullanıcılarınız kesinlikle korunacaktır. Devam etmek istiyor musunuz?')) {
+      return;
+    }
+    setCleaningDemo(true);
+    try {
+      const res = await apiClient.post('/admin/clean-demo');
+      alert(res.message || 'Demo veriler başarıyla temizlendi.');
+      await loadData();
+    } catch (err) {
+      alert('Hata: ' + (err.message || 'Demo veriler temizlenirken bir sorun oluştu.'));
+    } finally {
+      setCleaningDemo(false);
+    }
+  };
 
   const loadData = async () => {
     if (!isAdmin) return;
@@ -184,6 +202,30 @@ export default function SettingsPage() {
             <div className="field"><label>SMTP Host</label><input value={settingsForm.smtpHost} onChange={(e) => setSettingsForm({ ...settingsForm, smtpHost: e.target.value })} /></div>
             <button type="submit">Ayarları Kaydet</button>
           </form>
+
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid #fee2e2' }}>
+            <h4 style={{ color: '#b91c1c', marginBottom: 8 }}>Veritabanı Bakım & Demo Temizliği</h4>
+            <p style={{ fontSize: 13, color: '#4b5563', marginBottom: 14, maxWidth: 650 }}>
+              Sistem ilk kurulduğunda eklenen örnek (demo) marka, yatırımcı, lokasyon, sözleşme, görev ve finans kayıtlarını tek tıkla temizleyebilirsiniz. 
+              İşletmenizin girdiği <strong>gerçek verilere ve kullanıcı hesaplarına kesinlikle dokunulmaz</strong>.
+            </p>
+            <button
+              type="button"
+              onClick={handleCleanDemo}
+              disabled={cleaningDemo}
+              style={{
+                backgroundColor: '#dc2626',
+                color: '#fff',
+                border: 'none',
+                padding: '9px 18px',
+                borderRadius: '6px',
+                fontWeight: 600,
+                cursor: cleaningDemo ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {cleaningDemo ? 'Demo Veriler Temizleniyor...' : '🗑️ Demo Verilerini Temizle'}
+            </button>
+          </div>
         </article>
       )}
 
