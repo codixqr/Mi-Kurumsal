@@ -60,6 +60,23 @@ export default function SettingsPage() {
 
   const isAdmin = user?.role === 'admin';
 
+  const handleDownloadBackup = async () => {
+    try {
+      const res = await apiClient.get('/admin/backup-download');
+      const blob = new Blob([JSON.stringify(res, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mikurumsal_crm_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      alert('Yedek indirilirken hata olustu: ' + (err.message || 'Bilinmeyen hata'));
+    }
+  };
+
   const handleCleanDemo = async () => {
     if (!confirm('DİKKAT: Sistemdeki tüm demo marka, yatırımcı, lokasyon, proje, sözleşme, görev ve demo finans kayıtları silinecektir. Gerçek kayıtlarınız ve kullanıcılarınız kesinlikle korunacaktır. Devam etmek istiyor musunuz?')) {
       return;
@@ -209,22 +226,39 @@ export default function SettingsPage() {
               Sistem ilk kurulduğunda eklenen örnek (demo) marka, yatırımcı, lokasyon, sözleşme, görev ve finans kayıtlarını tek tıkla temizleyebilirsiniz. 
               İşletmenizin girdiği <strong>gerçek verilere ve kullanıcı hesaplarına kesinlikle dokunulmaz</strong>.
             </p>
-            <button
-              type="button"
-              onClick={handleCleanDemo}
-              disabled={cleaningDemo}
-              style={{
-                backgroundColor: '#dc2626',
-                color: '#fff',
-                border: 'none',
-                padding: '9px 18px',
-                borderRadius: '6px',
-                fontWeight: 600,
-                cursor: cleaningDemo ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {cleaningDemo ? 'Demo Veriler Temizleniyor...' : '🗑️ Demo Verilerini Temizle'}
-            </button>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={handleDownloadBackup}
+                style={{
+                  backgroundColor: '#2563eb',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '9px 18px',
+                  borderRadius: '6px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                📥 Tüm Veritabanını İndir (Yedek Al)
+              </button>
+              <button
+                type="button"
+                onClick={handleCleanDemo}
+                disabled={cleaningDemo}
+                style={{
+                  backgroundColor: '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '9px 18px',
+                  borderRadius: '6px',
+                  fontWeight: 600,
+                  cursor: cleaningDemo ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {cleaningDemo ? 'Demo Veriler Temizleniyor...' : '🗑️ Demo Verilerini Temizle'}
+              </button>
+            </div>
           </div>
         </article>
       )}

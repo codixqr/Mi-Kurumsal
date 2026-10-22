@@ -7,6 +7,27 @@
 
 BEGIN;
 
+-- 0. GÜVENLİK YEDEĞİ (Otomatik Snapshot Tablosu)
+CREATE TABLE IF NOT EXISTS demo_cleanup_backups (
+  id SERIAL PRIMARY KEY,
+  created_at TIMESTAMP DEFAULT NOW(),
+  note TEXT,
+  backup_payload JSONB
+);
+
+-- Silme öncesi mevcut tüm verileri JSON olarak demo_cleanup_backups tablosuna arşivle
+INSERT INTO demo_cleanup_backups(note, backup_payload)
+SELECT 'Demo temizleme oncesi guvenlik snapshot yedegi', json_build_object(
+  'investors', (SELECT json_agg(t) FROM investors t),
+  'brands', (SELECT json_agg(t) FROM brands t),
+  'locations', (SELECT json_agg(t) FROM locations t),
+  'projects', (SELECT json_agg(t) FROM projects t),
+  'contracts', (SELECT json_agg(t) FROM contracts t),
+  'tasks', (SELECT json_agg(t) FROM tasks t),
+  'finance_records', (SELECT json_agg(t) FROM finance_records t),
+  'team_members', (SELECT json_agg(t) FROM team_members t)
+);
+
 -- 1. Demo Tanımlayıcı Geçici Tabloları
 CREATE TEMP TABLE IF NOT EXISTS temp_demo_inv (name TEXT);
 TRUNCATE temp_demo_inv;

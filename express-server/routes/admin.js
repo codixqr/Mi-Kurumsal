@@ -245,6 +245,31 @@ router.get("/seed-legacy", authMiddleware, async (req, res) => {
 
 // Demo verilerini temizleme fonksiyonu ve endpoint'i
 async function performCleanDemoData(pgClient) {
+  // 0. GÜVENLİK YEDEĞİ: Silme öncesi tüm tabloların anlık kopyasını al
+  await pgClient.query(`
+    CREATE TABLE IF NOT EXISTS demo_cleanup_backups (
+      id SERIAL PRIMARY KEY,
+      created_at TIMESTAMP DEFAULT NOW(),
+      note TEXT,
+      backup_payload JSONB
+    );
+  `);
+
+  const tablesToBackup = ['investors', 'brands', 'locations', 'projects', 'contracts', 'tasks', 'finance_records', 'team_members', 'customer_pnl_revenues', 'customer_pnl_expenses'];
+  const snapshotData = {};
+  for (const tbl of tablesToBackup) {
+    try {
+      const res = await pgClient.query(`SELECT * FROM ${tbl}`);
+      snapshotData[tbl] = res.rows;
+    } catch (e) {
+      // Tablo yoksa devam et
+    }
+  }
+  await pgClient.query(
+    `INSERT INTO demo_cleanup_backups(note, backup_payload) VALUES($1, $2)`,
+    ['Demo temizleme öncesi otomatik alınan güvenlik yedeği', JSON.stringify(snapshotData)]
+  );
+
   // 1. Temporary identifier tables
   await pgClient.query(`
     CREATE TEMP TABLE IF NOT EXISTS temp_demo_inv (name TEXT);
@@ -437,6 +462,46 @@ router.get("/clean-demo", authMiddleware, requireAdmin, async (req, res) => {
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
+  }
+});
+
+router.get("/backup-download", authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const tables = [
+      'users', 'team_members', 'investors', 'brands', 'locations', 
+      'projects', 'contracts', 'tasks', 'finance_records', 'payment_plans', 
+      'investor_meetings', 'investor_brand_matches', 'brand_agreements',
+      'customer_pnl_revenues', 'customer_pnl_expenses', 'pnl_revenues', 
+      'pnl_expenses', 'pnl_personnel', 'message_templates', 'app_settings'
+    ];
+    const fullBackup = {
+      exportDate: new Date().toISOString(),
+      database: "mikurumsal_crm",
+      tables: {}
+    };
+
+    for (const tbl of tables) {
+      try {
+        const queryRes = await pool.query(`SELECT * FROM ${tbl}`);
+        // Mask passwords in users table for safety
+        if (tbl === 'users') {
+          fullBackup.tables[tbl] = queryRes.rows.map(u => ({ ...u, password_hash: '[PROTECTED]' }));
+        } else {
+          fullBackup.tables[tbl] = queryRes.rows;
+        }
+      } catch (err) {
+        // Tablo henüz mevcut olmayabilir
+        fullBackup.tables[tbl] = [];
+      }
+    }
+
+    const filename = `mikurumsal_crm_full_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    return res.send(JSON.stringify(fullBackup, null, 2));
+  } catch (err) {
+    console.error("Backup download error:", err);
+    return res.status(500).json({ error: err.message });
   }
 });
 
