@@ -89,8 +89,8 @@ export default function WhatsAppPage() {
         const invData = invRes.value;
         const list = Array.isArray(invData) ? invData : (invData?.items || []);
         setInvestors(list);
-        if (list.length > 0 && !targetId) {
-          setTargetId(String(list[0].id));
+        if (list.length > 0) {
+          setTargetId(prev => prev || String(list[0].id));
         }
       }
       if (brandsRes.status === 'fulfilled') {
@@ -111,7 +111,7 @@ export default function WhatsAppPage() {
     } finally {
       setLoading(false);
     }
-  }, [targetId]);
+  }, []);
 
   useEffect(() => {
     loadInitialData();
