@@ -509,6 +509,7 @@ export default function BrandsPage() {
 
   const BRAND_COLS = [
     { key: 'sector', label: 'Sektör' },
+    { key: 'investorCount', label: 'Yatırımcı Sayısı' },
     { key: 'budget', label: 'Bütçe aralığı' },
     { key: 'targetCities', label: 'Hedef şehirler' },
     { key: 'locationType', label: 'Lokasyon tipi' },
@@ -1018,6 +1019,7 @@ export default function BrandsPage() {
               </th>
               <th><button type="button" className="inv-sort-btn" onClick={() => toggleSort('name')}>Marka</button></th>
               {colVisible.sector !== false && <th><button type="button" className="inv-sort-btn" onClick={() => toggleSort('sector')}>Sektör</button></th>}
+              {colVisible.investorCount !== false && <th>Yatırımcı</th>}
               {colVisible.budget !== false && <th>Bütçe aralığı</th>}
               {colVisible.targetCities !== false && <th>Hedef şehirler</th>}
               {colVisible.locationType !== false && <th>Lokasyon tipi</th>}
@@ -1058,6 +1060,13 @@ export default function BrandsPage() {
                     )}
                   </td>
                   <td onClick={() => openDetail(b)}>{b.sector}</td>
+                  {colVisible.investorCount !== false && (
+                    <td onClick={() => openDetail(b, 'yatirimci')}>
+                      <span className="badge tag-success" style={{ fontWeight: 600, padding: '3px 8px', borderRadius: 12, cursor: 'pointer' }} title="İlgilenen / Eşleşen Yatırımcılar">
+                        {b.investorCount || 0} Yatırımcı
+                      </span>
+                    </td>
+                  )}
                   <td onClick={() => openDetail(b)}>{budgetLabel(b)}</td>
                   <td onClick={() => openDetail(b)} style={{ maxWidth: 160, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.targetLocations}</td>
                   <td onClick={() => openDetail(b)}>{b.locationType || '—'}</td>

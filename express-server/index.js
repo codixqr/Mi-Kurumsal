@@ -442,7 +442,8 @@ function mapBrand(row) {
     architecturalFee: row.architectural_fee != null ? Number(row.architectural_fee) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    matchingEligible: row.active === true && String(row.agreement_status || "") === "Anlaşmalı"
+    matchingEligible: row.active === true && String(row.agreement_status || "") === "Anlaşmalı",
+    investorCount: Number(row.investor_count || 0)
   };
 }
 function mapLocation(row) {
@@ -2837,14 +2838,23 @@ async function computeBrandKpis() {
         return 0;
       }
     };
-    const [total, activeAgreed, inDiscussion, passive, avgInv, newMonth] = await Promise.all([runQuery("SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL"), runQuery("SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL AND active = true AND COALESCE(agreement_status,'') = 'Anlaşmalı'"), runQuery("SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL AND COALESCE(agreement_status,'') IN ('Görüşülüyor','Beklemede')"), runQuery("SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL AND (active = false OR COALESCE(agreement_status,'') IN ('Pasif','Reddedildi'))"), runQuery("SELECT COALESCE(AVG((min_budget::numeric + max_budget::numeric) / 2), 0)::numeric AS a FROM brands WHERE deleted_at IS NULL AND min_budget IS NOT NULL AND max_budget IS NOT NULL"), runQuery("SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL AND created_at::date >= $1::date", [monthStart])]);
+    const [total, activeAgreed, inDiscussion, passive, avgInv, newMonth, totalInvestors] = await Promise.all([
+      runQuery("SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL"),
+      runQuery("SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL AND active = true AND COALESCE(agreement_status,'') = 'Anlaşmalı'"),
+      runQuery("SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL AND COALESCE(agreement_status,'') IN ('Görüşülüyor','Beklemede')"),
+      runQuery("SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL AND (active = false OR COALESCE(agreement_status,'') IN ('Pasif','Reddedildi'))"),
+      runQuery("SELECT COALESCE(AVG((min_budget::numeric + max_budget::numeric) / 2), 0)::numeric AS a FROM brands WHERE deleted_at IS NULL AND min_budget IS NOT NULL AND max_budget IS NOT NULL"),
+      runQuery("SELECT COUNT(*)::int AS c FROM brands WHERE deleted_at IS NULL AND created_at::date >= $1::date", [monthStart]),
+      runQuery("SELECT COUNT(DISTINCT id)::int AS c FROM investors WHERE deleted_at IS NULL AND (brand_id IS NOT NULL OR (brand_name IS NOT NULL AND brand_name <> ''))")
+    ]);
     return {
       total,
       activeAgreed,
       inDiscussion,
       passive,
       avgInvestment: avgInv,
-      newThisMonth: newMonth
+      newThisMonth: newMonth,
+      totalInvestors
     };
   } catch (err) {
     console.error("computeBrandKpis failed:", err.message);

@@ -56,7 +56,9 @@ router.get("/", authMiddleware, async (req, res) => {
     const countR = await pool.query(`SELECT COUNT(*)::int AS c FROM brands b WHERE ${whereSql}`, params);
     const total = countR.rows[0].c;
     const listParams = [...params, pageSize, offset];
-    const result = await pool.query(`SELECT b.* FROM brands b WHERE ${whereSql} ORDER BY ${sortCol} ${order} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`, listParams);
+    const result = await pool.query(`SELECT b.*,
+      (SELECT COUNT(DISTINCT id)::int FROM investors i WHERE i.deleted_at IS NULL AND (i.brand_id = b.id OR (i.brand_name IS NOT NULL AND LOWER(TRIM(i.brand_name)) = LOWER(TRIM(b.name))))) AS investor_count
+     FROM brands b WHERE ${whereSql} ORDER BY ${sortCol} ${order} LIMIT ${params.length + 1} OFFSET ${params.length + 2}`, listParams);
     const rows = result.rows.map(mapBrand);
     let kpis = {
       total: 0,
@@ -126,13 +128,16 @@ router.get("/:id/detail", authMiddleware, async (req, res) => {
     });
   }
   const brand = mapBrand(brandRow.rows[0]);
-  const [matches, projects, contracts, tasks, agreements, locRows] = await Promise.all([pool.query(`SELECT ibm.*, i.name AS investor_name, i.city AS investor_city, i.sector AS investor_sector
-       FROM investor_brand_matches ibm JOIN investors i ON i.id = ibm.investor_id WHERE ibm.brand_id=$1 ORDER BY ibm.score DESC NULLS LAST`, [id]), pool.query("SELECT * FROM projects WHERE brand_id=$1 AND deleted_at IS NULL ORDER BY id DESC", [id]), pool.query("SELECT * FROM contracts WHERE brand_id=$1 AND deleted_at IS NULL ORDER BY id DESC", [id]), pool.query("SELECT * FROM tasks WHERE brand_id=$1 ORDER BY id DESC LIMIT 100", [id]), pool.query("SELECT * FROM brand_agreements WHERE brand_id=$1 ORDER BY version_no DESC, created_at DESC", [id]), pool.query(`SELECT * FROM locations WHERE deleted_at IS NULL AND (
+  const [matches, directInvestors, projects, contracts, tasks, agreements, locRows] = await Promise.all([
+    pool.query(`SELECT ibm.*, i.name AS investor_name, i.city AS investor_city, i.sector AS investor_sector
+       FROM investor_brand_matches ibm JOIN investors i ON i.id = ibm.investor_id WHERE ibm.brand_id=$1 ORDER BY ibm.score DESC NULLS LAST`, [id]),
+    pool.query(`SELECT id, name, city, sector, phone, budget FROM investors WHERE deleted_at IS NULL AND (brand_id = $1 OR LOWER(TRIM(brand_name)) = LOWER(TRIM($2))) ORDER BY id DESC`, [id, brand.name || '']), pool.query("SELECT * FROM projects WHERE brand_id=$1 AND deleted_at IS NULL ORDER BY id DESC", [id]), pool.query("SELECT * FROM contracts WHERE brand_id=$1 AND deleted_at IS NULL ORDER BY id DESC", [id]), pool.query("SELECT * FROM tasks WHERE brand_id=$1 ORDER BY id DESC LIMIT 100", [id]), pool.query("SELECT * FROM brand_agreements WHERE brand_id=$1 ORDER BY version_no DESC, created_at DESC", [id]), pool.query(`SELECT * FROM locations WHERE deleted_at IS NULL AND (
         CAST($1 AS text) = ANY(recommended_brands) OR array_to_string(recommended_brands, ',') ILIKE '%' || $2 || '%'
       ) ORDER BY id DESC LIMIT 50`, [String(id), brand.name || ""])]);
   res.json({
     brand,
     investorMatches: matches.rows,
+    directInvestors: directInvestors.rows,
     projects: projects.rows.map(mapProject),
     contracts: contracts.rows.map(mapContract),
     tasks: tasks.rows.map(mapTask),
