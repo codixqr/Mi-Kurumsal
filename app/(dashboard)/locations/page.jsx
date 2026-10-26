@@ -8,8 +8,9 @@ import { ColumnPicker, useColumnVisibility } from '@/lib/ColumnPicker';
 
 const LOCATION_TYPES = ['AVM', 'Cadde', 'Plaza', 'Sanayi', 'Turistik'];
 const POTENTIALS = ['Düşük', 'Orta', 'Yüksek', 'Premium'];
-const STATUSES = ['Boş', 'Dolu', 'Görüşmede', 'Kiralandı'];
+const STATUSES = ['Boş', 'Dolu', 'Görüşmede', 'Kiralandı', 'Devirli'];
 const SEGMENTS = ['A+', 'A', 'B', 'C'];
+const GUARANTEE_TYPES = ['Senet', 'Çek', 'Nakit', 'Banka Teminat Mektubu', 'Fark etmez'];
 
 const defaultFilters = () => ({
   name: '', city: '', district: '', region: '', type: '', sqmMin: '', sqmMax: '', rentMin: '', rentMax: '', potential: '', status: '', brandFit: '', footfall: '', segment: '',
@@ -19,6 +20,7 @@ const defaultForm = () => ({
   id: null, name: '', avenueName: '', city: '', district: '', address: '', mapsLink: '', type: 'Cadde', segment: 'A', sqm: '', storefrontLength: '', floorInfo: '', chimneyStatus: '', infrastructureStatus: '',
   rent: '', revenueRentPct: '', dues: '', deposit: '', footfallScore: '', competitorBrands: '', targetCustomerProfile: '', suitableSectors: '', recommendedBrands: [], potential: 'Orta', status: 'Boş',
   brandFitScore: '', traffic: '', streetClass: '', avmSegment: '', notes: '', files: [], currency: 'TRY',
+  transferFee: '', fixturesList: '', commission: '', renovationDays: '', guaranteeType: 'Senet',
 });
 
 export default function LocationsPage() {
@@ -306,6 +308,21 @@ export default function LocationsPage() {
             <div className="field"><label>Footfall (1-10)</label><input type="number" min={1} max={10} value={form.footfallScore} onChange={(e) => setForm({ ...form, footfallScore: e.target.value })} /></div>
             <div className="field"><label>Potansiyel</label><select value={form.potential} onChange={(e) => setForm({ ...form, potential: e.target.value })}>{POTENTIALS.map((s) => <option key={s}>{s}</option>)}</select></div>
             <div className="field"><label>Durum</label><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select></div>
+            <div className="field"><label>Emlak Komisyonu (TL)</label><input type="number" placeholder="Aracı komisyonu" value={form.commission || ''} onChange={(e) => setForm({ ...form, commission: e.target.value })} /></div>
+            <div className="field"><label>Tadilat Süresi (Gün)</label><input type="number" placeholder="Örn: 30" value={form.renovationDays || ''} onChange={(e) => setForm({ ...form, renovationDays: e.target.value })} /></div>
+            <div className="field"><label>Teminat Talebi</label><select value={form.guaranteeType || 'Senet'} onChange={(e) => setForm({ ...form, guaranteeType: e.target.value })}>{GUARANTEE_TYPES.map((g) => <option key={g}>{g}</option>)}</select></div>
+            {form.status === 'Devirli' && (
+              <div style={{ gridColumn: '1 / -1', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: 12, display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12 }}>
+                <div className="field" style={{ margin: 0 }}>
+                  <label style={{ color: '#92400e', fontWeight: 600 }}>Devir Bedeli (TL)</label>
+                  <input type="number" placeholder="Devir bedeli tutarı" value={form.transferFee || ''} onChange={(e) => setForm({ ...form, transferFee: e.target.value })} />
+                </div>
+                <div className="field" style={{ margin: 0 }}>
+                  <label style={{ color: '#92400e', fontWeight: 600 }}>Alınan Demirbaş Listesi</label>
+                  <textarea rows={2} placeholder="Klima, mutfak ekipmanları, masa/sandalyeler..." value={form.fixturesList || ''} onChange={(e) => setForm({ ...form, fixturesList: e.target.value })} />
+                </div>
+              </div>
+            )}
             <div className="field"><label>Uygun markalar</label><input value={(form.recommendedBrands || []).join(',')} onChange={(e) => setForm({ ...form, recommendedBrands: e.target.value.split(',').map((x) => x.trim()).filter(Boolean) })} /></div>
             <div className="field" style={{ gridColumn: '1 / -1' }}><label>Notlar</label><textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
             <div className="field" style={{ gridColumn: '1 / -1' }}>
@@ -399,7 +416,17 @@ export default function LocationsPage() {
             <div className="inv-modal-body">
               {detailTab === 'genel' && <dl className="inv-dl"><dt>Adres</dt><dd>{detail.location.address || '-'}</dd><dt>Şehir</dt><dd>{detail.location.city || '-'}</dd><dt>Tip</dt><dd>{detail.location.type}</dd><dt>Durum</dt><dd>{detail.location.status}</dd></dl>}
               {detailTab === 'teknik' && <dl className="inv-dl"><dt>m²</dt><dd>{detail.location.sqm}</dd><dt>Cephe</dt><dd>{detail.location.storefrontLength || '-'}</dd><dt>Kat</dt><dd>{detail.location.floorInfo || '-'}</dd><dt>Baca</dt><dd>{detail.location.chimneyStatus || '-'}</dd><dt>Altyapı</dt><dd>{detail.location.infrastructureStatus || '-'}</dd></dl>}
-              {detailTab === 'finans' && <dl className="inv-dl"><dt>Kira</dt><dd>{detail.location.rent}</dd><dt>Ciro kirası %</dt><dd>{detail.location.revenueRentPct || '-'}</dd><dt>Aidat</dt><dd>{detail.location.dues || '-'}</dd><dt>Depozito</dt><dd>{detail.location.deposit || '-'}</dd></dl>}
+              {detailTab === 'finans' && <dl className="inv-dl"><dt>Kira</dt><dd>{detail.location.rent}</dd><dt>Ciro kirası %</dt><dd>{detail.location.revenueRentPct || '-'}</dd><dt>Aidat</dt><dd>{detail.location.dues || '-'}</dd><dt>Depozito</dt><dd>{detail.location.deposit || '-'}</dd>
+                <dt>Emlak Komisyonu</dt><dd>{detail.location.commission ? `${Number(detail.location.commission).toLocaleString('tr-TR')} TL` : '-'}</dd>
+                <dt>Tadilat Süresi</dt><dd>{detail.location.renovationDays ? `${detail.location.renovationDays} Gün` : '-'}</dd>
+                <dt>Teminat Talebi</dt><dd>{detail.location.guaranteeType || '-'}</dd>
+                {detail.location.status === 'Devirli' && (
+                  <>
+                    <dt style={{ color: '#b45309' }}>Devir Bedeli</dt><dd style={{ color: '#b45309', fontWeight: 'bold' }}>{detail.location.transferFee ? `${Number(detail.location.transferFee).toLocaleString('tr-TR')} TL` : '-'}</dd>
+                    <dt style={{ color: '#b45309' }}>Demirbaş Listesi</dt><dd style={{ whiteSpace: 'pre-wrap' }}>{detail.location.fixturesList || '-'}</dd>
+                  </>
+                )}
+              </dl>}
               {detailTab === 'gorsel' && <ul>{(detail.location.files || []).map((f) => <li key={f}><a href={f} target="_blank" rel="noreferrer">{f}</a></li>)}</ul>}
               {detailTab === 'marka' && <ul>{(detail.location.recommendedBrands || []).map((b) => <li key={b}>{b}</li>)}</ul>}
               {detailTab === 'yatirimci' && <ul>{(detail.investors || []).map((i) => <li key={i.id}>{i.name}</li>)}</ul>}
@@ -424,6 +451,21 @@ export default function LocationsPage() {
                   <div className="field"><label>m²</label><input type="number" value={form.sqm} onChange={(e) => setForm({ ...form, sqm: e.target.value })} /></div>
                   <div className="field"><label>Kira</label><input type="number" value={form.rent} onChange={(e) => setForm({ ...form, rent: e.target.value })} /></div>
                   <div className="field"><label>Durum</label><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>{STATUSES.map((s) => <option key={s}>{s}</option>)}</select></div>
+                  <div className="field"><label>Emlak Komisyonu (TL)</label><input type="number" placeholder="Aracı komisyonu" value={form.commission || ''} onChange={(e) => setForm({ ...form, commission: e.target.value })} /></div>
+                  <div className="field"><label>Tadilat Süresi (Gün)</label><input type="number" placeholder="Örn: 30" value={form.renovationDays || ''} onChange={(e) => setForm({ ...form, renovationDays: e.target.value })} /></div>
+                  <div className="field"><label>Teminat Talebi</label><select value={form.guaranteeType || 'Senet'} onChange={(e) => setForm({ ...form, guaranteeType: e.target.value })}>{GUARANTEE_TYPES.map((g) => <option key={g}>{g}</option>)}</select></div>
+                  {form.status === 'Devirli' && (
+                    <div style={{ gridColumn: '1 / -1', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: 12, display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12 }}>
+                      <div className="field" style={{ margin: 0 }}>
+                        <label style={{ color: '#92400e', fontWeight: 600 }}>Devir Bedeli (TL)</label>
+                        <input type="number" placeholder="Devir bedeli tutarı" value={form.transferFee || ''} onChange={(e) => setForm({ ...form, transferFee: e.target.value })} />
+                      </div>
+                      <div className="field" style={{ margin: 0 }}>
+                        <label style={{ color: '#92400e', fontWeight: 600 }}>Alınan Demirbaş Listesi</label>
+                        <textarea rows={2} placeholder="Klima, mutfak ekipmanları, masa/sandalyeler..." value={form.fixturesList || ''} onChange={(e) => setForm({ ...form, fixturesList: e.target.value })} />
+                      </div>
+                    </div>
+                  )}
                   <div className="field" style={{ gridColumn: '1 / -1' }}><label>Notlar</label><textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
                   <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, marginTop: 12 }}>
                     <button className="primary-btn" type="submit">Güncelle</button>

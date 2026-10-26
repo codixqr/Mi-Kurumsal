@@ -44,6 +44,12 @@ CREATE TABLE IF NOT EXISTS investors (
   created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL,
+  brand_name TEXT,
+  meeting_note_1 TEXT,
+  meeting_note_2 TEXT,
+  meeting_note_3 TEXT,
+  meeting_note_final TEXT,
   deleted_at TIMESTAMP
 );
 
@@ -99,6 +105,7 @@ CREATE TABLE IF NOT EXISTS brands (
   score_investor_interest INTEGER,
   score_profitability INTEGER,
   score_growth INTEGER,
+  architectural_fee BIGINT,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   deleted_at TIMESTAMP
@@ -165,6 +172,11 @@ CREATE TABLE IF NOT EXISTS locations (
   avm_segment TEXT,
   files TEXT[] NOT NULL DEFAULT '{}',
   created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  transfer_fee BIGINT,
+  fixtures_list TEXT,
+  commission BIGINT,
+  renovation_days INTEGER,
+  guarantee_type TEXT,
   notes TEXT,
   attachment_name TEXT,
   attachment_data TEXT,

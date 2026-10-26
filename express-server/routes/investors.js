@@ -204,11 +204,13 @@ router.post("/", authMiddleware, async (req, res) => {
       name,budget,budget_min,budget_max,currency,city,sector,investment_type,pipeline_stage,
       phone,email,district,goal,contact_history,meeting_notes,follow_up_date,documents,created_by,
       investor_type,contact_person,whatsapp_phone,target_cities,target_location_type,sub_sector,
-      investment_timing,financing_status,priority,lead_source,assigned_member_id,last_meeting_date,next_action,notes,last_activity_at
+      investment_timing,financing_status,priority,lead_source,assigned_member_id,last_meeting_date,next_action,notes,
+      brand_id,brand_name,meeting_note_1,meeting_note_2,meeting_note_3,meeting_note_final,last_activity_at
     ) VALUES(
       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,
-      $19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,NOW()
-    ) RETURNING *`, [r.name, r.budget, r.budgetMin, r.budgetMax, r.currency, r.city, r.sector, r.investment_type, r.pipeline_stage, r.phone, r.email, r.district, r.goal, r.contact_history, r.meeting_notes, r.follow_up_date, r.documents, req.user.id, r.investor_type, r.contact_person, r.whatsapp_phone, r.target_cities, r.target_location_type, r.sub_sector, r.investment_timing, r.financing_status, r.priority, r.lead_source, r.assigned_member_id, r.last_meeting_date, r.next_action, r.notes]);
+      $19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,
+      $33,$34,$35,$36,$37,$38,NOW()
+    ) RETURNING *`, [r.name, r.budget, r.budgetMin, r.budgetMax, r.currency, r.city, r.sector, r.investment_type, r.pipeline_stage, r.phone, r.email, r.district, r.goal, r.contact_history, r.meeting_notes, r.follow_up_date, r.documents, req.user.id, r.investor_type, r.contact_person, r.whatsapp_phone, r.target_cities, r.target_location_type, r.sub_sector, r.investment_timing, r.financing_status, r.priority, r.lead_source, r.assigned_member_id, r.last_meeting_date, r.next_action, r.notes, r.brand_id, r.brand_name, r.meeting_note_1, r.meeting_note_2, r.meeting_note_3, r.meeting_note_final]);
   const investor = mapInvestor(inserted.rows[0]);
   await logActivity({
     userId: req.user.id,
@@ -234,8 +236,9 @@ router.put("/:id", authMiddleware, async (req, res) => {
       phone=$10,email=$11,district=$12,goal=$13,contact_history=$14,meeting_notes=$15,follow_up_date=$16,documents=$17,
       investor_type=$18,contact_person=$19,whatsapp_phone=$20,target_cities=$21,target_location_type=$22,sub_sector=$23,
       investment_timing=$24,financing_status=$25,priority=$26,lead_source=$27,assigned_member_id=$28,last_meeting_date=$29,next_action=$30,notes=$31,
+      brand_id=$32,brand_name=$33,meeting_note_1=$34,meeting_note_2=$35,meeting_note_3=$36,meeting_note_final=$37,
       last_activity_at=NOW(),updated_at=NOW()
-     WHERE id=$32 RETURNING *`, [r.name, r.budget, r.budgetMin, r.budgetMax, r.currency, r.city, r.sector, r.investment_type, r.pipeline_stage, r.phone, r.email, r.district, r.goal, r.contact_history, r.meeting_notes, r.follow_up_date, r.documents, r.investor_type, r.contact_person, r.whatsapp_phone, r.target_cities, r.target_location_type, r.sub_sector, r.investment_timing, r.financing_status, r.priority, r.lead_source, r.assigned_member_id, r.last_meeting_date, r.next_action, r.notes, req.params.id]);
+     WHERE id=$38 RETURNING *`, [r.name, r.budget, r.budgetMin, r.budgetMax, r.currency, r.city, r.sector, r.investment_type, r.pipeline_stage, r.phone, r.email, r.district, r.goal, r.contact_history, r.meeting_notes, r.follow_up_date, r.documents, r.investor_type, r.contact_person, r.whatsapp_phone, r.target_cities, r.target_location_type, r.sub_sector, r.investment_timing, r.financing_status, r.priority, r.lead_source, r.assigned_member_id, r.last_meeting_date, r.next_action, r.notes, r.brand_id, r.brand_name, r.meeting_note_1, r.meeting_note_2, r.meeting_note_3, r.meeting_note_final, req.params.id]);
   if (updated.rowCount === 0) {
     return res.status(404).json({
       message: "Kayıt bulunamadı."

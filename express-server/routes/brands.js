@@ -151,8 +151,8 @@ router.post("/", authMiddleware, async (req, res) => {
       sub_sector,whatsapp_phone,email,website,brand_type,target_regions,location_type,
       storefront_need,chimney_need,tech_infrastructure,staff_need,ad_contribution_pct,avg_monthly_revenue,
       profit_margin_pct,payback_months,presentation_url,logo_url,contract_draft_url,documents,
-      gives_franchise,has_royalty,score_operation,score_franchise_fit,score_location_flex,score_investor_interest,score_profitability,score_growth
-    ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50)
+      gives_franchise,has_royalty,score_operation,score_franchise_fit,score_location_flex,score_investor_interest,score_profitability,score_growth,architectural_fee
+    ) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,$51)
     RETURNING *`, vals);
   const item = mapBrand(inserted.rows[0]);
   await logActivity({
@@ -178,9 +178,9 @@ router.put("/:id", authMiddleware, async (req, res) => {
       sub_sector=$24,whatsapp_phone=$25,email=$26,website=$27,brand_type=$28,target_regions=$29,location_type=$30,
       storefront_need=$31,chimney_need=$32,tech_infrastructure=$33,staff_need=$34,ad_contribution_pct=$35,avg_monthly_revenue=$36,
       profit_margin_pct=$37,payback_months=$38,presentation_url=$39,logo_url=$40,contract_draft_url=$41,documents=$42,
-      gives_franchise=$43,has_royalty=$44,score_operation=$45,score_franchise_fit=$46,score_location_flex=$47,score_investor_interest=$48,score_profitability=$49,score_growth=$50,
+      gives_franchise=$43,has_royalty=$44,score_operation=$45,score_franchise_fit=$46,score_location_flex=$47,score_investor_interest=$48,score_profitability=$49,score_growth=$50,architectural_fee=$51,
       updated_at=NOW()
-     WHERE id=$51 RETURNING *`, [...vals, req.params.id]);
+     WHERE id=$52 RETURNING *`, [...vals, req.params.id]);
   if (updated.rowCount === 0) {
     return res.status(404).json({
       message: "Kayıt bulunamadı."

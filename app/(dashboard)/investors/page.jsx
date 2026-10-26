@@ -30,7 +30,7 @@ const PIPELINES = [
 
 const PRIORITIES = ['Düşük', 'Orta', 'Yüksek', 'Çok sıcak'];
 const INVESTOR_TYPES = ['Bireysel', 'Şirket', 'Grup yatırımcı'];
-const INVESTMENT_TYPES = ['Franchise', 'Lokasyon arıyor', 'Marka satın alma', 'Ortaklık', 'Danışmanlık'];
+const INVESTMENT_TYPES = ['Franchise', 'Anahtar Teslim', 'Pasif Yatırımcı', 'Ortaklık', 'Bireysel İşletmeci', 'Lokasyon arıyor', 'Marka satın alma', 'Danışmanlık'];
 const TIMING = ['Hemen', '1 ay', '3 ay', '6 ay', 'Belirsiz'];
 const FINANCING = ['Hazır sermaye', 'Kredi', 'Ortaklı', 'Belirsiz'];
 const LEAD_SOURCES = ['Web sitesi', 'WhatsApp', 'Instagram', 'Referans', 'Fuar', 'Telefon', 'E-posta', 'Diğer'];
@@ -90,6 +90,12 @@ const defaultForm = () => ({
   contactHistory: '',
   goal: '',
   documents: [],
+  brandId: "",
+  brandName: "",
+  meetingNote1: "",
+  meetingNote2: "",
+  meetingNote3: "",
+  meetingNoteFinal: "",
 });
 
 const fmt = (n) => Number(n || 0).toLocaleString('tr-TR');
@@ -128,6 +134,7 @@ export default function InvestorsPage() {
   const [bulkMemberId, setBulkMemberId] = useState('');
   const [bulkPipeline, setBulkPipeline] = useState('');
   const [teamOptions, setTeamOptions] = useState([]);
+  const [brandOptions, setBrandOptions] = useState([]);
   const [form, setForm] = useState(defaultForm());
   const [formOpen, setFormOpen] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -170,8 +177,12 @@ export default function InvestorsPage() {
 
   const loadTeam = useCallback(async () => {
     try {
-      const t = await apiClient.get('/team-members/options');
+      const [t, b] = await Promise.all([
+        apiClient.get('/team-members/options').catch(() => []),
+        apiClient.get('/brands?pageSize=100').catch(() => ({ items: [] }))
+      ]);
       setTeamOptions(t || []);
+      setBrandOptions(b?.items || (Array.isArray(b) ? b : []));
     } catch {
       setTeamOptions([]);
     }
@@ -368,6 +379,12 @@ export default function InvestorsPage() {
     contactHistory: form.contactHistory || null,
     goal: form.goal || null,
     documents: form.documents,
+    brandId: form.brandId ? Number(form.brandId) : null,
+    brandName: form.brandName || null,
+    meetingNote1: form.meetingNote1 || null,
+    meetingNote2: form.meetingNote2 || null,
+    meetingNote3: form.meetingNote3 || null,
+    meetingNoteFinal: form.meetingNoteFinal || null,
   });
 
   const saveInvestor = async (e) => {
@@ -417,6 +434,12 @@ export default function InvestorsPage() {
       contactHistory: inv.contactHistory || '',
       goal: inv.goal || '',
       documents: inv.documents || [],
+      brandId: inv.brandId ? String(inv.brandId) : "",
+      brandName: inv.brandName || "",
+      meetingNote1: inv.meetingNote1 || "",
+      meetingNote2: inv.meetingNote2 || "",
+      meetingNote3: inv.meetingNote3 || "",
+      meetingNoteFinal: inv.meetingNoteFinal || "",
     });
     setFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -900,7 +923,28 @@ export default function InvestorsPage() {
                 </select>
               </div>
               <div className="field field-wide" style={{ margin: 0, gridColumn: 'span 2' }}>
-                <label>Hedef şehirler</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <label style={{ margin: 0 }}>Hedef şehirler</label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      type="button"
+                      style={{ fontSize: '0.75rem', padding: '2px 8px', background: '#e0e7ff', color: '#3730a3', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                      onClick={() => {
+                        const allCities = citiesData.city.map((c) => c.name).join(', ');
+                        setForm({ ...form, targetCities: allCities });
+                      }}
+                    >
+                      Hepsini Seç
+                    </button>
+                    <button
+                      type="button"
+                      style={{ fontSize: '0.75rem', padding: '2px 8px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                      onClick={() => setForm({ ...form, targetCities: '' })}
+                    >
+                      Temizle
+                    </button>
+                  </div>
+                </div>
                 <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ddd', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8, borderRadius: 6 }}>
                   {citiesData.city.map(c => {
                     const isSelected = form.targetCities?.includes(c.name);
@@ -1031,7 +1075,28 @@ export default function InvestorsPage() {
                 <textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </div>
               <div className="field field-wide" style={{ margin: 0, gridColumn: '1 / -1' }}>
-                <label>Görüşme / CRM notları</label>
+                <label style={{ fontWeight: 600, color: '#1e293b', marginBottom: 6, display: 'block' }}>Aşamalı Görüşme & CRM Notları</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0369a1' }}>1. Görüşme Notu</label>
+                    <textarea rows={2} placeholder="İlk temas ve tanışma notları..." value={form.meetingNote1} onChange={(e) => setForm({ ...form, meetingNote1: e.target.value })} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0369a1' }}>2. Görüşme Notu</label>
+                    <textarea rows={2} placeholder="İhtiyaç & bütçe detayları..." value={form.meetingNote2} onChange={(e) => setForm({ ...form, meetingNote2: e.target.value })} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0369a1' }}>3. Görüşme Notu</label>
+                    <textarea rows={2} placeholder="Marka ve lokasyon sunumu..." value={form.meetingNote3} onChange={(e) => setForm({ ...form, meetingNote3: e.target.value })} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#047857' }}>Son Görüşme / Kapanış</label>
+                    <textarea rows={2} placeholder="Son durum, karar veya teklif sonucu..." value={form.meetingNoteFinal} onChange={(e) => setForm({ ...form, meetingNoteFinal: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+              <div className="field field-wide" style={{ margin: 0, gridColumn: '1 / -1' }}>
+                <label>Genel Görüşme / CRM Notları</label>
                 <textarea rows={2} value={form.meetingNotes} onChange={(e) => setForm({ ...form, meetingNotes: e.target.value })} />
               </div>
               <div className="field field-wide" style={{ margin: 0, gridColumn: '1 / -1' }}>
@@ -1391,7 +1456,28 @@ export default function InvestorsPage() {
                 </select>
               </div>
               <div className="field field-wide" style={{ margin: 0, gridColumn: 'span 2' }}>
-                <label>Hedef şehirler</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <label style={{ margin: 0 }}>Hedef şehirler</label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      type="button"
+                      style={{ fontSize: '0.75rem', padding: '2px 8px', background: '#e0e7ff', color: '#3730a3', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                      onClick={() => {
+                        const allCities = citiesData.city.map((c) => c.name).join(', ');
+                        setForm({ ...form, targetCities: allCities });
+                      }}
+                    >
+                      Hepsini Seç
+                    </button>
+                    <button
+                      type="button"
+                      style={{ fontSize: '0.75rem', padding: '2px 8px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                      onClick={() => setForm({ ...form, targetCities: '' })}
+                    >
+                      Temizle
+                    </button>
+                  </div>
+                </div>
                 <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ddd', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8, borderRadius: 6 }}>
                   {citiesData.city.map(c => {
                     const isSelected = form.targetCities?.includes(c.name);
@@ -1522,7 +1608,28 @@ export default function InvestorsPage() {
                 <textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
               </div>
               <div className="field field-wide" style={{ margin: 0, gridColumn: '1 / -1' }}>
-                <label>Görüşme / CRM notları</label>
+                <label style={{ fontWeight: 600, color: '#1e293b', marginBottom: 6, display: 'block' }}>Aşamalı Görüşme & CRM Notları</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0369a1' }}>1. Görüşme Notu</label>
+                    <textarea rows={2} placeholder="İlk temas ve tanışma notları..." value={form.meetingNote1} onChange={(e) => setForm({ ...form, meetingNote1: e.target.value })} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0369a1' }}>2. Görüşme Notu</label>
+                    <textarea rows={2} placeholder="İhtiyaç & bütçe detayları..." value={form.meetingNote2} onChange={(e) => setForm({ ...form, meetingNote2: e.target.value })} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0369a1' }}>3. Görüşme Notu</label>
+                    <textarea rows={2} placeholder="Marka ve lokasyon sunumu..." value={form.meetingNote3} onChange={(e) => setForm({ ...form, meetingNote3: e.target.value })} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: '#047857' }}>Son Görüşme / Kapanış</label>
+                    <textarea rows={2} placeholder="Son durum, karar veya teklif sonucu..." value={form.meetingNoteFinal} onChange={(e) => setForm({ ...form, meetingNoteFinal: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+              <div className="field field-wide" style={{ margin: 0, gridColumn: '1 / -1' }}>
+                <label>Genel Görüşme / CRM Notları</label>
                 <textarea rows={2} value={form.meetingNotes} onChange={(e) => setForm({ ...form, meetingNotes: e.target.value })} />
               </div>
               <div className="field field-wide" style={{ margin: 0, gridColumn: '1 / -1' }}>
@@ -1570,6 +1677,7 @@ export default function InvestorsPage() {
                   {detailTab === 'genel' && (
                     <div className="inv-form-grid">
                       <div><strong>Tip:</strong> {detail.investor.investorType}</div>
+                      <div><strong>İlgilenilen Marka:</strong> {detail.investor.brandName || '—'}</div>
                       <div><strong>Yetkili:</strong> {detail.investor.contactPerson || '—'}</div>
                       <div><strong>Telefon:</strong> {detail.investor.phone || '—'}</div>
                       <div><strong>WhatsApp:</strong> {detail.investor.whatsappPhone || '—'}</div>
@@ -1601,6 +1709,15 @@ export default function InvestorsPage() {
                   )}
                   {detailTab === 'gorusme' && (
                     <div>
+                                            {(detail.investor.meetingNote1 || detail.investor.meetingNote2 || detail.investor.meetingNote3 || detail.investor.meetingNoteFinal) && (
+                        <div style={{ marginBottom: 16, padding: 12, background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+                          <h4 style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: '#166534' }}>Aşamalı CRM Notları</h4>
+                          {detail.investor.meetingNote1 && <p style={{ margin: '4px 0', fontSize: '0.85rem' }}><strong>1. Görüşme:</strong> {detail.investor.meetingNote1}</p>}
+                          {detail.investor.meetingNote2 && <p style={{ margin: '4px 0', fontSize: '0.85rem' }}><strong>2. Görüşme:</strong> {detail.investor.meetingNote2}</p>}
+                          {detail.investor.meetingNote3 && <p style={{ margin: '4px 0', fontSize: '0.85rem' }}><strong>3. Görüşme:</strong> {detail.investor.meetingNote3}</p>}
+                          {detail.investor.meetingNoteFinal && <p style={{ margin: '4px 0', fontSize: '0.85rem' }}><strong>Son Görüşme:</strong> {detail.investor.meetingNoteFinal}</p>}
+                        </div>
+                      )}
                       <form onSubmit={saveMeeting} style={{ marginBottom: 16, padding: 12, background: '#f8fafc', borderRadius: 10 }}>
                         <div className="inv-form-grid">
                           <div className="field" style={{ margin: 0 }}>

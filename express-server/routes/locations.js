@@ -117,9 +117,11 @@ router.post("/", authMiddleware, async (req, res) => {
   const inserted = await pool.query(`INSERT INTO locations(
       name,location_type,sqm,rent,currency,potential,recommended_brands,address,traffic,owner,owner_phone,
       city,district,region,avenue_name,maps_link,segment,storefront_length,floor_info,chimney_status,infrastructure_status,
-      revenue_rent_pct,dues,deposit,footfall_score,competitor_brands,target_customer_profile,suitable_sectors,status,brand_fit_score,street_class,avm_segment,files,notes,attachment_name,attachment_data,attachment_url,created_by
+      revenue_rent_pct,dues,deposit,footfall_score,competitor_brands,target_customer_profile,suitable_sectors,status,brand_fit_score,street_class,avm_segment,files,notes,attachment_name,attachment_data,attachment_url,created_by,
+      transfer_fee,fixtures_list,commission,renovation_days,guarantee_type
     ) VALUES(
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,
+      $39,$40,$41,$42,$43
     ) RETURNING *`, values);
   const item = mapLocation(inserted.rows[0]);
   await logActivity({
@@ -140,8 +142,9 @@ router.put("/:id", authMiddleware, async (req, res) => {
   const updated = await pool.query(`UPDATE locations SET
       name=$1,location_type=$2,sqm=$3,rent=$4,currency=$5,potential=$6,recommended_brands=$7,address=$8,traffic=$9,owner=$10,owner_phone=$11,
       city=$12,district=$13,region=$14,avenue_name=$15,maps_link=$16,segment=$17,storefront_length=$18,floor_info=$19,chimney_status=$20,infrastructure_status=$21,
-      revenue_rent_pct=$22,dues=$23,deposit=$24,footfall_score=$25,competitor_brands=$26,target_customer_profile=$27,suitable_sectors=$28,status=$29,brand_fit_score=$30,street_class=$31,avm_segment=$32,files=$33,notes=$34,attachment_name=$35,attachment_data=$36,attachment_url=$37,created_by=$38,updated_at=NOW()
-      WHERE id=$39 RETURNING *`, values);
+      revenue_rent_pct=$22,dues=$23,deposit=$24,footfall_score=$25,competitor_brands=$26,target_customer_profile=$27,suitable_sectors=$28,status=$29,brand_fit_score=$30,street_class=$31,avm_segment=$32,files=$33,notes=$34,attachment_name=$35,attachment_data=$36,attachment_url=$37,created_by=$38,
+      transfer_fee=$39,fixtures_list=$40,commission=$41,renovation_days=$42,guarantee_type=$43,updated_at=NOW()
+      WHERE id=$44 RETURNING *`, values);
   if (updated.rowCount === 0) return res.status(404).json({
     message: "Kayıt bulunamadı."
   });

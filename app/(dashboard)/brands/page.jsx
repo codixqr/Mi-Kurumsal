@@ -79,6 +79,7 @@ const defaultForm = () => ({
   minBudget: '',
   maxBudget: '',
   currency: 'TRY',
+  architecturalFee: '',
   franchiseFee: '',
   royaltyRate: '',
   adContributionPct: '',
@@ -335,6 +336,7 @@ export default function BrandsPage() {
     scoreInvestorInterest: form.scoreInvestorInterest === '' ? null : Number(form.scoreInvestorInterest),
     scoreProfitability: form.scoreProfitability === '' ? null : Number(form.scoreProfitability),
     scoreGrowth: form.scoreGrowth === '' ? null : Number(form.scoreGrowth),
+    architecturalFee: form.architecturalFee === '' ? null : Number(form.architecturalFee),
   });
 
   const saveBrand = async (e) => {
@@ -403,6 +405,7 @@ export default function BrandsPage() {
     scoreInvestorInterest: b.scoreInvestorInterest != null ? String(b.scoreInvestorInterest) : '',
     scoreProfitability: b.scoreProfitability != null ? String(b.scoreProfitability) : '',
     scoreGrowth: b.scoreGrowth != null ? String(b.scoreGrowth) : '',
+    architecturalFee: b.architecturalFee != null ? String(b.architecturalFee) : '',
   });
 
   const editRow = (b) => {

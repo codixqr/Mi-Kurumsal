@@ -376,6 +376,12 @@ function mapInvestor(row) {
     nextAction: row.next_action || "",
     notes: row.notes || "",
     lastActivityAt: row.last_activity_at || row.created_at || null,
+    brandId: row.brand_id || null,
+    brandName: row.brand_name || '',
+    meetingNote1: row.meeting_note_1 || '',
+    meetingNote2: row.meeting_note_2 || '',
+    meetingNote3: row.meeting_note_3 || '',
+    meetingNoteFinal: row.meeting_note_final || '',
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
@@ -433,6 +439,7 @@ function mapBrand(row) {
     scoreInvestorInterest: row.score_investor_interest != null ? Number(row.score_investor_interest) : null,
     scoreProfitability: row.score_profitability != null ? Number(row.score_profitability) : null,
     scoreGrowth: row.score_growth != null ? Number(row.score_growth) : null,
+    architecturalFee: row.architectural_fee != null ? Number(row.architectural_fee) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     matchingEligible: row.active === true && String(row.agreement_status || "") === "Anlaşmalı"
@@ -477,7 +484,12 @@ function mapLocation(row) {
     notes: row.notes || "",
     attachmentName: row.attachment_name || "",
     attachmentData: row.attachment_data || "",
-    attachmentUrl: row.attachment_url || ""
+    attachmentUrl: row.attachment_url || "",
+    transferFee: row.transfer_fee != null ? Number(row.transfer_fee) : null,
+    fixturesList: row.fixtures_list || "",
+    commission: row.commission != null ? Number(row.commission) : null,
+    renovationDays: row.renovation_days != null ? Number(row.renovation_days) : null,
+    guaranteeType: row.guarantee_type || ""
   };
 }
 function mapProject(row) {
@@ -739,6 +751,19 @@ async function initDb() {
   await pool.query("ALTER TABLE projects ADD COLUMN IF NOT EXISTS brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL");
   await pool.query("ALTER TABLE contracts ADD COLUMN IF NOT EXISTS brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL");
   await pool.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL");
+  // Yeni eklenen kolonlar
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS brand_name TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS meeting_note_1 TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS meeting_note_2 TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS meeting_note_3 TEXT");
+  await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS meeting_note_final TEXT");
+  await pool.query("ALTER TABLE brands ADD COLUMN IF NOT EXISTS architectural_fee BIGINT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS transfer_fee BIGINT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS fixtures_list TEXT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS commission BIGINT");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS renovation_days INTEGER");
+  await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS guarantee_type TEXT");
   await pool.query("ALTER TABLE locations ADD COLUMN IF NOT EXISTS currency TEXT NOT NULL DEFAULT 'TRY'");
   await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS phone TEXT");
   await pool.query("ALTER TABLE investors ADD COLUMN IF NOT EXISTS email TEXT");
@@ -2707,7 +2732,13 @@ function investorRowFromBody(body) {
     assigned_member_id: Number.isFinite(assignId) ? assignId : null,
     last_meeting_date: investorDateOrNull(b.lastMeetingDate || b.last_meeting_date),
     next_action: b.nextAction || b.next_action || null,
-    notes: b.notes || null
+    notes: b.notes || null,
+    brand_id: b.brandId || b.brand_id || null,
+    brand_name: b.brandName || b.brand_name || null,
+    meeting_note_1: b.meetingNote1 ?? b.meeting_note_1 ?? null,
+    meeting_note_2: b.meetingNote2 ?? b.meeting_note_2 ?? null,
+    meeting_note_3: b.meetingNote3 ?? b.meeting_note_3 ?? null,
+    meeting_note_final: b.meetingNoteFinal ?? b.meeting_note_final ?? null
   };
 }
 async function computeInvestorKpis() {
@@ -2792,7 +2823,7 @@ function brandWriteValues(body) {
   const steps = brandOnboardingFromBody(b);
   const docs = Array.isArray(b.documents) ? b.documents.map(String) : [];
   const n = v => v === "" || v === undefined || v === null ? null : Number(v);
-  return [b.name, b.sector, Number(b.minBudget ?? 0), Number(b.maxBudget ?? 0), b.currency || "TRY", Number(b.minSqm ?? 0), Number(b.maxSqm ?? 0), b.targetLocations ?? b.target_locations ?? "", b.active !== false, Number(b.monthlyGrowth ?? 0), b.agreementStatus ?? b.agreement_status ?? null, n(b.franchiseFee), n(b.royaltyRate), n(b.contractTermMonths), n(b.initialInvestment), n(b.branchCount), b.contactPerson || null, b.contactPhone || null, b.businessPlan || null, b.operationPlan || null, steps, b.kpiTargets || null, b.brandNotes || null, b.subSector || null, b.whatsappPhone || null, b.email || null, b.website || null, b.brandType || null, b.targetRegions || null, b.locationType || null, b.storefrontNeed || null, b.chimneyNeed || null, b.techInfrastructure || null, b.staffNeed || null, n(b.adContributionPct), n(b.avgMonthlyRevenue), n(b.profitMarginPct), n(b.paybackMonths), b.presentationUrl || null, b.logoUrl || null, b.contractDraftUrl || null, docs, b.givesFranchise !== false, b.hasRoyalty !== false, n(b.scoreOperation), n(b.scoreFranchiseFit), n(b.scoreLocationFlex), n(b.scoreInvestorInterest), n(b.scoreProfitability), n(b.scoreGrowth)];
+  return [b.name, b.sector, Number(b.minBudget ?? 0), Number(b.maxBudget ?? 0), b.currency || "TRY", Number(b.minSqm ?? 0), Number(b.maxSqm ?? 0), b.targetLocations ?? b.target_locations ?? "", b.active !== false, Number(b.monthlyGrowth ?? 0), b.agreementStatus ?? b.agreement_status ?? null, n(b.franchiseFee), n(b.royaltyRate), n(b.contractTermMonths), n(b.initialInvestment), n(b.branchCount), b.contactPerson || null, b.contactPhone || null, b.businessPlan || null, b.operationPlan || null, steps, b.kpiTargets || null, b.brandNotes || null, b.subSector || null, b.whatsappPhone || null, b.email || null, b.website || null, b.brandType || null, b.targetRegions || null, b.locationType || null, b.storefrontNeed || null, b.chimneyNeed || null, b.techInfrastructure || null, b.staffNeed || null, n(b.adContributionPct), n(b.avgMonthlyRevenue), n(b.profitMarginPct), n(b.paybackMonths), b.presentationUrl || null, b.logoUrl || null, b.contractDraftUrl || null, docs, b.givesFranchise !== false, b.hasRoyalty !== false, n(b.scoreOperation), n(b.scoreFranchiseFit), n(b.scoreLocationFlex), n(b.scoreInvestorInterest), n(b.scoreProfitability), n(b.scoreGrowth), n(b.architecturalFee ?? b.architectural_fee)];
 }
 async function computeBrandKpis() {
   try {
@@ -2829,7 +2860,7 @@ async function computeBrandKpis() {
 }
 function locationRowFromBody(body, userId) {
   const b = body || {};
-  return [b.name, b.type || b.locationType, Number(b.sqm || 0), Number(b.rent || 0), b.currency || "TRY", b.potential || "Orta", Array.isArray(b.recommendedBrands) ? b.recommendedBrands : [], b.address || null, b.traffic || null, b.owner || null, b.ownerPhone || null, b.city || null, b.district || null, b.region || null, b.avenueName || null, b.mapsLink || null, b.segment || null, b.storefrontLength == null || b.storefrontLength === "" ? null : Number(b.storefrontLength), b.floorInfo || null, b.chimneyStatus || null, b.infrastructureStatus || null, b.revenueRentPct == null || b.revenueRentPct === "" ? null : Number(b.revenueRentPct), b.dues == null || b.dues === "" ? null : Number(b.dues), b.deposit == null || b.deposit === "" ? null : Number(b.deposit), b.footfallScore == null || b.footfallScore === "" ? null : Number(b.footfallScore), b.competitorBrands || null, b.targetCustomerProfile || null, b.suitableSectors || null, b.status || "Boş", b.brandFitScore == null || b.brandFitScore === "" ? null : Number(b.brandFitScore), b.streetClass || null, b.avmSegment || null, Array.isArray(b.files) ? b.files : [], b.notes || null, b.attachmentName || null, b.attachmentData || null, b.attachmentUrl || null, userId || null];
+  return [b.name, b.type || b.locationType, Number(b.sqm || 0), Number(b.rent || 0), b.currency || "TRY", b.potential || "Orta", Array.isArray(b.recommendedBrands) ? b.recommendedBrands : [], b.address || null, b.traffic || null, b.owner || null, b.ownerPhone || null, b.city || null, b.district || null, b.region || null, b.avenueName || null, b.mapsLink || null, b.segment || null, b.storefrontLength == null || b.storefrontLength === "" ? null : Number(b.storefrontLength), b.floorInfo || null, b.chimneyStatus || null, b.infrastructureStatus || null, b.revenueRentPct == null || b.revenueRentPct === "" ? null : Number(b.revenueRentPct), b.dues == null || b.dues === "" ? null : Number(b.dues), b.deposit == null || b.deposit === "" ? null : Number(b.deposit), b.footfallScore == null || b.footfallScore === "" ? null : Number(b.footfallScore), b.competitorBrands || null, b.targetCustomerProfile || null, b.suitableSectors || null, b.status || "Boş", b.brandFitScore == null || b.brandFitScore === "" ? null : Number(b.brandFitScore), b.streetClass || null, b.avmSegment || null, Array.isArray(b.files) ? b.files : [], b.notes || null, b.attachmentName || null, b.attachmentData || null, b.attachmentUrl || null, userId || null, b.transferFee == null || b.transferFee === "" ? null : Number(b.transferFee), b.fixturesList || null, b.commission == null || b.commission === "" ? null : Number(b.commission), b.renovationDays == null || b.renovationDays === "" ? null : Number(b.renovationDays), b.guaranteeType || null];
 }
 async function computeLocationKpis() {
   try {
