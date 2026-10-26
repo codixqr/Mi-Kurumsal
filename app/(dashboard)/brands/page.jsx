@@ -783,7 +783,28 @@ export default function BrandsPage() {
               </select>
             </div>
             <div className="field" style={{ gridColumn: '1 / -1' }}>
-              <label>Hedef şehirler</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <label style={{ margin: 0 }}>Hedef şehirler</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    type="button"
+                    style={{ fontSize: '0.75rem', padding: '2px 8px', background: '#e0e7ff', color: '#3730a3', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                    onClick={() => {
+                      const allCities = citiesData.city.map((c) => c.name).join(', ');
+                      setForm({ ...form, targetLocations: allCities });
+                    }}
+                  >
+                    Hepsini Seç
+                  </button>
+                  <button
+                    type="button"
+                    style={{ fontSize: '0.75rem', padding: '2px 8px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                    onClick={() => setForm({ ...form, targetLocations: '' })}
+                  >
+                    Temizle
+                  </button>
+                </div>
+              </div>
               <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ddd', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8, borderRadius: 6 }}>
                 {citiesData.city.map(c => {
                   const isSelected = form.targetLocations?.includes(c.name);
