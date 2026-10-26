@@ -58,7 +58,7 @@ router.get("/", authMiddleware, async (req, res) => {
     const listParams = [...params, pageSize, offset];
     const result = await pool.query(`SELECT b.*,
       (SELECT COUNT(DISTINCT id)::int FROM investors i WHERE i.deleted_at IS NULL AND (i.brand_id = b.id OR (i.brand_name IS NOT NULL AND LOWER(TRIM(i.brand_name)) = LOWER(TRIM(b.name))))) AS investor_count
-     FROM brands b WHERE ${whereSql} ORDER BY ${sortCol} ${order} LIMIT ${params.length + 1} OFFSET ${params.length + 2}`, listParams);
+     FROM brands b WHERE ${whereSql} ORDER BY ${sortCol} ${order} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`, listParams);
     const rows = result.rows.map(mapBrand);
     let kpis = {
       total: 0,
