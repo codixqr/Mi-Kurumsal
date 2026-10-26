@@ -889,6 +889,28 @@ export default function InvestorsPage() {
                 <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </div>
               <div className="field" style={{ margin: 0 }}>
+                <label>İlgilenilen / Seçilen Marka</label>
+                <select
+                  value={form.brandId || ''}
+                  onChange={(e) => {
+                    const selId = e.target.value;
+                    const found = brandOptions.find((b) => String(b.id) === String(selId));
+                    setForm({
+                      ...form,
+                      brandId: selId,
+                      brandName: found ? found.name : ''
+                    });
+                  }}
+                >
+                  <option value="">Seçiniz (Opsiyonel)</option>
+                  {brandOptions.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} {b.sector ? `(${b.sector})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field" style={{ margin: 0 }}>
                 <label>Yetkili kişi</label>
                 <input value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
               </div>
@@ -1420,6 +1442,28 @@ export default function InvestorsPage() {
               <div className="field field-wide" style={{ margin: 0, gridColumn: 'span 2' }}>
                 <label>Ad Soyad / Şirket adı *</label>
                 <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              </div>
+              <div className="field" style={{ margin: 0 }}>
+                <label>İlgilenilen / Seçilen Marka</label>
+                <select
+                  value={form.brandId || ''}
+                  onChange={(e) => {
+                    const selId = e.target.value;
+                    const found = brandOptions.find((b) => String(b.id) === String(selId));
+                    setForm({
+                      ...form,
+                      brandId: selId,
+                      brandName: found ? found.name : ''
+                    });
+                  }}
+                >
+                  <option value="">Seçiniz (Opsiyonel)</option>
+                  {brandOptions.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} {b.sector ? `(${b.sector})` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="field" style={{ margin: 0 }}>
                 <label>Yetkili kişi</label>
