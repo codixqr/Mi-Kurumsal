@@ -111,13 +111,22 @@ export function ColumnPicker({ columns, visible, onChange }) {
             alignItems: 'center',
           }}>
             <span>Sütunları Seç</span>
-            <button
-              type="button"
-              onClick={() => columns.forEach((c) => onChange(c.key, true))}
-              style={{ border: 'none', background: 'none', color: '#0f766e', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
-            >
-              Tümü
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => columns.forEach((c) => onChange(c.key, true))}
+                style={{ border: 'none', background: '#f0fdf4', color: '#166534', padding: '2px 6px', borderRadius: 4, fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Tümünü Seç
+              </button>
+              <button
+                type="button"
+                onClick={() => columns.forEach((c) => onChange(c.key, false))}
+                style={{ border: 'none', background: '#f8fafc', color: '#64748b', padding: '2px 6px', borderRadius: 4, fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Temizle
+              </button>
+            </div>
           </div>
 
           {columns.map((col) => (

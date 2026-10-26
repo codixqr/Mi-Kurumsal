@@ -279,7 +279,25 @@ export default function SettingsPage() {
               </select>
             </div>
             <div className="field field-wide">
-              <label>Kullanım İzinleri</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <label style={{ margin: 0 }}>Kullanım İzinleri</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    type="button"
+                    style={{ fontSize: '0.75rem', padding: '2px 8px', background: '#e0e7ff', color: '#3730a3', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}
+                    onClick={() => setMemberForm({ ...memberForm, permissions: CRM_PERMISSION_OPTIONS.map((p) => p.key) })}
+                  >
+                    Tümünü Seç
+                  </button>
+                  <button
+                    type="button"
+                    style={{ fontSize: '0.75rem', padding: '2px 8px', background: '#f1f5f9', color: '#475569', border: 'none', borderRadius: 4, cursor: 'pointer' }}
+                    onClick={() => setMemberForm({ ...memberForm, permissions: [] })}
+                  >
+                    Temizle
+                  </button>
+                </div>
+              </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '8px' }}>
                 {CRM_PERMISSION_OPTIONS.map((perm) => (
                   <label key={perm.key} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px' }}>
