@@ -65,6 +65,10 @@ router.put("/:id", authMiddleware, requireAdmin, async (req, res) => {
   const updated = await pool.query(`UPDATE team_members
      SET name=$1,email=$2,phone=$3,department=$4,role_name=$5,permissions=$6,active=$7,updated_at=NOW()
      WHERE id=$8 RETURNING *`, [name, email, phone, department, roleName, permissions, active, req.params.id]);
+  if (updated.rowCount > 0 && updated.rows[0].user_id) {
+    const uRole = roleName === "Yönetici" ? "admin" : "agent";
+    await pool.query("UPDATE users SET name = $1, email = COALESCE($2, email), role = $3 WHERE id = $4", [name, email, uRole, updated.rows[0].user_id]);
+  }
   if (updated.rowCount === 0) {
     return res.status(404).json({
       message: "Ekip üyesi bulunamadı."
@@ -76,6 +80,40 @@ router.put("/:id", authMiddleware, requireAdmin, async (req, res) => {
 router.delete("/:id", authMiddleware, requireAdmin, async (req, res) => {
   await pool.query("DELETE FROM team_members WHERE id=$1", [req.params.id]);
   res.status(204).send();
+});
+
+
+// Admin reset password for team member
+router.post("/:id/reset-password", authMiddleware, requireAdmin, async (req, res) => {
+  const { newPassword } = req.body || {};
+  if (!newPassword || newPassword.length < 6) {
+    return res.status(400).json({ message: "Yeni şifre en az 6 karakter olmalıdır." });
+  }
+  const tmRes = await pool.query("SELECT id, user_id, email, name FROM team_members WHERE id = $1", [req.params.id]);
+  if (tmRes.rowCount === 0) {
+    return res.status(404).json({ message: "Ekip üyesi bulunamadı." });
+  }
+  const tm = tmRes.rows[0];
+  const newHash = await bcrypt.hash(newPassword, 10);
+
+  let userId = tm.user_id;
+  if (!userId && tm.email) {
+    const uRes = await pool.query("SELECT id FROM users WHERE email = $1", [tm.email]);
+    if (uRes.rowCount > 0) userId = uRes.rows[0].id;
+  }
+
+  if (userId) {
+    await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [newHash, userId]);
+  } else if (tm.email) {
+    // If no user record exists, create one
+    const insUser = await pool.query("INSERT INTO users(name, email, password_hash, role) VALUES($1, $2, $3, $4) RETURNING id", [tm.name, tm.email, newHash, 'agent']);
+    userId = insUser.rows[0].id;
+    await pool.query("UPDATE team_members SET user_id = $1 WHERE id = $2", [userId, tm.id]);
+  } else {
+    return res.status(400).json({ message: "Bu ekip üyesinin e-postası bulunmadığı için kullanıcı hesabı oluşturulamadı." });
+  }
+
+  return res.json({ message: "Şifre başarıyla güncellendi." });
 });
 
 module.exports = router;

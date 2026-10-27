@@ -116,4 +116,26 @@ router.get("/me", authMiddleware, async (req, res) => {
   }
 });
 
+
+router.post("/change-password", authMiddleware, async (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: "Mevcut şifre ve yeni şifre zorunludur." });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: "Yeni şifre en az 6 karakter olmalıdır." });
+  }
+  const userRes = await pool.query("SELECT id, password_hash FROM users WHERE id = $1", [req.user.id]);
+  if (userRes.rowCount === 0) {
+    return res.status(404).json({ message: "Kullanıcı bulunamadı." });
+  }
+  const valid = await bcrypt.compare(currentPassword, userRes.rows[0].password_hash);
+  if (!valid) {
+    return res.status(400).json({ message: "Mevcut şifreniz hatalı." });
+  }
+  const newHash = await bcrypt.hash(newPassword, 10);
+  await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [newHash, req.user.id]);
+  return res.json({ message: "Şifreniz başarıyla güncellendi." });
+});
+
 module.exports = router;
