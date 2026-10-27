@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
-const { authMiddleware, requireAdmin, requirePermission } = require('../middlewares/auth');
+const { authMiddleware, requireAdmin, requireSuperAdmin, requirePermission } = require('../middlewares/auth');
 const jwt = require("jsonwebtoken");
 const jwtSecret = process.env.JWT_SECRET || "crm_dev_secret_change_me";
 // Add other common imports here if they are missing
 
-router.use("/", authMiddleware, requirePermission("timeline"));
+router.use("/", authMiddleware, requireSuperAdmin);
 
 router.get("/", authMiddleware, async (req, res) => {
   const limit = Math.min(200, Number(req.query.limit || 50));

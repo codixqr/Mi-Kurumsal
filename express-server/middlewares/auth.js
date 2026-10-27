@@ -15,9 +15,22 @@ function authMiddleware(req, res, next) {
   }
 }
 
+function isSuperAdminUser(user) {
+  if (!user) return false;
+  const adminEmail = (process.env.ADMIN_EMAIL || "admin@mikurumsal.com").toLowerCase();
+  return user.role === "superadmin" || (user.email && user.email.toLowerCase() === adminEmail);
+}
+
 function requireAdmin(req, res, next) {
-  if (!req.user || req.user.role !== "admin") {
+  if (!req.user || (req.user.role !== "admin" && !isSuperAdminUser(req.user))) {
     return res.status(403).json({ message: "Bu işlem sadece yöneticiye açıktır." });
+  }
+  return next();
+}
+
+function requireSuperAdmin(req, res, next) {
+  if (!req.user || !isSuperAdminUser(req.user)) {
+    return res.status(403).json({ message: "Bu işlem yalnızca Superadmin yetkisi gerektirir." });
   }
   return next();
 }
@@ -26,6 +39,12 @@ function requirePermission(perm) {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ message: "Yetkisiz erişim." });
+    }
+    if (isSuperAdminUser(req.user)) {
+      return next();
+    }
+    if (perm === "timeline") {
+      return res.status(403).json({ message: "İşlem geçmişi sadece Superadmin tarafından görüntülenebilir." });
     }
     if (req.user.role === "admin") {
       return next();
@@ -41,6 +60,8 @@ function requirePermission(perm) {
 module.exports = {
   authMiddleware,
   requireAdmin,
+  requireSuperAdmin,
   requirePermission,
+  isSuperAdminUser,
   jwtSecret
 };

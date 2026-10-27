@@ -27,16 +27,22 @@ export default function DashboardLayout({ children }) {
     { name: 'İşlem Geçmişi', path: '/timeline', id: 'timeline' },
   ];
 
+  const isSuperAdmin = user?.role === 'superadmin' || user?.isSuperAdmin || user?.email === 'admin@mikurumsal.com';
+
   // Route protection redirect guard on client side
   useEffect(() => {
-    if (user && user.role !== 'admin' && pathname !== '/') {
+    if (user && !isSuperAdmin && pathname !== '/') {
+      if (pathname.startsWith('/timeline')) {
+        window.location.href = '/';
+        return;
+      }
       const matchedMenu = menuItems.find((m) => m.path !== '/' && pathname.startsWith(m.path));
       const userPermissions = user.permissions || [];
       if (matchedMenu && !userPermissions.includes(matchedMenu.id)) {
         window.location.href = '/';
       }
     }
-  }, [user, pathname]);
+  }, [user, isSuperAdmin, pathname]);
 
   // Close sidebar on path change
   useEffect(() => {
@@ -48,7 +54,10 @@ export default function DashboardLayout({ children }) {
 
   const userPermissions = user.permissions || [];
   const hasPermission = (id) => {
-    if (user.role === 'admin') return true;
+    if (id === 'timeline') {
+      return Boolean(isSuperAdmin);
+    }
+    if (isSuperAdmin || user.role === 'admin') return true;
     if (id === 'dashboard') return true;
     return userPermissions.includes(id);
   };

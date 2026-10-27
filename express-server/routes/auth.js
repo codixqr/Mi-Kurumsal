@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
-const { authMiddleware, requireAdmin, requirePermission } = require('../middlewares/auth');
+const { authMiddleware, requireAdmin, requirePermission, isSuperAdminUser } = require('../middlewares/auth');
 const jwt = require("jsonwebtoken");
 const bcrypt = require('bcryptjs');
 const jwtSecret = process.env.JWT_SECRET || "crm_dev_secret_change_me";
@@ -59,17 +59,22 @@ router.post("/login", async (req, res) => {
     });
   }
   let permissions = [];
-  if (user.role === "admin") {
+  const isSuper = isSuperAdminUser(user);
+  const effectiveRole = isSuper ? "superadmin" : user.role;
+  if (isSuper) {
     permissions = ["investors", "brands", "locations", "projects", "contracts", "tasks", "reports", "templates", "matching", "pnl", "timeline"];
+  } else if (user.role === "admin") {
+    // Regular admins don't get timeline (activity log)
+    permissions = ["investors", "brands", "locations", "projects", "contracts", "tasks", "reports", "templates", "matching", "pnl"];
   } else {
     try {
       const tmRes = await pool.query("SELECT permissions FROM team_members WHERE user_id = $1", [user.id]);
-      permissions = tmRes.rows[0]?.permissions || [];
+      permissions = (tmRes.rows[0]?.permissions || []).filter(p => p !== "timeline");
     } catch (err) {
       console.error("Failed to fetch team member permissions:", err.message);
     }
   }
-  const token = signToken(user, permissions);
+  const token = signToken({ ...user, role: effectiveRole }, permissions);
   await logActivity({
     userId: user.id,
     moduleName: "auth",
@@ -82,7 +87,8 @@ router.post("/login", async (req, res) => {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
+      role: effectiveRole,
+      isSuperAdmin: isSuper,
       permissions
     }
   });
@@ -97,12 +103,18 @@ router.get("/me", authMiddleware, async (req, res) => {
       });
     }
     const user = result.rows[0];
-    if (user.role === "admin") {
+    const isSuper = isSuperAdminUser(user);
+    const effectiveRole = isSuper ? "superadmin" : user.role;
+    user.role = effectiveRole;
+    user.isSuperAdmin = isSuper;
+    if (isSuper) {
       user.permissions = ["investors", "brands", "locations", "projects", "contracts", "tasks", "reports", "templates", "matching", "pnl", "timeline"];
+    } else if (user.role === "admin") {
+      user.permissions = ["investors", "brands", "locations", "projects", "contracts", "tasks", "reports", "templates", "matching", "pnl"];
     } else {
       try {
         const tmRes = await pool.query("SELECT permissions FROM team_members WHERE user_id = $1", [user.id]);
-        user.permissions = tmRes.rows[0]?.permissions || [];
+        user.permissions = (tmRes.rows[0]?.permissions || []).filter(p => p !== "timeline");
       } catch (err) {
         console.error("Failed to fetch team member permissions for me:", err.message);
         user.permissions = [];

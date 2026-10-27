@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
-const { authMiddleware, requireAdmin, requirePermission } = require('../middlewares/auth');
+const { authMiddleware, requireAdmin, requireSuperAdmin, requirePermission } = require('../middlewares/auth');
 const jwt = require("jsonwebtoken");
 const bcrypt = require('bcryptjs');
 const jwtSecret = process.env.JWT_SECRET || "crm_dev_secret_change_me";
@@ -77,14 +77,14 @@ router.put("/:id", authMiddleware, requireAdmin, async (req, res) => {
   res.json(mapTeamMember(updated.rows[0]));
 });
 
-router.delete("/:id", authMiddleware, requireAdmin, async (req, res) => {
+router.delete("/:id", authMiddleware, requireSuperAdmin, async (req, res) => {
   await pool.query("DELETE FROM team_members WHERE id=$1", [req.params.id]);
   res.status(204).send();
 });
 
 
 // Admin reset password for team member
-router.post("/:id/reset-password", authMiddleware, requireAdmin, async (req, res) => {
+router.post("/:id/reset-password", authMiddleware, requireSuperAdmin, async (req, res) => {
   const { newPassword } = req.body || {};
   if (!newPassword || newPassword.length < 6) {
     return res.status(400).json({ message: "Yeni şifre en az 6 karakter olmalıdır." });

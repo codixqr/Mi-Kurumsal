@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
-const { authMiddleware, requireAdmin } = require('../middlewares/auth');
+const { authMiddleware, requireAdmin, requireSuperAdmin } = require('../middlewares/auth');
 const waha = require('../services/waha');
 
 // Middleware to check permission (admin or whatsapp permission)
@@ -44,8 +44,8 @@ router.get('/settings', authMiddleware, canManageWhatsApp, async (req, res) => {
   }
 });
 
-// 2. Save Settings
-router.put('/settings', authMiddleware, requireAdmin, async (req, res) => {
+// 2. Save Settings (Superadmin only)
+router.put('/settings', authMiddleware, requireSuperAdmin, async (req, res) => {
   try {
     const { apiUrl, apiKey, session, countryCode, enabled } = req.body;
     

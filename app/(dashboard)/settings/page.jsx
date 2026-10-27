@@ -5,11 +5,11 @@ import { useAuth } from '@/lib/AuthContext';
 import { apiClient } from '@/lib/apiClient';
 
 const SETTINGS_TABS = [
-  { id: 'system', label: 'Sistem Ayarları' },
-  { id: 'team', label: 'Kullanıcı & Ekip Yönetimi' },
+  { id: 'system', label: 'Sistem Ayarları', superAdminOnly: true },
+  { id: 'team', label: 'Kullanıcı & Ekip Yönetimi', superAdminOnly: true },
   { id: 'profile', label: 'Şifre & Profil' },
   { id: 'tasks', label: 'Görev Tanımlama' },
-  { id: 'timeline', label: 'Aktivite Kaydı' },
+  { id: 'timeline', label: 'Aktivite Kaydı', superAdminOnly: true },
 ];
 
 const CRM_PERMISSION_OPTIONS = [
@@ -29,7 +29,9 @@ const CRM_PERMISSION_OPTIONS = [
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('system');
+  const isSuperAdmin = user?.role === 'superadmin' || user?.isSuperAdmin || user?.email === 'admin@mikurumsal.com';
+  const visibleTabs = SETTINGS_TABS.filter(t => !t.superAdminOnly || isSuperAdmin);
+  const [activeTab, setActiveTab] = useState(isSuperAdmin ? 'system' : 'profile');
   const [teamMembers, setTeamMembers] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [logs, setLogs] = useState([]);
@@ -253,7 +255,7 @@ export default function SettingsPage() {
       </div>
 
       <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', marginBottom: '20px', flexWrap: 'wrap', gap: '4px' }}>
-        {SETTINGS_TABS.map(t => (
+        {visibleTabs.map(t => (
           <button key={t.id} style={tabStyle(t.id)} onClick={() => setActiveTab(t.id)}>{t.label}</button>
         ))}
       </div>
