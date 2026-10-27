@@ -339,6 +339,27 @@ async function triggerAutomation(eventName, payload) {
     await logAutomation("whatsapp", eventName, payload, "failed", error.message);
   }
 }
+function toIsoDateStr(val) {
+  if (!val) return null;
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return null;
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, '0');
+    const d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  const str = String(val).trim();
+  if (!str) return null;
+  if (str.includes("T")) return str.split("T")[0];
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
+  const parsed = new Date(str);
+  if (isNaN(parsed.getTime())) return null;
+  const y = parsed.getFullYear();
+  const m = String(parsed.getMonth() + 1).padStart(2, '0');
+  const d = String(parsed.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function mapInvestor(row) {
   const bmin = row.budget_min != null ? Number(row.budget_min) : null;
   const bmax = row.budget_max != null ? Number(row.budget_max) : null;
@@ -359,7 +380,7 @@ function mapInvestor(row) {
     goal: row.goal || "",
     contactHistory: row.contact_history || "",
     meetingNotes: row.meeting_notes || "",
-    followUpDate: row.follow_up_date ? String(row.follow_up_date).split("T")[0] : "",
+    followUpDate: toIsoDateStr(row.follow_up_date) || "",
     documents: row.documents || [],
     investorType: row.investor_type || "Bireysel",
     contactPerson: row.contact_person || "",
@@ -372,7 +393,7 @@ function mapInvestor(row) {
     priority: row.priority || "Orta",
     leadSource: row.lead_source || "",
     assignedMemberId: row.assigned_member_id || null,
-    lastMeetingDate: row.last_meeting_date ? String(row.last_meeting_date).split("T")[0] : "",
+    lastMeetingDate: toIsoDateStr(row.last_meeting_date) || "",
     nextAction: row.next_action || "",
     notes: row.notes || "",
     lastActivityAt: row.last_activity_at || row.created_at || null,
@@ -503,7 +524,7 @@ function mapProject(row) {
     priority: row.priority || "Orta",
     progress: Number(row.progress || 0),
     stage: row.stage,
-    dueDate: row.due_date,
+    dueDate: toIsoDateStr(row.due_date),
     description: row.description || "",
     checklist: row.checklist || [],
     investorId: row.investor_id || null,
@@ -530,7 +551,7 @@ function mapTask(row) {
     assigneeId: row.assignee_id || null,
     assigneeName: row.assignee_name || "",
     priority: row.priority || "Orta",
-    dueDate: row.due_date ? String(row.due_date).split("T")[0] : null,
+    dueDate: toIsoDateStr(row.due_date),
     investorId: row.investor_id || null,
     brandId: row.brand_id || null,
     projectId: row.project_id || null,
@@ -570,10 +591,10 @@ function mapContract(row) {
     type: row.contract_type || "",
     status: row.status || "Taslak",
     counterparty: row.counterparty || "",
-    startDate: row.start_date ? String(row.start_date).split("T")[0] : null,
-    endDate: row.end_date ? String(row.end_date).split("T")[0] : null,
-    signDate: row.sign_date ? String(row.sign_date).split("T")[0] : null,
-    renewalDate: row.renewal_date ? String(row.renewal_date).split("T")[0] : null,
+    startDate: toIsoDateStr(row.start_date),
+    endDate: toIsoDateStr(row.end_date),
+    signDate: toIsoDateStr(row.sign_date),
+    renewalDate: toIsoDateStr(row.renewal_date),
     amount: row.amount ? Number(row.amount) : 0,
     consultingFee: row.consulting_fee ? Number(row.consulting_fee) : 0,
     franchiseCommission: row.franchise_commission ? Number(row.franchise_commission) : 0,
@@ -626,8 +647,8 @@ function mapFinanceRecord(row) {
     status: row.status || "Açık",
     consultantCommissionPct: row.consultant_commission_pct != null ? Number(row.consultant_commission_pct) : null,
     companySharePct: row.company_share_pct != null ? Number(row.company_share_pct) : null,
-    dueDate: row.due_date ? String(row.due_date).split("T")[0] : null,
-    paidDate: row.paid_date ? String(row.paid_date).split("T")[0] : null,
+    dueDate: toIsoDateStr(row.due_date),
+    paidDate: toIsoDateStr(row.paid_date),
     paymentMethod: row.payment_method || "",
     createdAt: row.created_at,
     // joined
@@ -643,8 +664,8 @@ function mapPaymentPlan(row) {
     financeRecordId: row.finance_record_id,
     taksitNo: Number(row.taksit_no || 1),
     amount: Number(row.amount || 0),
-    dueDate: row.due_date ? String(row.due_date).split("T")[0] : null,
-    paidDate: row.paid_date ? String(row.paid_date).split("T")[0] : null,
+    dueDate: toIsoDateStr(row.due_date),
+    paidDate: toIsoDateStr(row.paid_date),
     status: row.status || "Bekliyor",
     paymentMethod: row.payment_method || "",
     note: row.note || ""
@@ -658,7 +679,7 @@ function mapExpense(row) {
     expenseType: row.expense_type || "Operasyon",
     amount: Number(row.amount || 0),
     currency: row.currency || "TRY",
-    expenseDate: row.expense_date ? String(row.expense_date).split("T")[0] : null,
+    expenseDate: toIsoDateStr(row.expense_date),
     description: row.description || "",
     createdAt: row.created_at
   };

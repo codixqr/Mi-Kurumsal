@@ -24,8 +24,18 @@ const emptyForm = () => ({
   tags: '',
 });
 
-const fmt = (d) => d ? new Date(d).toLocaleDateString('tr-TR') : '-';
-const isOverdue = (t) => t.status !== 'Tamamlandı' && t.dueDate && new Date(t.dueDate) < new Date(new Date().toISOString().split('T')[0]);
+const fmt = (d) => {
+  if (!d) return '-';
+  const parsed = new Date(d);
+  if (isNaN(parsed.getTime())) return '-';
+  return parsed.toLocaleDateString('tr-TR');
+};
+const isOverdue = (t) => {
+  if (t.status === 'Tamamlandı' || !t.dueDate) return false;
+  const d = new Date(t.dueDate);
+  if (isNaN(d.getTime())) return false;
+  return d < new Date(new Date().toISOString().split('T')[0]);
+};
 
 export default function TasksPage() {
   const { user } = useAuth();
