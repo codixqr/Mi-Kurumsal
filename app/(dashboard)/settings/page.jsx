@@ -71,24 +71,6 @@ export default function SettingsPage() {
   });
   const [selfPasswordMessage, setSelfPasswordMessage] = useState({ type: '', text: '' });
 
-  const [cleaningDemo, setCleaningDemo] = useState(false);
-
-  const cleanDemoData = async () => {
-    if (!confirm('DİKKAT: Sistemdeki tüm demo marka, yatırımcı, lokasyon, proje, sözleşme, görev ve demo finans kayıtları silinecektir. Gerçek kayıtlarınız ve kullanıcılarınız kesinlikle korunacaktır. Devam etmek istiyor musunuz?')) {
-      return;
-    }
-    setCleaningDemo(true);
-    try {
-      const res = await apiClient.post('/admin/clean-demo-data', {});
-      alert(res.message || 'Demo veriler başarıyla temizlendi.');
-      window.location.reload();
-    } catch (err) {
-      alert('Hata: ' + (err.message || 'Demo veriler temizlenirken bir sorun oluştu.'));
-    } finally {
-      setCleaningDemo(false);
-    }
-  };
-
   const loadData = async () => {
     try {
       const [members, settings, taskList] = await Promise.all([
@@ -292,35 +274,6 @@ export default function SettingsPage() {
             <button type="submit">Ayarları Kaydet</button>
           </form>
 
-          <hr style={{ margin: '24px 0', borderColor: '#e2e8f0' }} />
-
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '16px' }}>
-            <h4 style={{ color: '#991b1b', marginTop: 0, marginBottom: '8px' }}>Demo Verileri Sıfırla (Canlıya Geçiş)</h4>
-            <p style={{ fontSize: '13px', color: '#7f1d1d', margin: '0 0 12px 0', lineHeight: 1.5 }}>
-              Sistemi ilk kez kurarken yüklenen örnek demo markaları, yatırımcıları, lokasyonları ve sahte finans hareketlerini tek tıkla güvenle temizler.
-              İşletmenizin girdiği <strong>gerçek verilere ve kullanıcı hesaplarına kesinlikle dokunulmaz</strong>.
-            </p>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={cleanDemoData}
-                disabled={cleaningDemo}
-                style={{
-                  background: '#dc2626',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 16px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: cleaningDemo ? 'not-allowed' : 'pointer',
-                  opacity: cleaningDemo ? 0.7 : 1
-                }}
-              >
-                {cleaningDemo ? 'Temizleniyor...' : 'Demo Verileri Temizle'}
-              </button>
-            </div>
-          </div>
         </article>
       )}
 
