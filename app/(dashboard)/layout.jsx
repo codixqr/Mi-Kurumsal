@@ -25,6 +25,7 @@ export default function DashboardLayout({ children }) {
     { name: 'Şablonlar', path: '/templates', id: 'templates' },
     { name: 'Akıllı Eşleştirme', path: '/matching', id: 'matching' },
     { name: 'İşlem Geçmişi', path: '/timeline', id: 'timeline' },
+    { name: 'Ayarlar', path: '/settings', id: 'settings' },
   ];
 
   const isSuperAdmin = user?.role === 'superadmin' || user?.isSuperAdmin || user?.email === 'admin@mikurumsal.com';
@@ -38,7 +39,7 @@ export default function DashboardLayout({ children }) {
       }
       const matchedMenu = menuItems.find((m) => m.path !== '/' && pathname.startsWith(m.path));
       const userPermissions = user.permissions || [];
-      if (matchedMenu && !userPermissions.includes(matchedMenu.id)) {
+      if (matchedMenu && user.role !== 'admin' && !userPermissions.includes(matchedMenu.id)) {
         window.location.href = '/';
       }
     }
@@ -54,6 +55,9 @@ export default function DashboardLayout({ children }) {
 
   const userPermissions = user.permissions || [];
   const hasPermission = (id) => {
+    if (id === 'settings') {
+      return Boolean(isSuperAdmin || user.role === 'admin');
+    }
     if (id === 'timeline') {
       return Boolean(isSuperAdmin);
     }
@@ -106,7 +110,6 @@ export default function DashboardLayout({ children }) {
               </Link>
             );
           })}
-          {user.role === 'admin' && <Link href="/settings" className={`menu-link ${pathname.startsWith('/settings') ? 'active' : ''}`}>Ayarlar</Link>}
         </nav>
       </aside>
 
