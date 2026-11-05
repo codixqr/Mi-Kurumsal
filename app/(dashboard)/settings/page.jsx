@@ -110,7 +110,7 @@ export default function SettingsPage() {
     }
   }, [activeTab]);
 
-  if (user?.role !== 'admin') {
+  if (!isSuperAdmin && user?.role !== 'admin') {
     return (
       <section className="card page-section active">
         <div className="module-head">
