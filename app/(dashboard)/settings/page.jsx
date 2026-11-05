@@ -82,7 +82,7 @@ export default function SettingsPage() {
       ]);
       setTeamMembers(members || []);
       setSettingsForm((prev) => ({ ...prev, ...(settings || {}) }));
-      setTasks(taskList || []);
+      setTasks(Array.isArray(taskList) ? taskList : (taskList?.items || []));
     } catch (e) {
       console.error(e);
     }
